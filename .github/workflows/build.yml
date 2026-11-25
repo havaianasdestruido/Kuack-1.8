@@ -1,0 +1,228 @@
+name: Build client
+
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - 'v*'
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      mcp918_url:
+        description: 'HTTPS URL for mcp918.zip (overrides the configured variable/secret)'
+        required: false
+        type: string
+      minecraft_jar_url:
+        description: 'HTTPS URL for the Minecraft 1.8.8 client jar'
+        required: false
+        type: string
+      assets_index_url:
+        description: 'HTTPS URL for the Minecraft 1.8 assets index (1.8.json)'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Compile web client
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Ensure ffmpeg is available
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          ffmpeg -version | head -n 1
+
+      - name: Download license-restricted build inputs
+        env:
+          MCP918_URL: ${{ inputs.mcp918_url || vars.MCP918_URL || secrets.MCP918_URL }}
+          MINECRAFT_JAR_URL: ${{ inputs.minecraft_jar_url || vars.MINECRAFT_1_8_8_JAR_URL || secrets.MINECRAFT_1_8_8_JAR_URL }}
+          ASSETS_INDEX_URL: ${{ inputs.assets_index_url || vars.ASSETS_1_8_JSON_URL || secrets.ASSETS_1_8_JSON_URL }}
+          BUILD_INPUTS_TOKEN: ${{ secrets.BUILD_INPUTS_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          missing=0
+          if [ -z "${MCP918_URL:-}" ]; then
+            echo "::error::Missing mcp918.zip URL. Set the MCP918_URL repository variable/secret or pass mcp918_url to workflow_dispatch."
+            missing=1
+          fi
+          if [ -z "${MINECRAFT_JAR_URL:-}" ]; then
+            echo "::error::Missing 1.8.8.jar URL. Set the MINECRAFT_1_8_8_JAR_URL repository variable/secret or pass minecraft_jar_url to workflow_dispatch."
+            missing=1
+          fi
+          if [ -z "${ASSETS_INDEX_URL:-}" ]; then
+            echo "::error::Missing 1.8.json URL. Set the ASSETS_1_8_JSON_URL repository variable/secret or pass assets_index_url to workflow_dispatch."
+            missing=1
+          fi
+          if [ "$missing" -ne 0 ]; then
+            echo "::error::The Minecraft jar, assets index and MCP files cannot be committed to this repository; see the CI section of README.md."
+            exit 1
+          fi
+
+          inputs="$RUNNER_TEMP/eagler-inputs"
+          mkdir -p "$inputs"
+
+          fetch_input() {
+            label="$1"
+            url="$2"
+            destination="$3"
+            auth_args=()
+            if [ -n "${BUILD_INPUTS_TOKEN:-}" ]; then
+              auth_args=(-H "Authorization: Bearer ${BUILD_INPUTS_TOKEN}")
+            fi
+            echo "Downloading $label..."
+            curl --fail --silent --show-error --location \
+              --retry 3 --retry-delay 2 --connect-timeout 20 --max-time 1800 \
+              --proto '=https' --proto-redir '=https' \
+              "${auth_args[@]}" --output "$destination" "$url"
+            test -s "$destination"
+          }
+
+          fetch_input "mcp918.zip" "$MCP918_URL" "$inputs/mcp918.zip"
+          fetch_input "1.8.8.jar" "$MINECRAFT_JAR_URL" "$inputs/1.8.8.jar"
+          fetch_input "1.8.json" "$ASSETS_INDEX_URL" "$inputs/1.8.json"
+
+          python3 -m json.tool "$inputs/1.8.json" > /dev/null
+          python3 - "$inputs/mcp918.zip" "$inputs/1.8.8.jar" <<'PY'
+          import sys
+          import zipfile
+
+          for path in sys.argv[1:]:
+              with zipfile.ZipFile(path) as archive:
+                  if archive.testzip() is not None:
+                      raise SystemExit("Corrupt archive: " + path)
+          PY
+
+      - name: Cache TeaVM jars
+        id: teavm-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/eagler-maven
+          key: ${{ runner.os }}-teavm-${{ hashFiles('buildtools/BuildTools.jar') }}
+
+      - name: Write headless compiler config
+        env:
+          TEAVM_MAVEN_URL: ${{ vars.TEAVM_MAVEN_URL || 'https://repo1.maven.org/maven2/' }}
+          TEAVM_CACHE_HIT: ${{ steps.teavm-cache.outputs.cache-hit }}
+        run: |
+          set -euo pipefail
+
+          mkdir -p "$RUNNER_TEMP/eagler-build" "$RUNNER_TEMP/eagler-maven" "$GITHUB_WORKSPACE/dist"
+
+          jq -n \
+            --arg repo "$GITHUB_WORKSPACE" \
+            --arg mcp "$RUNNER_TEMP/eagler-inputs/mcp918.zip" \
+            --arg jar "$RUNNER_TEMP/eagler-inputs/1.8.8.jar" \
+            --arg assets "$RUNNER_TEMP/eagler-inputs/1.8.json" \
+            --arg out "$GITHUB_WORKSPACE/dist" \
+            --arg tmp "$RUNNER_TEMP/eagler-build" \
+            --arg maven "$RUNNER_TEMP/eagler-maven" \
+            --arg index "$GITHUB_WORKSPACE/buildtools/production-index.html" \
+            --arg favicon "$GITHUB_WORKSPACE/buildtools/production-favicon.png" \
+            --arg offline "$GITHUB_WORKSPACE/sources/setup/workspace_template/javascript/OfflineDownloadTemplate.txt" \
+            '{
+              repositoryFolder: $repo,
+              modCoderPack: $mcp,
+              minecraftJar: $jar,
+              assetsIndex: $assets,
+              outputDirectory: $out,
+              temporaryDirectory: $tmp,
+              mavenLocal: $maven,
+              productionIndex: $index,
+              productionFavicon: $favicon,
+              generateOfflineDownload: true,
+              offlineDownloadTemplate: $offline,
+              minifying: true,
+              writeSourceMap: false,
+              keepTemporaryFiles: false
+            }' > "$RUNNER_TEMP/eagler-build-config.json"
+
+          if [ "$TEAVM_CACHE_HIT" != "true" ]; then
+            jq --arg url "$TEAVM_MAVEN_URL" '.mavenURL = $url' \
+              "$RUNNER_TEMP/eagler-build-config.json" > "$RUNNER_TEMP/eagler-build-config.tmp.json"
+            mv "$RUNNER_TEMP/eagler-build-config.tmp.json" "$RUNNER_TEMP/eagler-build-config.json"
+          fi
+
+      - name: Compile client
+        run: |
+          set -euo pipefail
+          java -Deaglercraft.TeaVMBridge="$GITHUB_WORKSPACE/buildtools/TeaVMBridge.jar" \
+            -cp "$GITHUB_WORKSPACE/buildtools/BuildTools.jar:$GITHUB_WORKSPACE/buildtools/deps/*" \
+            net.lax1dude.eaglercraft.v1_8.buildtools.gui.headless.CompileLatestClientHeadless \
+            -y "$RUNNER_TEMP/eagler-build-config.json"
+
+      - name: Verify build output
+        run: |
+          set -euo pipefail
+          test -s dist/index.html
+          test -s dist/classes.js
+          test -s dist/assets.epk
+          test -d dist/lang
+          echo "Generated HTML files:"
+          find dist -maxdepth 1 -type f -name '*.html' -printf '%f (%s bytes)\n' | sort
+
+      - name: Upload web build
+        uses: actions/upload-artifact@v4
+        with:
+          name: eaglercraft-web
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload HTML artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: eaglercraft-html
+          path: dist/*.html
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Publish HTML files to release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download HTML artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: eaglercraft-html
+          path: html
+
+      - name: Attach standalone HTML clients to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          mapfile -t assets < <(find html -maxdepth 1 -type f -name '*.html' ! -name 'index.html' | sort)
+          if [ "${#assets[@]}" -eq 0 ]; then
+            echo "::error::No standalone HTML client was generated"
+            exit 1
+          fi
+          printf 'Publishing: %s\n' "${assets[@]}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${assets[@]}" --clobber
+          else
+            gh release create "$TAG" "${assets[@]}" --title "$TAG" --generate-notes
+          fi
