@@ -37,6 +37,27 @@
 5. Type `./CompileLatestClient.sh` and hit enter, a GUI resembling a classic windows installer should open
 6. Follow the steps shown to you in the new window to finish compiling
 
+## CI builds and published artifacts
+
+The `Build client` workflow (`.github/workflows/build.yml`) compiles the client with the same headless compiler as the GUI scripts on every push, pull request, and manual run. It publishes two Actions artifacts:
+
+ - `eaglercraft-web` - the complete site: `index.html`, `classes.js`, `assets.epk`, `favicon.png`, and `lang/`
+ - `eaglercraft-html` - every generated `.html` file, including the standalone `EaglercraftX_1.8_Offline_en_US.html` and `EaglercraftX_1.8_Offline_International.html` clients
+
+Pushing a `v*` tag also attaches the standalone HTML files to that GitHub Release. The optional `Publish web build to Pages` workflow deploys `eaglercraft-web` to GitHub Pages after a successful build on the default branch.
+
+### Required CI configuration
+
+MCP v9.18, the Minecraft 1.8.8 jar, and the 1.8 assets index cannot be redistributed in this repository, so CI must download them from a location you control. Host these three files somewhere the workflow can reach over HTTPS and configure their URLs as repository **variables** (public URLs) or **secrets** (private/signed URLs):
+
+| File | Variable or secret | `workflow_dispatch` input |
+| --- | --- | --- |
+| `mcp918.zip` | `MCP918_URL` | `mcp918_url` |
+| `1.8.8.jar` | `MINECRAFT_1_8_8_JAR_URL` | `minecraft_jar_url` |
+| `1.8.json` | `ASSETS_1_8_JSON_URL` | `assets_index_url` |
+
+Dispatch inputs take precedence over the variable/secret with the same name. If the URLs need authentication, add the `BUILD_INPUTS_TOKEN` secret; it is sent as a bearer token. Optional settings: `TEAVM_MAVEN_URL` (variable, defaults to Maven Central) and `PAGES_ENABLED` (variable, set to `true` to enable automatic Pages deployments). To publish manually to Pages, run `Publish web build to Pages` and supply the run ID of a successful `Build client` run. GitHub Pages must be enabled for the repository and configured to deploy from GitHub Actions.
+
 ## Singleplayer
 
 As of January 2024, singleplayer and shared worlds have been added to EaglercraftX 1.8.
