@@ -55,60 +55,7 @@ jobs:
           MINECRAFT_JAR_URL: ${{ inputs.minecraft_jar_url || vars.MINECRAFT_1_8_8_JAR_URL || secrets.MINECRAFT_1_8_8_JAR_URL }}
           ASSETS_INDEX_URL: ${{ inputs.assets_index_url || vars.ASSETS_1_8_JSON_URL || secrets.ASSETS_1_8_JSON_URL }}
           BUILD_INPUTS_TOKEN: ${{ secrets.BUILD_INPUTS_TOKEN }}
-        run: |
-          set -euo pipefail
-
-          missing=0
-          if [ -z "${MCP918_URL:-}" ]; then
-            echo "::error::Missing mcp918.zip URL. Set the MCP918_URL repository variable/secret or pass mcp918_url to workflow_dispatch."
-            missing=1
-          fi
-          if [ -z "${MINECRAFT_JAR_URL:-}" ]; then
-            echo "::error::Missing 1.8.8.jar URL. Set the MINECRAFT_1_8_8_JAR_URL repository variable/secret or pass minecraft_jar_url to workflow_dispatch."
-            missing=1
-          fi
-          if [ -z "${ASSETS_INDEX_URL:-}" ]; then
-            echo "::error::Missing 1.8.json URL. Set the ASSETS_1_8_JSON_URL repository variable/secret or pass assets_index_url to workflow_dispatch."
-            missing=1
-          fi
-          if [ "$missing" -ne 0 ]; then
-            echo "::error::The Minecraft jar, assets index and MCP files cannot be committed to this repository; see the CI section of README.md."
-            exit 1
-          fi
-
-          inputs="$RUNNER_TEMP/eagler-inputs"
-          mkdir -p "$inputs"
-
-          fetch_input() {
-            label="$1"
-            url="$2"
-            destination="$3"
-            auth_args=()
-            if [ -n "${BUILD_INPUTS_TOKEN:-}" ]; then
-              auth_args=(-H "Authorization: Bearer ${BUILD_INPUTS_TOKEN}")
-            fi
-            echo "Downloading $label..."
-            curl --fail --silent --show-error --location \
-              --retry 3 --retry-delay 2 --connect-timeout 20 --max-time 1800 \
-              --proto '=https' --proto-redir '=https' \
-              "${auth_args[@]}" --output "$destination" "$url"
-            test -s "$destination"
-          }
-
-          fetch_input "mcp918.zip" "$MCP918_URL" "$inputs/mcp918.zip"
-          fetch_input "1.8.8.jar" "$MINECRAFT_JAR_URL" "$inputs/1.8.8.jar"
-          fetch_input "1.8.json" "$ASSETS_INDEX_URL" "$inputs/1.8.json"
-
-          python3 -m json.tool "$inputs/1.8.json" > /dev/null
-          python3 - "$inputs/mcp918.zip" "$inputs/1.8.8.jar" <<'PY'
-          import sys
-          import zipfile
-
-          for path in sys.argv[1:]:
-              with zipfile.ZipFile(path) as archive:
-                  if archive.testzip() is not None:
-                      raise SystemExit("Corrupt archive: " + path)
-          PY
+        run: scripts/download-build-inputs.sh "$RUNNER_TEMP/eagler-inputs"
 
       - name: Cache TeaVM jars
         id: teavm-cache

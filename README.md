@@ -51,9 +51,11 @@ The `Build client` workflow (`.github/workflows/build.yml`) compiles the client 
 
 Pushing a `v*` tag also attaches the standalone HTML files to that GitHub Release. The optional `Publish web build to Pages` workflow deploys `eaglercraft-web` to GitHub Pages after a successful build on the default branch.
 
-### Required CI configuration
+### Build inputs and optional CI configuration
 
-MCP v9.18, the Minecraft 1.8.8 jar, and the 1.8 assets index cannot be redistributed in this repository, so CI must download them from a location you control. Host these three files somewhere the workflow can reach over HTTPS and configure their URLs as repository **variables** (public URLs) or **secrets** (private/signed URLs):
+The workflow downloads the required inputs automatically: the [MCP 9.18 archive](https://github.com/Spacehost-me/MCP) from a commit-pinned third-party mirror, and the [Minecraft 1.8.8 client](https://launcher.mojang.com/v1/objects/0983f08be6a4e624f5d85689d1aca869ed99c738/client.jar) and [1.8 asset index](https://launchermeta.mojang.com/v1/packages/f6ad102bcaa53b1a58358f16e376d548d44933ec/1.8.json) from Mojang. Default downloads are checked against their pinned hashes. The archive mirror is not maintained by this project; these files are not committed here. You are responsible for complying with the applicable licenses and Minecraft terms.
+
+To use different HTTPS sources, optionally configure repository **variables** or **secrets**, or provide manual workflow inputs:
 
 | File | Variable or secret | `workflow_dispatch` input |
 | --- | --- | --- |
@@ -61,7 +63,7 @@ MCP v9.18, the Minecraft 1.8.8 jar, and the 1.8 assets index cannot be redistrib
 | `1.8.8.jar` | `MINECRAFT_1_8_8_JAR_URL` | `minecraft_jar_url` |
 | `1.8.json` | `ASSETS_1_8_JSON_URL` | `assets_index_url` |
 
-Dispatch inputs take precedence over the variable/secret with the same name. If the URLs need authentication, add the `BUILD_INPUTS_TOKEN` secret; it is sent as a bearer token. Optional settings: `TEAVM_MAVEN_URL` (variable, defaults to Maven Central) and `PAGES_ENABLED` (variable, set to `true` to enable automatic Pages deployments). To publish manually to Pages, run `Publish web build to Pages` and supply the run ID of a successful `Build client` run. GitHub Pages must be enabled for the repository and configured to deploy from GitHub Actions.
+Dispatch inputs take precedence over the variable/secret with the same name. If override URLs need authentication, add the `BUILD_INPUTS_TOKEN` secret; it is sent as a bearer token to each explicitly configured URL, but not to the defaults. Only use trusted override hosts. Overrides are checked for valid archive/JSON structure, but not against the default hashes. Optional settings: `TEAVM_MAVEN_URL` (variable, defaults to Maven Central) and `PAGES_ENABLED` (variable, set to `true` to enable automatic Pages deployments). To publish manually to Pages, run `Publish web build to Pages` and supply the run ID of a successful `Build client` run. GitHub Pages must be enabled for the repository and configured to deploy from GitHub Actions.
 
 ## Singleplayer
 
