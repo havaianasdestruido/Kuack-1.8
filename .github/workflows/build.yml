@@ -8,19 +8,6 @@ on:
       - 'v*'
   pull_request:
   workflow_dispatch:
-    inputs:
-      mcp918_url:
-        description: 'HTTPS URL for mcp918.zip (overrides the configured variable/secret)'
-        required: false
-        type: string
-      minecraft_jar_url:
-        description: 'HTTPS URL for the Minecraft 1.8.8 client jar'
-        required: false
-        type: string
-      assets_index_url:
-        description: 'HTTPS URL for the Minecraft 1.8 assets index (1.8.json)'
-        required: false
-        type: string
 
 permissions:
   contents: read
@@ -49,13 +36,12 @@ jobs:
           fi
           ffmpeg -version | head -n 1
 
-      - name: Download license-restricted build inputs
-        env:
-          MCP918_URL: ${{ inputs.mcp918_url || vars.MCP918_URL || secrets.MCP918_URL }}
-          MINECRAFT_JAR_URL: ${{ inputs.minecraft_jar_url || vars.MINECRAFT_1_8_8_JAR_URL || secrets.MINECRAFT_1_8_8_JAR_URL }}
-          ASSETS_INDEX_URL: ${{ inputs.assets_index_url || vars.ASSETS_1_8_JSON_URL || secrets.ASSETS_1_8_JSON_URL }}
-          BUILD_INPUTS_TOKEN: ${{ secrets.BUILD_INPUTS_TOKEN }}
-        run: scripts/download-build-inputs.sh "$RUNNER_TEMP/eagler-inputs"
+      - name: Verify vendored build inputs
+        run: |
+          set -euo pipefail
+          cd vendor/minecraft
+          sha256sum --quiet -c SHA256SUMS
+          echo "Vendored MCP, client JAR, asset index and 1.8 asset objects verified"
 
       - name: Cache TeaVM jars
         id: teavm-cache
@@ -75,9 +61,6 @@ jobs:
 
           jq -n \
             --arg repo "$GITHUB_WORKSPACE" \
-            --arg mcp "$RUNNER_TEMP/eagler-inputs/mcp918.zip" \
-            --arg jar "$RUNNER_TEMP/eagler-inputs/1.8.8.jar" \
-            --arg assets "$RUNNER_TEMP/eagler-inputs/1.8.json" \
             --arg out "$GITHUB_WORKSPACE/dist" \
             --arg tmp "$RUNNER_TEMP/eagler-build" \
             --arg maven "$RUNNER_TEMP/eagler-maven" \
@@ -86,9 +69,9 @@ jobs:
             --arg offline "$GITHUB_WORKSPACE/sources/setup/workspace_template/javascript/OfflineDownloadTemplate.txt" \
             '{
               repositoryFolder: $repo,
-              modCoderPack: $mcp,
-              minecraftJar: $jar,
-              assetsIndex: $assets,
+              minecraftSourceDirectory: ($repo + "/sources/minecraft/java"),
+              minecraftAssetsDirectory: ($repo + "/sources/minecraft/assets"),
+              minecraftLanguagesDirectory: ($repo + "/sources/minecraft/lang"),
               outputDirectory: $out,
               temporaryDirectory: $tmp,
               mavenLocal: $maven,
