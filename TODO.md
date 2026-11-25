@@ -1,12 +1,12 @@
 # my personal goal with this fork
 
-- [ ] add SodiumMC baked-in with the game
-- [ ] add Distant Horizons baked-in with the game
+- [ ] add [SodiumMC](https://github.com/CaffeineMC/sodium) baked-in with the game
+- [ ] add [Distant Horizons](https://gitlab.com/distant-horizons-team/distant-horizons) baked-in with the game
 - [ ] add new config "performance presets" where the user can change between presets made for ultra low-end devices up to high-end devices
 - [ ] (better) mobile support
-- [ ] performance optimzations
+- [ ] performance optimizations
 - [ ] toggle between reporting or not that the client is cracked
-- - [ ] oficial client spoofing
+- - [ ] _oficial client spoofing_
 
 ## stuff i may add later
 
