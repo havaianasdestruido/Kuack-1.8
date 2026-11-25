@@ -13,11 +13,16 @@
  - **Browser-modified portions of Minecraft 1.8's open-source dependencies**
  - **Plugins for Minecraft servers to allow the eagler client to connect to them**
 
-### This repository does NOT contain:
+<!-- here lies stuff about it doesnt containing decomp of the games source code
+BUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUT
+im not making any money off this + i want to make this as straight-forward as possible
+to absolute noobs to simply build this from source and play ASAP.
 
- - **Any portion of the decompiled Minecraft 1.8 source code or resources**
- - **Any portion of Mod Coder Pack and it's config files**
- - **Data that can be used alone to reconstruct portions of the game's source code**
+so yea this includes some assets and the full source code, since working with those
+weird patches system kinda sucks and its horrible to work with.
+
+TL,DR: i VILL include decompiled code + assets for a old unupdated obsolete version
+of the worlds most popular game -->
 
 ## Getting Started:
 
