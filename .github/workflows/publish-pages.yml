@@ -29,11 +29,18 @@ jobs:
       actions: read
       pages: write
       id-token: write
+    # Deploy automatically when Pages is enabled for the repo (this workflow
+    # runs on the default branch, and actions/deploy-pages publishes via the
+    # Pages "GitHub Actions" source). Set the PAGES_ENABLED variable to
+    # 'false' to opt out of automatic deployments. The default_branch
+    # comparison falls back to github.ref_name (the branch this
+    # workflow_run workflow itself runs on, always the default branch) because the
+    # workflow_run payload does not guarantee repository.default_branch.
     if: >-
-      (vars.PAGES_ENABLED == 'true' && github.event_name == 'workflow_run' &&
+      (vars.PAGES_ENABLED != 'false' && github.event_name == 'workflow_run' &&
        github.event.workflow_run.conclusion == 'success' &&
        github.event.workflow_run.head_repository.full_name == github.repository &&
-       github.event.workflow_run.head_branch == github.event.repository.default_branch) ||
+       github.event.workflow_run.head_branch == (github.event.repository.default_branch || github.ref_name)) ||
       (github.event_name == 'workflow_dispatch' && inputs.run_id != '')
     steps:
       - name: Download web build from the triggering run
