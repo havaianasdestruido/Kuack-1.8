@@ -42,6 +42,17 @@ import net.lax1dude.eaglercraft.v1_8.internal.teavm.TeaVMUtils;
  */
 public class PlatformApplication {
 
+	public static void setWindowTitle(String title) {
+		try {
+			setWindowTitle0(title == null ? "" : title);
+		}catch(Throwable t) {
+			PlatformRuntime.logger.error("Exception setting window title");
+		}
+	}
+
+	@JSBody(params = { "str" }, script = "document.title = str;")
+	private static native void setWindowTitle0(String str);
+
 	public static void openLink(String url) {
 		if(url.indexOf(':') == -1) {
 			url = "http://" + url;
