@@ -104,7 +104,6 @@ public class BlockModelRenderer {
 		boolean flag = false;
 		float[] afloat = this.sharedQuadBounds;
 		BitSet bitset = this.sharedBoundsFlags;
-		bitset.clear();
 		BlockModelRenderer.AmbientOcclusionFace blockmodelrenderer$ambientocclusionface = this.sharedAoFace;
 
 		EnumFacing[] facings = EnumFacing._VALUES;
@@ -142,7 +141,6 @@ public class BlockModelRenderer {
 		boolean flag = false;
 		float[] afloat = isDeferred ? this.sharedQuadBounds : null;
 		BitSet bitset = this.sharedBoundsFlags;
-		bitset.clear();
 
 		BlockPos pointer = this.sharedSidePos;
 		EnumFacing[] facings = EnumFacing._VALUES;
@@ -749,25 +747,25 @@ public class BlockModelRenderer {
 			long w1 = cache.get(x1, y1, z1);
 			int i = SodiumLightDataCache.unpackLight(w1);
 			float f = SodiumLightDataCache.unpackAO(w1);
-			boolean flag = SodiumLightDataCache.unpackTranslucent(cache.get(x1 + fx, y1 + fy, z1 + fz));
+			boolean flag = cache.isTranslucent(x1 + fx, y1 + fy, z1 + fz);
 
 			int x2 = bx + n1.getFrontOffsetX(), y2 = by + n1.getFrontOffsetY(), z2 = bz + n1.getFrontOffsetZ();
 			long w2 = cache.get(x2, y2, z2);
 			int j = SodiumLightDataCache.unpackLight(w2);
 			float f1 = SodiumLightDataCache.unpackAO(w2);
-			boolean flag1 = SodiumLightDataCache.unpackTranslucent(cache.get(x2 + fx, y2 + fy, z2 + fz));
+			boolean flag1 = cache.isTranslucent(x2 + fx, y2 + fy, z2 + fz);
 
 			int x3 = bx + n2.getFrontOffsetX(), y3 = by + n2.getFrontOffsetY(), z3 = bz + n2.getFrontOffsetZ();
 			long w3 = cache.get(x3, y3, z3);
 			int k = SodiumLightDataCache.unpackLight(w3);
 			float f2 = SodiumLightDataCache.unpackAO(w3);
-			boolean flag2 = SodiumLightDataCache.unpackTranslucent(cache.get(x3 + fx, y3 + fy, z3 + fz));
+			boolean flag2 = cache.isTranslucent(x3 + fx, y3 + fy, z3 + fz);
 
 			int x4 = bx + n3.getFrontOffsetX(), y4 = by + n3.getFrontOffsetY(), z4 = bz + n3.getFrontOffsetZ();
 			long w4 = cache.get(x4, y4, z4);
 			int l = SodiumLightDataCache.unpackLight(w4);
 			float f3 = SodiumLightDataCache.unpackAO(w4);
-			boolean flag3 = SodiumLightDataCache.unpackTranslucent(cache.get(x4 + fx, y4 + fy, z4 + fz));
+			boolean flag3 = cache.isTranslucent(x4 + fx, y4 + fy, z4 + fz);
 
 			float f4;
 			int i1;
