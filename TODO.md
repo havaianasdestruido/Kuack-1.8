@@ -3,7 +3,7 @@
 everything that is **bold** is a prority.
 
 
-- [ ] **add [SodiumMC](https://github.com/CaffeineMC/sodium) baked-in with the game**
+- [x] **add [SodiumMC](https://github.com/CaffeineMC/sodium) baked-in with the game** (see the "Sodium Renderer" option in Video Settings)
 - [ ] **add [Distant Horizons](https://gitlab.com/distant-horizons-team/distant-horizons) baked-in with the game**
 - [ ] **add new config "performance presets" where the user can change between presets made for ultra low-end devices up to high-end devices**
 - [ ] **add [in-game music](https://bafybeiayojww5jfyzvlmtuk7l5ufkt7nlfto7mhwmzf2vs4bvsjd5ouiuq.ipfs.nftstorage.link/?filename=Music_For_Eaglercraft.zip)**

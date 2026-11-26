@@ -31,6 +31,7 @@ import net.lax1dude.eaglercraft.v1_8.internal.KeyboardConstants;
 import net.lax1dude.eaglercraft.v1_8.log4j.LogManager;
 import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.EaglerDeferredConfig;
+import net.lax1dude.eaglercraft.v1_8.opengl.ext.sodium.SodiumConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.SoundCategory;
 import net.minecraft.client.gui.GuiNewChat;
@@ -203,6 +204,7 @@ public class GameSettings {
 	public boolean enableUpdateSvc = true;
 	public boolean enableFNAWSkins = true;
 	public boolean enableDynamicLights = false;
+	public int sodiumRenderer = SodiumConfig.LEVEL_BALANCED;
 
 	public int voiceListenRadius = 16;
 	public float voiceListenVolume = 0.5f;
@@ -471,6 +473,14 @@ public class GameSettings {
 			this.mc.renderGlobal.loadRenderers();
 		}
 
+		if (parOptions == GameSettings.Options.SODIUM_RENDERER) {
+			this.sodiumRenderer = SodiumConfig.cycleLevel(this.sodiumRenderer, parInt1 == 0 ? 1 : parInt1);
+			// switching between the vanilla and the sodium chunk renderer makes
+			// every cached chunk list invalid, and the display lists have to be
+			// rebuilt because the two renderers iterate them differently
+			this.mc.renderGlobal.loadRenderers();
+		}
+
 		this.saveOptions();
 	}
 
@@ -549,6 +559,8 @@ public class GameSettings {
 			return this.enableVsync;
 		case EAGLER_DYNAMIC_LIGHTS:
 			return this.enableDynamicLights;
+		case SODIUM_RENDERER:
+			return SodiumConfig.isEnabled(this.sodiumRenderer);
 		default:
 			return false;
 		}
@@ -651,6 +663,8 @@ public class GameSettings {
 				String s1 = "options.graphics.fast";
 				return s + I18n.format("options.graphics.fast", new Object[0]);
 			}
+		} else if (parOptions == GameSettings.Options.SODIUM_RENDERER) {
+			return s + I18n.format(SodiumConfig.getLevelTranslationKey(this.sodiumRenderer), new Object[0]);
 		} else if (parOptions == GameSettings.Options.FXAA) {
 			if (this.fxaa == 0) {
 				return s + I18n.format("options.fxaa.auto");
@@ -998,6 +1012,10 @@ public class GameSettings {
 						this.enableDynamicLights = astring[1].equals("true");
 					}
 
+					if (astring[0].equals("sodiumRenderer")) {
+						this.sodiumRenderer = SodiumConfig.clampLevel(Integer.parseInt(astring[1]));
+					}
+
 					deferredShaderConf.readOption(astring[0], astring[1]);
 				} catch (Exception var8) {
 					logger.warn("Skipping bad option: " + s);
@@ -1117,6 +1135,7 @@ public class GameSettings {
 			printwriter.println("voicePTTKey:" + this.voicePTTKey);
 			printwriter.println("enableFNAWSkins:" + this.enableFNAWSkins);
 			printwriter.println("enableDynamicLights:" + this.enableDynamicLights);
+			printwriter.println("sodiumRenderer:" + this.sodiumRenderer);
 
 			for (KeyBinding keybinding : this.keyBindings) {
 				printwriter.println("key_" + keybinding.getKeyDescription() + ":" + keybinding.getKeyCode());
@@ -1144,6 +1163,14 @@ public class GameSettings {
 			return null;
 		}
 
+	}
+
+	/**
+	 * @return true if the built-in SodiumMC style chunk renderer should be used
+	 *         instead of the vanilla 1.8 chunk graph walker
+	 */
+	public boolean isSodiumRendererEnabled() {
+		return SodiumConfig.isEnabled(this.sodiumRenderer);
 	}
 
 	public float getSoundLevel(SoundCategory parSoundCategory) {
@@ -1251,7 +1278,8 @@ public class GameSettings {
 		FOG("options.fog", false, true), FXAA("options.fxaa", false, false),
 		FULLSCREEN("options.fullscreen", false, true),
 		FNAW_SKINS("options.skinCustomisation.enableFNAWSkins", false, true),
-		EAGLER_VSYNC("options.vsync", false, true), EAGLER_DYNAMIC_LIGHTS("options.dynamicLights", false, true);
+		EAGLER_VSYNC("options.vsync", false, true), EAGLER_DYNAMIC_LIGHTS("options.dynamicLights", false, true),
+		SODIUM_RENDERER("options.sodiumRenderer", false, true);
 
 		private final boolean enumFloat;
 		private final boolean enumBoolean;

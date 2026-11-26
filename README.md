@@ -87,6 +87,23 @@ If you would like to host your own relay, the JAR file and instructions can be d
 
 EaglercraftX 1.8 includes a deferred physically-based renderer modeled after the GTA V rendering engine with many new improvements and a novel raytracing technique for fast realistic reflections. It can be enabled in the "Shaders" menu in the game's options screen. Shader packs in EaglercraftX are just a component of resource packs, so any custom shaders you install will be in the form of a resource pack. EaglercraftX also comes with a very well optimized built-in PBR shader pack and also a built-in PBR material texture pack to give all blocks and items in the game realistic lighting and materials that looks better than most vanilla Minecraft shader packs. The default shader and texture packs were created from scratch by lax1dude, shaders packs made for vanilla Minecraft will not work in EaglercraftX and no shaders in EaglercraftX were taken from vanilla Minecraft shader packs.
 
+## Sodium Renderer
+
+EaglercraftX 1.8 includes a Sodium-style chunk renderer built into the client, it is always installed and there is nothing to download or add to the game. It replaces the vanilla 1.8 chunk graph walker, which used to allocate a chunk render info node, a facing set and a linked list entry for every visible chunk on every single frame, with the approach [SodiumMC](https://github.com/CaffeineMC/sodium) uses: a cached candidate set that only rebuilds when the player crosses a chunk boundary, a per-frame frustum test that allocates nothing, and an in-place insertion sort that keeps the chunk list in front to back order, which is also exactly the order the translucent pass needs after being walked backwards.
+
+Chunk rebuilds are scheduled from the already sorted visible list, so the sections the player is actually looking at are always rebuilt first, and dirty chunks outside of the view can be left in the queue instead of consuming the whole frame budget, which stops a teleport or a fast flight from freezing the game on thousands of pointless rebuilds.
+
+It is toggled with the "Sodium Renderer" option at the bottom of the "Video Settings" screen and is set to `Balanced` on a fresh install. The setting is stored with the rest of the game settings and can also be edited directly in the saved options file:
+
+| Value | Level | Behavior |
+| --- | --- | --- |
+| `0` | OFF (Vanilla) | vanilla chunk renderer, no caching at all |
+| `1` | Fast | closest sort and upload budget, offscreen updates deferred |
+| `2` | Balanced | default, offscreen updates deferred |
+| `3` | Fancy | highest chunk build throughput, nothing is ever deferred |
+
+The renderer only changes the order in which chunk display lists are built, uploaded and drawn, never what is drawn, so switching between it and the vanilla renderer does not change how the world looks. It is independent of the PBR shaders and of the dynamic lights extension described below, both of which keep working with it enabled.
+
 ## Voice Chat
 
 EaglercraftX 1.8 includes an integrated voice-chat service that can be used in shared worlds and also on multiplayer servers when it is enabled by the server owner. This feature also uses WebRTC like shared worlds, so be careful that you don't leak your IP address accidentally by using it on a public server. If you own a website and don't want people to use voice chat on it, edit the `eaglercraftXOpts` variable in your index.html and add `allowVoiceClient: false`.

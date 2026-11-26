@@ -33,6 +33,8 @@ import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.EaglerDeferredConfig;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.EaglerDeferredPipeline;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.program.SharedPipelineShaders;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.dynamiclights.DynamicLightsStateManager;
+import net.lax1dude.eaglercraft.v1_8.opengl.ext.sodium.SodiumChunkRenderer;
+import net.lax1dude.eaglercraft.v1_8.opengl.ext.sodium.SodiumConfig;
 import net.lax1dude.eaglercraft.v1_8.vector.Vector3f;
 import net.lax1dude.eaglercraft.v1_8.vector.Vector4f;
 import net.minecraft.block.Block;
@@ -183,6 +185,25 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 	private double prevRenderSortY;
 	private double prevRenderSortZ;
 	private boolean displayListEntitiesDirty = true;
+
+	/**
+	 * The built-in SodiumMC style chunk renderer, baked into the client.
+	 */
+	private final SodiumChunkRenderer sodiumRenderer = new SodiumChunkRenderer();
+	private List<RenderChunk> sodiumRenderChunks = null;
+	private RenderChunk[] renderInfosArray = null;
+	private List<RenderChunk> renderInfosScratch = null;
+	private boolean renderInfosChanged = true;
+	private final SodiumChunkRenderer.SodiumCameraProvidor sodiumProvidor = new SodiumChunkRenderer.SodiumCameraProvidor() {
+		public RenderChunk getRenderChunk(BlockPos pos) {
+			return viewFrustum != null ? viewFrustum.getRenderChunk(pos) : null;
+		}
+
+		public boolean isBoxInFrustum(AxisAlignedBB box) {
+			return sodiumCamera != null && sodiumCamera.isBoundingBoxInFrustum(box);
+		}
+	};
+	private ICamera sodiumCamera = null;
 
 	public RenderGlobal(Minecraft mcIn) {
 		this.mc = mcIn;
@@ -397,6 +418,8 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			}
 
 			this.stopChunkUpdates();
+			this.sodiumRenderer.reset();
+			this.sodiumRenderChunks = null;
 			synchronized (this.field_181024_n) {
 				this.field_181024_n.clear();
 			}
@@ -536,14 +559,12 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 
 			this.theWorld.theProfiler.endStartSection("entities");
 
-			label738: for (int ii = 0, ll = this.renderInfos.size(); ii < ll; ++ii) {
-				RenderGlobal.ContainerLocalRenderInformation renderglobal$containerlocalrenderinformation = this.renderInfos
-						.get(ii);
-				Chunk chunk = this.theWorld.getChunkFromBlockCoords(
-						renderglobal$containerlocalrenderinformation.renderChunk.getPosition());
+			List<RenderChunk> entityChunks = this.getVisibleChunkList();
+			label738: for (int ii = 0, ll = entityChunks.size(); ii < ll; ++ii) {
+				RenderChunk entityChunk = entityChunks.get(ii);
+				Chunk chunk = this.theWorld.getChunkFromBlockCoords(entityChunk.getPosition());
 				ClassInheritanceMultiMap classinheritancemultimap = chunk
-						.getEntityLists()[renderglobal$containerlocalrenderinformation.renderChunk.getPosition().getY()
-								/ 16];
+						.getEntityLists()[entityChunk.getPosition().getY() / 16];
 				if (!classinheritancemultimap.isEmpty()) {
 					Iterator iterator = classinheritancemultimap.iterator();
 
@@ -588,11 +609,10 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			this.theWorld.theProfiler.endStartSection("blockentities");
 			RenderHelper.enableStandardItemLighting();
 
-			for (int ii = 0, ll = this.renderInfos.size(); ii < ll; ++ii) {
-				RenderGlobal.ContainerLocalRenderInformation renderglobal$containerlocalrenderinformation1 = this.renderInfos
-						.get(ii);
-				List list1 = renderglobal$containerlocalrenderinformation1.renderChunk.getCompiledChunk()
-						.getTileEntities();
+			List<RenderChunk> tileEntityChunks = this.getVisibleChunkList();
+			for (int ii = 0, ll = tileEntityChunks.size(); ii < ll; ++ii) {
+				RenderChunk tileEntityChunk = tileEntityChunks.get(ii);
+				List list1 = tileEntityChunk.getCompiledChunk().getTileEntities();
 				if (!list1.isEmpty()) {
 					for (int m = 0, n = list1.size(); m < n; ++m) {
 						TileEntityRendererDispatcher.instance.renderTileEntity((TileEntity) list1.get(m), partialTicks,
@@ -667,14 +687,14 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			renderManager.setRenderPosition(d3, d4, d5);
 
 			this.theWorld.theProfiler.endStartSection("shadow_entities");
-			for (RenderGlobal.ContainerLocalRenderInformation containerlocalrenderinformation : this.renderInfos) {
-				RenderChunk currentRenderChunk = containerlocalrenderinformation.renderChunk;
+			List<RenderChunk> shadowEntityChunks = this.getVisibleChunkList();
+			for (int sii = 0, sll = shadowEntityChunks.size(); sii < sll; ++sii) {
+				RenderChunk currentRenderChunk = shadowEntityChunks.get(sii);
 
 				if (!entityChunkCull.shouldCull(currentRenderChunk)) {
-					Chunk chunk = this.theWorld
-							.getChunkFromBlockCoords(containerlocalrenderinformation.renderChunk.getPosition());
+					Chunk chunk = this.theWorld.getChunkFromBlockCoords(currentRenderChunk.getPosition());
 					ClassInheritanceMultiMap<Entity> classinheritancemultimap = chunk
-							.getEntityLists()[containerlocalrenderinformation.renderChunk.getPosition().getY() / 16];
+							.getEntityLists()[currentRenderChunk.getPosition().getY() / 16];
 					if (!classinheritancemultimap.isEmpty()) {
 						Iterator<Entity> iterator = classinheritancemultimap.iterator();
 						while (iterator.hasNext()) {
@@ -812,6 +832,13 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			}
 		}
 
+		if (this.mc.gameSettings.isSodiumRendererEnabled()) {
+			return HString.format("C: %d/%d %sD: %d, %s",
+					new Object[] { Integer.valueOf(this.sodiumRenderer.getRenderCount()),
+							Integer.valueOf(this.sodiumRenderer.getCandidateCount()),
+							this.mc.renderChunksMany ? "(s) " : "", Integer.valueOf(this.renderDistanceChunks),
+							this.sodiumRenderer.getDebugString() });
+		}
 		return HString.format("C: %d/%d %sD: %d, %s",
 				new Object[] { Integer.valueOf(j), Integer.valueOf(i), this.mc.renderChunksMany ? "(s) " : "",
 						Integer.valueOf(this.renderDistanceChunks), this.renderDispatcher.getDebugInfo() });
@@ -845,6 +872,11 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			this.frustumUpdatePosChunkY = viewEntity.chunkCoordY;
 			this.frustumUpdatePosChunkZ = viewEntity.chunkCoordZ;
 			this.viewFrustum.updateChunkPositions(viewEntity.posX, viewEntity.posZ);
+			if (this.mc.gameSettings.isSodiumRendererEnabled()) {
+				// recycled chunks may have been repositioned, the cached candidate
+				// list would now point at the wrong block coordinates
+				this.sodiumRenderer.markDirty();
+			}
 		}
 
 		this.theWorld.theProfiler.endStartSection("renderlistcamera");
@@ -859,6 +891,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 					this.debugTerrainFrustumPosition.field_181060_b, this.debugTerrainFrustumPosition.field_181061_c);
 			camera = frustum;
 		}
+		this.sodiumCamera = camera;
 
 		this.mc.mcProfiler.endStartSection("culling");
 		BlockPos blockpos1 = new BlockPos(d3, d4 + (double) viewEntity.getEyeHeight(), d5);
@@ -878,8 +911,14 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		this.lastViewEntityYaw = (double) viewEntity.rotationYaw;
 		this.lastViewProjMatrixFOV = this.mc.entityRenderer.currentProjMatrixFOV;
 		boolean flag = this.debugFixedClippingHelper != null;
-		if (!flag && this.displayListEntitiesDirty) {
+		if (!flag && this.mc.gameSettings.isSodiumRendererEnabled()) {
+			// the built-in SodiumMC renderer keeps its own cached chunk lists,
+			// it does not allocate anything per frame
+			this.sodiumRenderChunks = this.sodiumRenderer.getRenderChunks(this.sodiumProvidor, d3,
+					d4 + (double) viewEntity.getEyeHeight(), d5, this.renderDistanceChunks);
+		} else if (!flag && this.displayListEntitiesDirty) {
 			this.displayListEntitiesDirty = false;
+			this.renderInfosChanged = true;
 			this.renderInfos = Lists.newArrayList();
 			LinkedList linkedlist = Lists.newLinkedList();
 			boolean flag1 = this.mc.renderChunksMany;
@@ -963,26 +1002,90 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		Set set = this.chunksToUpdate;
 		this.chunksToUpdate = Sets.newLinkedHashSet();
 
-		for (int ii = 0, ll = this.renderInfos.size(); ii < ll; ++ii) {
-			RenderGlobal.ContainerLocalRenderInformation renderglobal$containerlocalrenderinformation2 = this.renderInfos
-					.get(ii);
-			RenderChunk renderchunk4 = renderglobal$containerlocalrenderinformation2.renderChunk;
-			if (renderchunk4.isNeedsUpdate() || set.contains(renderchunk4)) {
-				this.displayListEntitiesDirty = true;
-				if (this.mc.gameSettings.chunkFix ? this.isPositionInRenderChunkHack(blockpos1, renderchunk4)
-						: this.isPositionInRenderChunk(blockpos, renderchunk4)) {
-					this.mc.mcProfiler.startSection("build near");
-					this.renderDispatcher.updateChunkNow(renderchunk4);
-					renderchunk4.setNeedsUpdate(false);
-					this.mc.mcProfiler.endSection();
-				} else {
-					this.chunksToUpdate.add(renderchunk4);
+		if (this.mc.gameSettings.isSodiumRendererEnabled() && this.sodiumRenderChunks != null) {
+			// Sodium schedules the rebuilds, the visible list is already
+			// front to back sorted so the chunks the player is looking at
+			// are always rebuilt first, and dirty chunks which are outside
+			// of the view are allowed to wait so a teleport cannot queue
+			// thousands of rebuilds for geometry nobody will ever see
+			List<RenderChunk> sodiumList = this.sodiumRenderChunks;
+			for (int ii = 0, ll = sodiumList.size(); ii < ll; ++ii) {
+				RenderChunk renderchunk4 = sodiumList.get(ii);
+				if (renderchunk4.isNeedsUpdate() || set.contains(renderchunk4)) {
+					this.displayListEntitiesDirty = true;
+					if (this.mc.gameSettings.chunkFix ? this.isPositionInRenderChunkHack(blockpos1, renderchunk4)
+							: this.isPositionInRenderChunk(blockpos, renderchunk4)) {
+						this.mc.mcProfiler.startSection("build near");
+						this.renderDispatcher.updateChunkNow(renderchunk4);
+						renderchunk4.setNeedsUpdate(false);
+						this.mc.mcProfiler.endSection();
+					} else {
+						this.chunksToUpdate.add(renderchunk4);
+					}
 				}
 			}
+			boolean cullPending = SodiumConfig.shouldCullPendingUpdates(this.mc.gameSettings.sodiumRenderer);
+			Iterator iterator5 = set.iterator();
+			while (iterator5.hasNext()) {
+				RenderChunk renderchunk5 = (RenderChunk) iterator5.next();
+				if (!cullPending || this.sodiumRenderer.wasVisible(renderchunk5)) {
+					if (!this.chunksToUpdate.contains(renderchunk5)) {
+						this.chunksToUpdate.add(renderchunk5);
+					}
+				}
+			}
+		} else {
+			for (int ii = 0, ll = this.renderInfos.size(); ii < ll; ++ii) {
+				RenderGlobal.ContainerLocalRenderInformation renderglobal$containerlocalrenderinformation2 = this.renderInfos
+						.get(ii);
+				RenderChunk renderchunk4 = renderglobal$containerlocalrenderinformation2.renderChunk;
+				if (renderchunk4.isNeedsUpdate() || set.contains(renderchunk4)) {
+					this.displayListEntitiesDirty = true;
+					if (this.mc.gameSettings.chunkFix ? this.isPositionInRenderChunkHack(blockpos1, renderchunk4)
+							: this.isPositionInRenderChunk(blockpos, renderchunk4)) {
+						this.mc.mcProfiler.startSection("build near");
+						this.renderDispatcher.updateChunkNow(renderchunk4);
+						renderchunk4.setNeedsUpdate(false);
+						this.mc.mcProfiler.endSection();
+					} else {
+						this.chunksToUpdate.add(renderchunk4);
+					}
+				}
+			}
+			this.chunksToUpdate.addAll(set);
 		}
-
-		this.chunksToUpdate.addAll(set);
 		this.mc.mcProfiler.endSection();
+	}
+
+	/**
+	 * Returns the chunks which are currently visible to the player, in the
+	 * order they should be iterated for entity, tile entity and block layer
+	 * rendering. When the built-in SodiumMC renderer is enabled its cached and
+	 * already sorted chunk list is returned as is, otherwise the vanilla
+	 * ContainerLocalRenderInformation list is unwrapped.
+	 */
+	private List<RenderChunk> getVisibleChunkList() {
+		if (this.mc.gameSettings.isSodiumRendererEnabled()) {
+			List<RenderChunk> ret = this.sodiumRenderChunks;
+			if (ret != null) {
+				return ret;
+			}
+			return java.util.Collections.emptyList();
+		}
+		// the vanilla path reuses one scratch list so this does not allocate
+		// once per entity/tile entity/block layer pass, the last frame's array
+		// is kept whenever renderInfos was not rebuilt
+		if (this.renderInfosArray == null || this.renderInfosArray.length != this.renderInfos.size()) {
+			this.renderInfosArray = new RenderChunk[this.renderInfos.size()];
+		} else if (!this.renderInfosChanged) {
+			return this.renderInfosScratch;
+		}
+		for (int ii = 0, ll = this.renderInfos.size(); ii < ll; ++ii) {
+			this.renderInfosArray[ii] = this.renderInfos.get(ii).renderChunk;
+		}
+		this.renderInfosChanged = false;
+		this.renderInfosScratch = java.util.Arrays.asList(this.renderInfosArray);
+		return this.renderInfosScratch;
 	}
 
 	private boolean isPositionInRenderChunk(BlockPos pos, RenderChunk renderChunkIn) {
@@ -1090,13 +1193,11 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 				this.prevRenderSortZ = entityIn.posZ;
 				int k = 0;
 
-				for (int ii = 0, ll = this.renderInfos.size(); ii < ll; ++ii) {
-					RenderGlobal.ContainerLocalRenderInformation renderglobal$containerlocalrenderinformation = this.renderInfos
-							.get(ii);
-					if (renderglobal$containerlocalrenderinformation.renderChunk.compiledChunk
-							.isLayerStarted(blockLayerIn) && k++ < 15) {
-						this.renderDispatcher
-								.updateTransparencyLater(renderglobal$containerlocalrenderinformation.renderChunk);
+				List<RenderChunk> translucentChunks = this.getVisibleChunkList();
+				for (int ii = 0, ll = translucentChunks.size(); ii < ll; ++ii) {
+					RenderChunk translucentChunk = translucentChunks.get(ii);
+					if (translucentChunk.compiledChunk.isLayerStarted(blockLayerIn) && k++ < 15) {
+						this.renderDispatcher.updateTransparencyLater(translucentChunk);
 					}
 				}
 			}
@@ -1107,16 +1208,35 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		this.mc.mcProfiler.startSection("filterempty");
 		int l = 0;
 		boolean flag = blockLayerIn == EnumWorldBlockLayer.TRANSLUCENT;
-		int i1 = flag ? this.renderInfos.size() - 1 : 0;
-		int i = flag ? -1 : this.renderInfos.size();
-		int j1 = flag ? -1 : 1;
+		List<RenderChunk> sodiumChunks = this.mc.gameSettings.isSodiumRendererEnabled() ? this.sodiumRenderChunks
+				: null;
+		if (sodiumChunks != null) {
+			// the list is sorted front to back once per frame in setupTerrain,
+			// opaque layers walk it forwards and the translucent layer walks
+			// it backwards which is exactly the order blending needs
+			int jl = sodiumChunks.size();
+			int j0 = flag ? jl - 1 : 0;
+			int j1a = flag ? -1 : jl;
+			int js = flag ? -1 : 1;
+			for (int j = j0; j != j1a; j += js) {
+				RenderChunk renderchunk = sodiumChunks.get(j);
+				if (!renderchunk.getCompiledChunk().isLayerEmpty(blockLayerIn)) {
+					++l;
+					this.renderContainer.addRenderChunk(renderchunk, blockLayerIn);
+				}
+			}
+		} else {
+			int i1 = flag ? this.renderInfos.size() - 1 : 0;
+			int i = flag ? -1 : this.renderInfos.size();
+			int j1 = flag ? -1 : 1;
 
-		for (int j = i1; j != i; j += j1) {
-			RenderChunk renderchunk = ((RenderGlobal.ContainerLocalRenderInformation) this.renderInfos
-					.get(j)).renderChunk;
-			if (!renderchunk.getCompiledChunk().isLayerEmpty(blockLayerIn)) {
-				++l;
-				this.renderContainer.addRenderChunk(renderchunk, blockLayerIn);
+			for (int j = i1; j != i; j += j1) {
+				RenderChunk renderchunk = ((RenderGlobal.ContainerLocalRenderInformation) this.renderInfos
+						.get(j)).renderChunk;
+				if (!renderchunk.getCompiledChunk().isLayerEmpty(blockLayerIn)) {
+					++l;
+					this.renderContainer.addRenderChunk(renderchunk, blockLayerIn);
+				}
 			}
 		}
 
