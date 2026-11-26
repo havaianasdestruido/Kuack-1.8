@@ -6,8 +6,10 @@ import net.lax1dude.eaglercraft.v1_8.mojang.authlib.GameProfile;
 import net.lax1dude.eaglercraft.v1_8.netty.Unpooled;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockFence;
@@ -127,9 +129,15 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 	public double managedPosX;
 	public double managedPosZ;
 	/**+
-	 * LinkedList that holds the loaded chunks.
+	 * Insertion-ordered set of the loaded chunks. EAGLER: this used to be a LinkedList, so every
+	 * loadedChunks.contains() was an O(n) pointer-chasing scan. It is queried once per (entity,
+	 * player) pair per tick by PlayerManager.isPlayerWatchingChunk and once per player per block
+	 * change by sendToAllPlayersWatchingChunk, so membership has to be O(1). A LinkedHashSet keeps
+	 * the same (insertion-order) iteration the chunk load queue relies on and, exactly like the old
+	 * list, never holds a duplicate. The add sites are already duplicate-guarded, so the observable
+	 * contents are identical.
 	 */
-	public final List<ChunkCoordIntPair> loadedChunks = Lists.newLinkedList();
+	public final Collection<ChunkCoordIntPair> loadedChunks = new LinkedHashSet<ChunkCoordIntPair>();
 	/**+
 	 * entities added to this list will be packet29'd to the player
 	 */
