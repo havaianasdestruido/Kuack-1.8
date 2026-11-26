@@ -151,7 +151,11 @@ public class RenderChunk {
 			boolean[] aboolean = new boolean[EnumWorldBlockLayer._VALUES.length];
 			BlockRendererDispatcher blockrendererdispatcher = Minecraft.getMinecraft().getBlockRendererDispatcher();
 
-			for (BlockPos blockpos$mutableblockpos : BlockPos.getAllInBox(blockpos, blockpos1)) {
+			// Chunk compilation visits every block in this 16x16x16 section. Reuse one
+			// mutable position instead of allocating a BlockPos for each of the 4096
+			// blocks; all consumers below use it immediately and do not retain it.
+			for (BlockPos.MutableBlockPos blockpos$mutableblockpos : BlockPos.getAllInBoxMutable(blockpos,
+					blockpos1)) {
 				IBlockState iblockstate = regionrendercache.getBlockStateFaster(blockpos$mutableblockpos);
 				Block block = iblockstate.getBlock();
 				if (block.isOpaqueCube()) {

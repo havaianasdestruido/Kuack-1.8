@@ -2,8 +2,10 @@ package net.lax1dude.eaglercraft.v1_8.minecraft;
 
 import static net.lax1dude.eaglercraft.v1_8.opengl.RealOpenGLEnums.*;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import net.lax1dude.eaglercraft.v1_8.log4j.LogManager;
 import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
@@ -18,6 +20,7 @@ import net.minecraft.client.renderer.chunk.CompiledChunk;
 import net.minecraft.client.renderer.chunk.ListedRenderChunk;
 import net.minecraft.client.renderer.chunk.RenderChunk;
 import net.minecraft.entity.Entity;
+import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumWorldBlockLayer;
 
 public class ChunkUpdateManager {
@@ -35,7 +38,10 @@ public class ChunkUpdateManager {
 	private int chunkUpdatesQueuedLast = 0;
 	private long chunkUpdatesTotalLastUpdate = 0l;
 	
-	private final List<ChunkCompileTaskGenerator> queue = new LinkedList();
+	/** Pending mesh work, bounded by updateChunkLater to keep frame time predictable. */
+	private final List<ChunkCompileTaskGenerator> queue = new ArrayList<>(100);
+	/** O(1) per-section deduplication for queued rebuild and transparency tasks. */
+	private final Map<RenderChunk, ChunkCompileTaskGenerator> queuedByChunk = new HashMap<>();
 
 	public ChunkUpdateManager() {
 		worldVertexUploader = new WorldVertexBufferUploader();
@@ -103,55 +109,99 @@ public class ChunkUpdateManager {
 	public boolean updateChunks(long timeout) {
 		Entity entity = Minecraft.getMinecraft().getRenderViewEntity();
 		if (entity == null) {
-			queue.clear();
-			chunkUpdatesQueued = 0;
+			stopChunkUpdates();
 			return false;
-		}else {
-			boolean flag = false;
-			long millis = System.currentTimeMillis();
-			List<ChunkCompileTaskGenerator> droppedUpdates = new LinkedList();
-			while(!queue.isEmpty()) {
-				ChunkCompileTaskGenerator generator = queue.remove(0);
-				
-				if(!generator.canExecuteYet()) {
-					if(millis - generator.goddamnFuckingTimeout < 60000l) {
-						droppedUpdates.add(generator);
+		}
+
+		boolean didWork = false;
+		long millis = System.currentTimeMillis();
+		List<ChunkCompileTaskGenerator> deferred = new ArrayList<>();
+		while (!queue.isEmpty()) {
+			int bestIndex = -1;
+			double bestDistance = Double.POSITIVE_INFINITY;
+
+			// Prefer the section nearest the camera, as Sodium's task scheduler does.
+			// This makes newly visible nearby terrain settle before distant rebuilds,
+			// while the small fixed queue keeps the scan cheap.
+			for (int i = 0; i < queue.size();) {
+				ChunkCompileTaskGenerator task = queue.get(i);
+				if (task.isFinished() || task.getStatus() != ChunkCompileTaskGenerator.Status.PENDING) {
+					queue.remove(i);
+					removeQueuedMapping(task);
+					continue;
+				}
+
+				if (!task.canExecuteYet()) {
+					queue.remove(i);
+					if (millis - task.goddamnFuckingTimeout < 60000L) {
+						deferred.add(task);
+					} else {
+						removeQueuedMapping(task);
+						task.finish();
 					}
 					continue;
 				}
-				
-				runGenerator(generator, entity);
-				flag = true;
-				
-				++chunkUpdatesTotal;
-				
-				if(timeout < System.nanoTime()) {
-					break;
+
+				BlockPos pos = task.getRenderChunk().getPosition();
+				double dx = (double) pos.getX() + 8.0D - entity.posX;
+				double dy = (double) pos.getY() + 8.0D - entity.posY;
+				double dz = (double) pos.getZ() + 8.0D - entity.posZ;
+				double distance = dx * dx + dy * dy + dz * dz;
+				if (distance < bestDistance) {
+					bestDistance = distance;
+					bestIndex = i;
 				}
+				++i;
 			}
-			queue.addAll(droppedUpdates);
-			return flag;
+
+			if (bestIndex < 0) {
+				break;
+			}
+
+			ChunkCompileTaskGenerator task = queue.remove(bestIndex);
+			removeQueuedMapping(task);
+			runGenerator(task, entity);
+			didWork = true;
+			++chunkUpdatesTotal;
+
+			if (timeout < System.nanoTime()) {
+				break;
+			}
 		}
+		queue.addAll(deferred);
+		return didWork;
 	}
 
 	public boolean updateChunkLater(RenderChunk chunkRenderer) {
-		final ChunkCompileTaskGenerator chunkcompiletaskgenerator = chunkRenderer.makeCompileTaskChunk();
-		boolean flag = queue.size() < 100;
-		if (!flag) {
-			chunkcompiletaskgenerator.finish();
-		}else {
-			chunkcompiletaskgenerator.addFinishRunnable(new Runnable() {
-				@Override
-				public void run() {
-					if(queue.remove(chunkcompiletaskgenerator)) {
-						++chunkUpdatesTotal;
-					}
-				}
-			});
-			queue.add(chunkcompiletaskgenerator);
-			++chunkUpdatesQueued;
+		final ChunkCompileTaskGenerator task = chunkRenderer.makeCompileTaskChunk();
+		if (queue.size() >= 100) {
+			task.finish();
+			return false;
 		}
-		return flag;
+		enqueue(task);
+		return true;
+	}
+
+	private void enqueue(final ChunkCompileTaskGenerator task) {
+		task.addFinishRunnable(new Runnable() {
+			@Override
+			public void run() {
+				if (queue.remove(task)) {
+					++chunkUpdatesTotal;
+				}
+				removeQueuedMapping(task);
+			}
+		});
+		queue.add(task);
+		queuedByChunk.put(task.getRenderChunk(), task);
+		++chunkUpdatesQueued;
+	}
+
+	private void removeQueuedMapping(ChunkCompileTaskGenerator task) {
+		RenderChunk chunk = task.getRenderChunk();
+		if (queuedByChunk.get(chunk) == task) {
+			queuedByChunk.remove(chunk);
+		}
 	}
 
 	public boolean updateChunkNow(RenderChunk chunkRenderer) {
@@ -164,34 +214,33 @@ public class ChunkUpdateManager {
 	}
 
 	public void stopChunkUpdates() {
+		List<ChunkCompileTaskGenerator> pending = new ArrayList<>(queue);
 		queue.clear();
+		queuedByChunk.clear();
 		chunkUpdatesQueued = 0;
+		for (int i = 0, l = pending.size(); i < l; ++i) {
+			ChunkCompileTaskGenerator task = pending.get(i);
+			if (!task.isFinished()) {
+				task.finish();
+			}
+		}
 	}
 
 	public boolean updateTransparencyLater(RenderChunk chunkRenderer) {
-		if(isAlreadyQueued(chunkRenderer)) {
+		if (isAlreadyQueued(chunkRenderer)) {
 			return true;
 		}
-		final ChunkCompileTaskGenerator chunkcompiletaskgenerator = chunkRenderer.makeCompileTaskTransparency();
-		if (chunkcompiletaskgenerator == null) {
+		final ChunkCompileTaskGenerator task = chunkRenderer.makeCompileTaskTransparency();
+		if (task == null) {
 			return true;
 		}
-		chunkcompiletaskgenerator.goddamnFuckingTimeout = System.currentTimeMillis();
-		if(queue.size() < 100) {
-			chunkcompiletaskgenerator.addFinishRunnable(new Runnable() {
-				@Override
-				public void run() {
-					if(queue.remove(chunkcompiletaskgenerator)) {
-						++chunkUpdatesTotal;
-					}
-				}
-			});
-			queue.add(chunkcompiletaskgenerator);
-			++chunkUpdatesQueued;
-			return true;
-		}else {
+		task.goddamnFuckingTimeout = System.currentTimeMillis();
+		if (queue.size() >= 100) {
+			task.finish();
 			return false;
 		}
+		enqueue(task);
+		return true;
 	}
 
 	public void uploadChunk(final EnumWorldBlockLayer player, final WorldRenderer chunkRenderer,
@@ -210,12 +259,7 @@ public class ChunkUpdateManager {
 	}
 
 	public boolean isAlreadyQueued(RenderChunk update) {
-		for(int i = 0, l = queue.size(); i < l; ++i) {
-			if(queue.get(i).getRenderChunk() == update) {
-				return true;
-			}
-		}
-		return false;
+		return queuedByChunk.containsKey(update);
 	}
 
 	public String getDebugInfo() {
