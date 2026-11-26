@@ -1,3 +1,5 @@
 #!/bin/sh
-java -cp "buildtools/BuildTools.jar" net.lax1dude.eaglercraft.v1_8.buildtools.gui.CompileLatestClientGUI
+java -Deaglercraft.TeaVMBridge=buildtools/TeaVMBridge.jar \
+  -cp "buildtools/BuildTools.jar:buildtools/deps/*" \
+  net.lax1dude.eaglercraft.v1_8.buildtools.gui.CompileLatestClientGUI
 rm -rf "##TEAVM.TMP##"

@@ -235,3 +235,29 @@ On a normal client you will only ever need to handle local storage keys called `
 There is currently no system in place to make forks of 1.8 and merge commits made to the patch files in this repository with the patch files or workspace of the fork, you're on your own if you try to keep a fork of this repo for reasons other than to contribute to it
 
 A javascript-based modding API resembling Minecraft Forge may be implemented someday though for adding custom content to the game.
+
+## Local Headless Build & Testing
+
+### Downloading build inputs
+
+The headless build uses `scripts/download-build-inputs.sh` to fetch `mcp918.zip`, `1.8.8.jar`, and `1.8.json` into a target directory and verify their checksums:
+
+```sh
+./scripts/download-build-inputs.sh /tmp/eagler-inputs
+```
+
+You can override any source URL with `MCP918_URL`, `MINECRAFT_JAR_URL`, or `ASSETS_INDEX_URL` (and pass `BUILD_INPUTS_TOKEN` for authenticated URLs).
+
+### Running unit tests
+
+```sh
+python3 -m unittest discover -s tests -v
+```
+
+### Running performance benchmarks & verification suites
+
+```sh
+./perfbench/run_bench.sh
+# Or run a specific verification/benchmark class:
+./perfbench/run_bench.sh perfbench.VerifyMatrixRotate
+```
