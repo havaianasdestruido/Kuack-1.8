@@ -1072,18 +1072,16 @@ public abstract class World implements IBlockAccess {
 		for (int k1 = i; k1 < j; ++k1) {
 			for (int l1 = i1; l1 < j1; ++l1) {
 				if (this.isBlockLoaded(blockpos$mutableblockpos.func_181079_c(k1, 64, l1))) {
+					if (flag && flag1) {
+						entityIn.setOutsideBorder(false);
+					} else if (!flag && !flag1) {
+						entityIn.setOutsideBorder(true);
+					}
+					boolean inBorder = worldborder.contains((BlockPos) blockpos$mutableblockpos) || !flag1;
+
 					for (int i2 = k - 1; i2 < l; ++i2) {
 						blockpos$mutableblockpos.func_181079_c(k1, i2, l1);
-						if (flag && flag1) {
-							entityIn.setOutsideBorder(false);
-						} else if (!flag && !flag1) {
-							entityIn.setOutsideBorder(true);
-						}
-
-						IBlockState iblockstate1 = iblockstate;
-						if (worldborder.contains((BlockPos) blockpos$mutableblockpos) || !flag1) {
-							iblockstate1 = this.getBlockState(blockpos$mutableblockpos);
-						}
+						IBlockState iblockstate1 = inBorder ? this.getBlockState(blockpos$mutableblockpos) : iblockstate;
 
 						iblockstate1.getBlock().addCollisionBoxesToList(this, blockpos$mutableblockpos, iblockstate1,
 								bb, arraylist, entityIn);
@@ -1387,22 +1385,28 @@ public abstract class World implements IBlockAccess {
 		}
 
 		this.theProfiler.endStartSection("remove");
-		this.loadedEntityList.removeAll(this.unloadedEntityList);
-
-		for (int k = 0; k < this.unloadedEntityList.size(); ++k) {
-			Entity entity1 = (Entity) this.unloadedEntityList.get(k);
-			int j = entity1.chunkCoordX;
-			int l1 = entity1.chunkCoordZ;
-			if (entity1.addedToChunk && this.isChunkLoaded(j, l1, true)) {
-				this.getChunkFromChunkCoords(j, l1).removeEntity(entity1);
+		if (!this.unloadedEntityList.isEmpty()) {
+			if (this.unloadedEntityList.size() > 1) {
+				this.loadedEntityList.removeAll(new java.util.HashSet<Entity>(this.unloadedEntityList));
+			} else {
+				this.loadedEntityList.removeAll(this.unloadedEntityList);
 			}
-		}
 
-		for (int l = 0; l < this.unloadedEntityList.size(); ++l) {
-			this.onEntityRemoved((Entity) this.unloadedEntityList.get(l));
-		}
+			for (int k = 0; k < this.unloadedEntityList.size(); ++k) {
+				Entity entity1 = (Entity) this.unloadedEntityList.get(k);
+				int j = entity1.chunkCoordX;
+				int l1 = entity1.chunkCoordZ;
+				if (entity1.addedToChunk && this.isChunkLoaded(j, l1, true)) {
+					this.getChunkFromChunkCoords(j, l1).removeEntity(entity1);
+				}
+			}
 
-		this.unloadedEntityList.clear();
+			for (int l = 0; l < this.unloadedEntityList.size(); ++l) {
+				this.onEntityRemoved((Entity) this.unloadedEntityList.get(l));
+			}
+
+			this.unloadedEntityList.clear();
+		}
 		this.theProfiler.endStartSection("regular");
 
 		for (int i1 = 0; i1 < this.loadedEntityList.size(); ++i1) {
@@ -1476,8 +1480,11 @@ public abstract class World implements IBlockAccess {
 
 		this.processingLoadedTiles = false;
 		if (!this.tileEntitiesToBeRemoved.isEmpty()) {
-			this.tickableTileEntities.removeAll(this.tileEntitiesToBeRemoved);
-			this.loadedTileEntityList.removeAll(this.tileEntitiesToBeRemoved);
+			java.util.Collection<?> toRemove = this.tileEntitiesToBeRemoved.size() > 1
+					? new java.util.HashSet<TileEntity>(this.tileEntitiesToBeRemoved)
+					: this.tileEntitiesToBeRemoved;
+			this.tickableTileEntities.removeAll(toRemove);
+			this.loadedTileEntityList.removeAll(toRemove);
 			this.tileEntitiesToBeRemoved.clear();
 		}
 
