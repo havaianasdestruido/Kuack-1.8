@@ -26,11 +26,14 @@ cost at a realistic input size.
 3. **`Chunk.getBlockState` vs `getBlockStateFaster`** (`world/chunk/Chunk.java:481` vs `:509`) — the
    generic path goes through `getX()/getY()/getZ()` accessors where `getBlockStateFaster` reads the
    fields; meshing calls the generic form indirectly through several block methods.
-4. **`Chunk.recheckGaps`** (`world/chunk/Chunk.java:263-306`) — per changed column it allocates a
-   `BlockPos` in `world.getHeight(...)` and again in each `updateSkylightNeighborHeight` probe, and
-   `checkSkylightNeighborHeight` is called 1 + 4 times per column; `World.getHeight` also returns a
-   freshly allocated `BlockPos`. A primitive `getHeightValue(x,z)` path would remove the garbage on a
-   path that runs on every block change.
+4. **`Chunk.recheckGaps`** (`world/chunk/Chunk.java:263-306`) — **FIXED in this session.** The
+   `getHeight(new BlockPos(x,0,z))` and `isAreaLoaded(new BlockPos(x,0,z),16)` probes (plus the
+   `recheckGaps` gate) now call the new allocation-free `World.getHeight(int,int)` and
+   `World.isAreaLoaded(int,int,int,int)` overloads, removing all ~769 `BlockPos` allocations per
+   invocation from the probe/early-return path. Verified by `perfbench/js/bench_blockpos.js`:
+   0 allocs in the probe path, 1,444 differential cases / 0 mismatches. The remaining per-block
+   `checkLightFor(..., new BlockPos(x,i,z))` inside `updateSkylightNeighborHeight`'s relight loop is a
+   separate, deeper site and is intentionally left for a follow-up.
 5. **`World.getCollidingBoundingBoxes`** (`world/World.java:1058`) — allocates a fresh `ArrayList`
    per call (several calls per entity per tick) and walks the full padded AABB in
    x → z → y order, which has poor locality; the world-border check is also re-evaluated per block.

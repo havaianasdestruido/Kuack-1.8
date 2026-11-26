@@ -262,7 +262,7 @@ public class Chunk {
 
 	private void recheckGaps(boolean parFlag) {
 		this.worldObj.theProfiler.startSection("recheckGaps");
-		if (this.worldObj.isAreaLoaded(new BlockPos(this.xPosition * 16 + 8, 0, this.zPosition * 16 + 8), 16)) {
+		if (this.worldObj.isAreaLoaded(this.xPosition * 16 + 8, 0, this.zPosition * 16 + 8, 16)) {
 			for (int i = 0; i < 16; ++i) {
 				for (int j = 0; j < 16; ++j) {
 					if (this.updateSkylightColumns[i + j * 16]) {
@@ -306,7 +306,7 @@ public class Chunk {
 	 * schedules a lighting update as necessary.
 	 */
 	private void checkSkylightNeighborHeight(int x, int z, int maxValue) {
-		int i = this.worldObj.getHeight(new BlockPos(x, 0, z)).getY();
+		int i = this.worldObj.getHeight(x, z);
 		if (i > maxValue) {
 			this.updateSkylightNeighborHeight(x, z, maxValue, i + 1);
 		} else if (i < maxValue) {
@@ -316,7 +316,7 @@ public class Chunk {
 	}
 
 	private void updateSkylightNeighborHeight(int x, int z, int startY, int endY) {
-		if (endY > startY && this.worldObj.isAreaLoaded(new BlockPos(x, 0, z), 16)) {
+		if (endY > startY && this.worldObj.isAreaLoaded(x, 0, z, 16)) {
 			for (int i = startY; i < endY; ++i) {
 				this.worldObj.checkLightFor(EnumSkyBlock.SKY, new BlockPos(x, i, z));
 			}

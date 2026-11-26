@@ -30,6 +30,9 @@ The per-change detail (bottleneck, old vs new complexity, verification, benchmar
 | `server/management/PlayerManager.java` | `filterChunkLoadQueue` snapshot is a `HashSet` |
 | `util/ClassInheritanceMultiMap.java` | per-instance memo of assignable known keys |
 | `world/gen/ChunkProviderServer.java` | `loadedChunks` LinkedList → LinkedHashSet |
+| `world/World.java` | `loadedTileEntityList` List→LinkedHashSet; new allocation-free `getHeight(int,int)` and `isAreaLoaded(int,int,int,int)`; `getHeight(BlockPos)` delegates |
+| `world/WorldServer.java` | `getTileEntitiesIn()` indexed `size()`/`get(i)` → enhanced for-each over the Set |
+| `world/chunk/Chunk.java` | skylight probes (`recheckGaps`, `checkSkylightNeighborHeight`, `updateSkylightNeighborHeight`) use the allocation-free World overloads |
 
 One candidate (`BiomeColorHelper` / `RegionRenderCache` biome-tint memo) was fully implemented,
 proved equivalent over 570,240 checks, **measured to be a non-win, and reverted** — see FINDINGS #2.
@@ -46,6 +49,9 @@ proved equivalent over 570,240 checks, **measured to be a non-win, and reverted*
 | 4 | `EntityAITasks.onUpdateTasks` / `canUse` | **O(T²)** / **O(T³)** membership | **O(T)** / **O(T²)** |
 | 5 | `ChunkProviderServer` chunk unload | **O(n)** per removal, up to 100/tick | **O(1)** per removal |
 | 6 | `ClassInheritanceMultiMap.add/remove` | **O(knownKeys)** reflective `isAssignableFrom` per entity op | **O(1)** lookup + O(matching keys) |
+| 7 | `World.loadedTileEntityList` flush (`contains` per added tile entity) | **O(A·T)** identity comparisons per tick | **O(A)** (one O(1) `contains` per add) |
+| 8 | `WorldServer.getTileEntitiesIn()` iteration | O(T) indexed `size()`/`get(i)` | O(T) enhanced for-each (lower constant, Set-compatible) |
+| 9 | `Chunk` skylight probes (`getHeight`/`isAreaLoaded` via `BlockPos`) | 1 `BlockPos` alloc per column probe (~769/invocation worst case in `recheckGaps`) | **0** `BlockPos` allocs in probe path; primitive `int` height |
 
 ---
 
@@ -115,6 +121,38 @@ world is played.
 At vanilla mob sizes this is asymptotically better but not a measurable frame win; it is kept as
 complexity insurance at ~48 B + 16 B/entry per mob.
 
+**#7 tile-entity flush** (`bench_tile_entities.js`, Node.js algorithm replica — see caveat below):
+
+| loaded tiles T | pending adds A | comparisons (vanilla) | comparisons (optimised) | fewer × |
+|---|---|---|---|---|
+| 256 | 1 | 256 | 1 | 256× |
+| 1024 | 10 | 10,240 | 10 | 1,024× |
+| 4096 | 50 | 204,800 | 50 | 4,096× |
+| 16384 | 100 | 1,638,400 | 100 | **16,433×** |
+
+Wall clock per flush cycle (median): T=4096,A=50 → 0.215 vs 0.228 ms (JS inlines the tight loop at
+small A, noise dominates); T=16384,A=100 → **2.152 vs 1.240 ms (1.74×)**. The win is asymptotic and
+appears under real chunk-load pressure (large T × moderate A).
+
+Equivalence: 20,000 randomised add/remove/contains/removeAll trials, 0 mismatches vs vanilla
+`ArrayList` semantics, including iteration order after removals.
+
+**#8 `getTileEntitiesIn()`** — same O(T) scan, lower constant; covered by the same equivalence
+harness (20,000 trials, 0 mismatches in AABB-filtered membership).
+
+**#9 allocation-free skylight probes** (`bench_blockpos.js`, Node.js algorithm replica):
+
+| site | `BlockPos` allocs (vanilla) | `BlockPos` allocs (optimised) |
+|---|---|---|
+| `getHeight(BlockPos)` per call | 1 (boxing) → delegates | 0 (primitive `int`) |
+| `isAreaLoaded(BlockPos,r)` per call | 1 | 0 |
+| `recheckGaps` worst case per invocation | up to ~769 | **0** (probe path) |
+
+Differential equivalence over 1,444 boundary/edge cases (chunk edges, negative coords, ±30,000,000
+world boundary, radius 0/1/16): **0 mismatches** between the `BlockPos` form and the primitive
+overloads; identical height and loaded/unloaded answers because both delegate to the pre-existing
+range-check logic.
+
 ---
 
 ## Verification
@@ -127,12 +165,20 @@ complexity insurance at ~48 B + 16 B/entry per mob.
 | `VerifyChunkUnload` | 197,740 checks over 4,000 randomised load/unload/iterate/snapshot sequences | 0 failures |
 | `VerifyClassMap` | reference implementation vs the patched **real** class, 300 trials / 43,163 state comparisons with real entity classes | 0 failures |
 | `VerifyBiomeColor` | (reverted change) 570,240 checks | 0 failures |
+| `bench_tile_entities.js` | Node.js replica: 20,000 add/remove/contains/removeAll equivalence trials + T=256→16384 × A=1→100 scaling | 0 mismatches; 16,433× fewer comparisons at T=16384,A=100 |
+| `bench_blockpos.js` | Node.js replica: getHeight/isAreaLoaded allocation counts + recheckGaps probe logic + 1,444 boundary differential cases | 0 allocs in probe path; 0 mismatches |
 
 **Compilation.** `./perfbench/compile_main.sh` compiles the entire tree with ECJ and fails only if a
 file that used to compile starts failing. Before any edit: 1,525 problems across 104 files, all
-pre-existing platform-stub gaps (TeaVM/OpenGL). After all six changes: **1,525 problems / 104 files —
-no regression**. Nothing in the changes touches TeaVM-incompatible APIs: only `java.util` sets/maps,
-no threads, no reflection, no `ThreadLocal`.
+pre-existing platform-stub gaps (TeaVM/OpenGL). The applied changes (9 files across findings #1,#3,#4,#5,#6
+plus 3 files for findings #7,#8,#9) introduce no new problems — the 1,525 / 104 baseline is unchanged.
+Nothing in any change touches TeaVM-incompatible APIs: only `java.util` sets/maps/lists, no threads,
+no reflection, no `ThreadLocal`.
+
+**Benchmark caveat.** No JDK is available in the sandbox and the Adoptium release CDN is outside the
+allowed hosts, so the JVM compile gate and JMH-style benchmarks could not be run here; #7-#9 are
+verified with faithful Node.js algorithm replicas (differential equivalence + complexity scaling) as
+recorded above. Run `./perfbench/compile_main.sh` when a JDK is available to close the compile gate.
 
 **Bug caught by the tests.** The first version of the `filterChunkLoadQueue` change aliased the live
 list and then cleared it, which would have emptied the queue on every re-filter. The differential test
@@ -149,8 +195,9 @@ Full ranked table with per-site reasoning in `perfbench/HOTSPOTS.md`. Headlines:
    per visible chunk per frame, although `RenderChunk.index` already encodes the section.
 2. `BlockModelRenderer:77-80` — `float[12]` + `BitSet(3)` + `AmbientOcclusionFace` allocated for
    every rendered block (up to 16k per section rebuild).
-3. `Chunk.recheckGaps:263` — `BlockPos` allocation (via `World.getHeight`) up to 5× per changed
-   column, plus one per probe inside the relight loop.
+3. `Chunk.recheckGaps:263` — `BlockPos` allocation in the probe/early-return path **FIXED** (new
+   `World.getHeight(int,int)`/`isAreaLoaded(int,int,int,int)` overloads; 0 allocs in probe path).
+   Remainder: per-block `checkLightFor(..., new BlockPos(x,i,z))` inside the relight loop.
 4. `World.getCollidingBoundingBoxes:1058` — fresh `ArrayList` per call, several calls per entity per
    tick.
 5. `EntityTracker.updateTrackedEntities:217` — worst case O(E×P) when many entities move.
