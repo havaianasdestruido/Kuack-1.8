@@ -7,41 +7,24 @@
 
 ### This repository contains:
 
- - **The full patched Minecraft 1.8 Java source, game assets and language files in `sources/minecraft/`**
  - **Utilities to decompile Minecraft 1.8 and apply patch files to it**
  - **Source code to provide the LWJGL keyboard, mouse, and OpenGL APIs in a browser**
  - **Patch files to mod the Minecraft 1.8 source code to make it browser compatible**
- - **The pinned build inputs needed to regenerate the patched source from those patches**
  - **Browser-modified portions of Minecraft 1.8's open-source dependencies**
  - **Plugins for Minecraft servers to allow the eagler client to connect to them**
 
-## Vendored game source and assets
+<!-- here lies stuff about it doesnt containing decomp of the games source code
+BUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUUT
+im not making any money off this + i want to make this as straight-forward as possible
+to absolute noobs to simply build this from source and play ASAP.
 
-The repository contains real, patched Java code instead of only patch gibberish:
+so yea this includes some assets and the full source code, since working with those
+weird patches system kinda sucks and its horrible to work with.
 
- - `sources/minecraft/java/` - all 1468 decompiled `net.minecraft.*` classes after every patch in `patches/minecraft/` has been applied
- - `sources/minecraft/assets/` - the 1.8 client assets (textures, models, blockstates, sounds, `sounds.json`, ...) after `patches/resources/` has been applied
- - `sources/minecraft/lang/` - the 74 Minecraft 1.8 language files
- - `sources/minecraft/LICENSE` - the license notice for the deobfuscated Minecraft portion
- - `vendor/minecraft/` - the exact MCP 9.18, Minecraft 1.8.8, asset index and 1.8 asset objects used to create those files, with a `SHA256SUMS` manifest
-
-The normal client build compiles the checked in Java source and packages the checked in assets; it does not need to decompile anything or contact Mojang. If you change a patch file, regenerate the checked in source with:
-
-    ./scripts/regenerate-vendored-sources.sh
-
-That script re-decompiles the vendored 1.8.8 JAR, applies `patches/minecraft` and `patches/resources`, then replaces `sources/minecraft/java`, `sources/minecraft/assets` and `sources/minecraft/lang` with the freshly patched files. It needs Java 11+ and `ffmpeg` on your PATH (or pass `-Deaglercraft.ffmpeg=/path/to/ffmpeg` in `EAGLERCRAFT_JAVA_OPTS`). On Windows use `scripts\regenerate-vendored-sources.bat`.
-
-Redistributing decompiled Minecraft code may not be permitted by Mojang's terms; see `sources/minecraft/LICENSE` and `CREDITS` before publishing a fork.
+TL,DR: i VILL include decompiled code + assets for a old unupdated obsolete version
+of the worlds most popular game -->
 
 ## Getting Started:
-
-### Fastest way: compile the checked in source (headless)
-
-    # Linux/macOS
-    ./scripts/build-vendored.sh dist
-    # Windows: scripts\build-vendored.bat
-
-Java 11+ is required. The only network access needed is for the open-source TeaVM compiler JARs, downloaded from Maven Central into `buildtools/maven/` on the first build. Set `TEAVM_MAVEN_URL` to use a mirror and `MAVEN_LOCAL` to change the download directory. The generated site is written to `dist/`.
 
 ### To compile the latest version of the client, on Windows:
 
@@ -70,9 +53,17 @@ Pushing a `v*` tag also attaches the standalone HTML files to that GitHub Releas
 
 ### Build inputs and optional CI configuration
 
-All license-restricted build inputs are vendored in `vendor/minecraft/` and verified against `SHA256SUMS` at the start of every workflow run. The client itself is compiled from the patched Java source and assets in `sources/minecraft/`, so CI never downloads a client JAR or decompiles the game. Only the open-source TeaVM compiler JARs come from Maven Central.
+The workflow downloads the required inputs automatically: the [MCP 9.18 archive](https://github.com/Spacehost-me/MCP) from a commit-pinned third-party mirror, and the [Minecraft 1.8.8 client](https://launcher.mojang.com/v1/objects/0983f08be6a4e624f5d85689d1aca869ed99c738/client.jar) and [1.8 asset index](https://launchermeta.mojang.com/v1/packages/f6ad102bcaa53b1a58358f16e376d548d44933ec/1.8.json) from Mojang. Default downloads are checked against their pinned hashes. The archive mirror is not maintained by this project; these files are not committed here. You are responsible for complying with the applicable licenses and Minecraft terms.
 
-Optional settings: `TEAVM_MAVEN_URL` (repository variable, defaults to Maven Central) and `PAGES_ENABLED` (variable, set to `true` to enable automatic Pages deployments). To publish manually to Pages, run `Publish web build to Pages` and supply the run ID of a successful `Build client` run. GitHub Pages must be enabled for the repository and configured to deploy from GitHub Actions. `scripts/download-build-inputs.sh` is kept for rebuilding the vendored inputs from their pinned sources; it is not used by CI.
+To use different HTTPS sources, optionally configure repository **variables** or **secrets**, or provide manual workflow inputs:
+
+| File | Variable or secret | `workflow_dispatch` input |
+| --- | --- | --- |
+| `mcp918.zip` | `MCP918_URL` | `mcp918_url` |
+| `1.8.8.jar` | `MINECRAFT_1_8_8_JAR_URL` | `minecraft_jar_url` |
+| `1.8.json` | `ASSETS_1_8_JSON_URL` | `assets_index_url` |
+
+Dispatch inputs take precedence over the variable/secret with the same name. If override URLs need authentication, add the `BUILD_INPUTS_TOKEN` secret; it is sent as a bearer token to each explicitly configured URL, but not to the defaults. Only use trusted override hosts. Overrides are checked for valid archive/JSON structure, but not against the default hashes. Optional settings: `TEAVM_MAVEN_URL` (variable, defaults to Maven Central) and `PAGES_ENABLED` (variable, set to `true` to enable automatic Pages deployments). To publish manually to Pages, run `Publish web build to Pages` and supply the run ID of a successful `Build client` run. GitHub Pages must be enabled for the repository and configured to deploy from GitHub Actions.
 
 ## Singleplayer
 

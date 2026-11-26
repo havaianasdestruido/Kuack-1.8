@@ -10,5 +10,5 @@
 
 ## stuff i may add later
 
-- [x] include the full game source code + assets + whatever needed to make a build of it and apply our patches on it, so the repo is not just a bunch of "patch" gibberish and actually turns into real patched Java code
+- [ ] include the full game source code + assets + whatever needed to make a build of it and apply our patches on it, so the repo is not just a bunch of "patch" gibberish and actually turns into real patched Java code
 - [ ] rewrite some stuff into Kotlin (only important logic or stuff that needs some kind of revamp)
