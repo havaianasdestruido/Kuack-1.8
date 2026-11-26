@@ -37,26 +37,42 @@ package net.minecraft.client.renderer.texture;
  * times per output texel (4 channels x 4 neighbours in the gamma branch, 4 channels in the linear
  * branch). That makes it an ideal integer-indexed lookup: a 256-entry float table costs 1 KiB and
  * turns a 43 ns libm call (V8 measurement, see perfbench/js/bench_math_lut.js) into a ~1 ns array
- * read. Nothing can go stale - the mapping is a pure function of the byte value - and it is built
- * once in the static initializer (256 Math.pow calls, ~10 us) with no per-call allocation.
+ * read. Nothing can go stale - the mapping is a pure function of the byte value - and it has no
+ * per-call allocation.
  *
- * Exactness: each entry is produced with the identical expression the call sites used, including the
- * int->float conversion, the float division by 255.0F, the double root and the narrowing cast back
- * to float, so a lookup is bit-for-bit identical to the old computation and the generated mipmaps are
- * unchanged. Only the encode step (Math.pow(avg, 1/2.2)) still calls libm: its input is a continuous
+ * The tables live in GeneratedGammaTables as 2 x 256 source-embedded float constants, produced at
+ * development time by perfbench/gen_luts.py. One table matches strict Java float semantics
+ * (HotSpot/desktop), the other matches TeaVM 0.9.2's double-lowered float semantics (Chromium/V8);
+ * GeneratedGammaTables selects the right constant array once at class init through the engine's
+ * EagRuntime.getPlatformType(). There is no static loop and no Math.pow at class initialization
+ * (which also removes 256 libm calls from browser startup); TeaVM lowers the arrays to Float32Array
+ * literals. See perfbench/CROSS_RUNTIME.md for the generator contract, the measured reason two
+ * tables are required, and the regeneration/verification commands.
+ *
+ * Exactness: each runtime's entries are produced with the identical expression that runtime used:
+ * strict Java float division and narrowing on HotSpot, TeaVM's double-lowered float division in
+ * V8. A lookup is bit-for-bit identical to the old computation on that runtime, so the generated
+ * mipmaps are unchanged. The two tables differ on 132/256 entries by at most one ULP. Only the encode step (Math.pow(avg, 1/2.2)) still calls libm: its input is a continuous
  * average of table values, so it has no small domain to tabulate, and quantising it would perturb
- * dark texels by several LSBs.
+ * dark texels by several LSBs (measured and rejected in perfbench/CROSS_RUNTIME.md).
  *
  * Verified by perfbench.VerifyGammaLut (exhaustive over all 256 decode inputs plus a differential
  * test of the whole filter against a verbatim copy of the vanilla code, 8,295,168 checks) and
- * measured by perfbench.TextureGammaBench (4.6-5.1x). See perfbench/FINDINGS.md #11.
+ * measured by perfbench.TextureGammaBench (3.7-7.6x depending on runtime/workload). See
+ * perfbench/FINDINGS.md #11 and #12.
  */
 public final class MipmapGammaBlend {
-	/** sRGB-ish decode: GAMMA_2_2[v] == (float) Math.pow((float) v / 255.0F, 2.2). */
-	private static final float[] GAMMA_2_2 = new float[256];
 
 	/** Scratch copy of the four texels, kept as a field so the loop does not touch an array parameter. */
 	private static final int[] mipmapBuffer = new int[4];
+
+	/**
+	 * Stable final reference to the platform-selected constant array. This is a reference, not a
+	 * copy; GeneratedGammaTables encapsulates both arrays and never exposes them publicly. Keeping
+	 * the reference here lets HotSpot and TeaVM ADVANCED inline the lookup into a single typed-array
+	 * load without an extra cross-class method call on JDK 25.
+	 */
+	private static final float[] GAMMA = GeneratedGammaTables.activeTable();
 
 	private MipmapGammaBlend() {
 	}
@@ -84,10 +100,10 @@ public final class MipmapGammaBlend {
 
 			for (int i = 0; i < 4; ++i) {
 				if (mipmapBuffer[i] >> 24 != 0) {
-					f += GAMMA_2_2[mipmapBuffer[i] >> 24 & 255];
-					f1 += GAMMA_2_2[mipmapBuffer[i] >> 16 & 255];
-					f2 += GAMMA_2_2[mipmapBuffer[i] >> 8 & 255];
-					f3 += GAMMA_2_2[mipmapBuffer[i] >> 0 & 255];
+					f += gamma22(mipmapBuffer[i] >> 24 & 255);
+					f1 += gamma22(mipmapBuffer[i] >> 16 & 255);
+					f2 += gamma22(mipmapBuffer[i] >> 8 & 255);
+					f3 += gamma22(mipmapBuffer[i] >> 0 & 255);
 				}
 			}
 
@@ -109,22 +125,17 @@ public final class MipmapGammaBlend {
 
 	/** Blends one channel (selected by {@code shift}) of four ARGB texels, in linear light. */
 	public static int blendComponent(int parInt1, int parInt2, int parInt3, int parInt4, int shift) {
-		float f = GAMMA_2_2[parInt1 >> shift & 255];
-		float f1 = GAMMA_2_2[parInt2 >> shift & 255];
-		float f2 = GAMMA_2_2[parInt3 >> shift & 255];
-		float f3 = GAMMA_2_2[parInt4 >> shift & 255];
+		float f = gamma22(parInt1 >> shift & 255);
+		float f1 = gamma22(parInt2 >> shift & 255);
+		float f2 = gamma22(parInt3 >> shift & 255);
+		float f3 = gamma22(parInt4 >> shift & 255);
 		float f4 = (float) Math.pow((double) (f + f1 + f2 + f3) * 0.25D, 0.45454545454545453D);
 		return (int) ((double) f4 * 255.0D);
 	}
 
 	/** The raw decode table, exposed for the exhaustive equivalence check in perfbench. */
 	public static float gamma22(int byteValue) {
-		return GAMMA_2_2[byteValue & 255];
+		return GAMMA[byteValue & 255];
 	}
 
-	static {
-		for (int i = 0; i < 256; ++i) {
-			GAMMA_2_2[i] = (float) Math.pow((double) ((float) i / 255.0F), 2.2D);
-		}
-	}
 }

@@ -4,7 +4,7 @@ Working notes for the algorithmic-hotspot sweep. Every entry records: file(s), o
 bottleneck, old vs new complexity, the verification used, and the measured benchmark.
 
 Benchmarks run under `JAVA_HOME=/tmp/jdkpkg/jdk4py/java-runtime`, `-Xmx2g -XX:+UseParallelGC`.
-Full-tree compile gate: `./perfbench/compile_main.sh` (baseline 1525 problems / 104 error files).
+Full-tree compile gate: `./perfbench/compile_main.sh` (current expected set: 1525 problems / 105 error files; see REPORT.md for reconciliation).
 
 ---
 
@@ -460,8 +460,9 @@ every animated texture*. It is the single biggest `Math.pow` concentration in th
 on world load, on resource-pack switch and on `F3+T` — a visible hitch, not just a startup cost.
 
 **Fix.** The **input** side of that expression has exactly **256 distinct values** (one per byte),
-so it is a textbook integer-indexed table: `GAMMA_2_2[256]` = 1 KiB, filled once in a static
-initializer (256 `Math.pow` calls, ~10 µs), read 16× per texel. The **output** side
+so it is a textbook integer-indexed table: `GAMMA_2_2[256]` = 1 KiB, read 16× per texel. The
+historical implementation filled it in a static initializer (256 `Math.pow` calls); **#12 below
+supersedes that with committed source-embedded constants** as required by the current task. The **output** side
 (`pow(avg, 1/2.2)`) is a continuous function of an average and is deliberately left as `Math.pow`:
 quantising it would cost several LSBs in dark texels, and the accuracy budget for "exact" changes
 here is zero.
@@ -500,8 +501,80 @@ Target-runtime measurement (V8/TeaVM shape): the decode step alone goes **43.46 
 `pow(avg, 1/2.2)` encode that was intentionally kept for exactness (it is now 90 % of the cost of
 the filter, which is why the end-to-end speedup is ~5×, not 20×).
 
-Cold start: the table costs 256 `Math.pow` calls (~10 µs) once, and the atlas pass is ~21 ms shorter
+Cold start (historical runtime table): 256 `Math.pow` calls once; the atlas pass is ~21 ms shorter
 per build. Memory: 1 KiB, statically bounded, never re-allocated, cannot go stale (pure mapping).
+See #12 for the current source-embedded implementation and its measured startup trade-off.
+
+---
+
+## #12 Cross-runtime exactness — dual source-embedded gamma tables (current PR)
+
+**Files:** `net/minecraft/client/renderer/texture/GeneratedGammaTables.java` (new, generated);
+`MipmapGammaBlend.java`; development-time `perfbench/gen_luts.py`; TeaVM probe
+`perfbench/teavm/`; tests `perfbench/src/perfbench/VerifyEmbeddedLut.java`,
+`tests/test_generated_luts.py`.
+
+**Bottleneck / surprise.** A single 256-entry table is *not* portable between HotSpot and TeaVM.
+TeaVM 0.9.2 lowers Java `float` arithmetic as JS doubles without `Math.fround`; 132/256 gamma
+entries differ by ≤1 ULP (max abs 5.96e-8, max rel 1.80e-7). With one strict-Java table the real
+TeaVM/V8 probe saw 84/203,072 browser output-byte mismatches; with one double-lowered table a JVM
+differential saw 66/4,000,000 mismatches. Neither single table preserves both runtimes.
+
+**Fix.** Commit two `private static final float[]` constant arrays (2×256 entries, 2,048 bytes of
+data) with shortest round-tripping decimal literals. `ACTIVE` is selected once at class init by
+`EagRuntime.getPlatformType() == EnumPlatformType.JAVASCRIPT`; `MipmapGammaBlend` holds a stable
+final reference. No `Math.pow`, loop, static initializer computation, file load or per-lookup
+allocation remains. Regenerate with `python3 perfbench/gen_luts.py --gamma-only`; verify with
+`--check` and `python3 -m unittest discover -s tests -v`. Full design: `LUTS.md`.
+
+**Verification.** `VerifyEmbeddedLut`: 401,292 checks / 0 failures (both tables bit-exact vs their
+defining expressions, 132 expected cross-runtime ULP differences, index wrapping, HotSpot platform
+selection, no runtime computation, 400,000 whole-blend cases). `VerifyGammaLut`: 8,295,168 / 0 on
+HotSpot 17 and 25. Real TeaVM 0.9.2 → V8: `gamma_vs_prechange_browser_table` 256/0,
+`gamma_index_wrap` 1,024/0, `blend_vs_legacy_browser_table` 203,072/0. The 118/203,072-byte
+difference vs verbatim vanilla *browser arithmetic* is pre-existing in the shipped runtime table and
+is preserved, not introduced.
+
+**Benchmark** (final `./perfbench/run_all.sh` logs; medians; microbench only, no FPS):
+
+| workload | before | after | change |
+|---|---:|---:|---|
+| JDK17 1,024-sprite atlas, linear | 29.87 ms | 6.75 ms | 4.43× / 77.40% less CPU |
+| JDK17 1,024-sprite atlas, gamma | 35.97 ms | 4.76 ms | 7.56× / 86.77% less CPU |
+| JDK25 1,024-sprite atlas, linear | 26.91 ms | 5.82 ms | 4.62× / 78.37% less CPU |
+| JDK25 1,024-sprite atlas, gamma | 23.33 ms | 4.82 ms | 4.84× / 79.34% less CPU |
+| V8/TeaVM decode op | 42.894 ns | 2.038 ns | 21.05× / 95.25% less |
+| V8/TeaVM whole blend, linear | 927.216 ns | 243.277 ns | 3.81× / 73.76% less |
+| V8/TeaVM whole blend, gamma | 928.740 ns | 237.145 ns | 3.92× / 74.47% less |
+
+**Size / startup trade-off.** Java source 10,667 B; class 6,691 B; `MipmapGammaBlend.class` 1,384 B.
+TeaVM gamma-only JS 178,309 B vs 164,387 B for the old runtime table (+13,922 B); first-process
+parse/clinit 3.541/2.675 ms vs 3.465/2.670 ms. HotSpot cold clinit 853.50 µs (JDK17) / 826.02 µs
+(JDK25) vs 202.75 / 199.07 µs for the old table, but steady-state lookup is parity (0.523 ns/op
+JDK17, 0.522 ns/op JDK25). The one-time startup regression is accepted for the mandated
+source-embedded constants and the measured steady-state CPU win. No full-game FPS claim.
+
+---
+
+## #13 `EntityRenderer.updateLightmap` — bit-exact invariant hoisting / CSE
+
+**File:** `net/minecraft/client/renderer/EntityRenderer.java` (`updateLightmap`, reached from
+`renderWorld`; `lightmapUpdateNeeded` is set by `updateRenderer`/`updateTorchFlicker` on client ticks).
+
+**Bottleneck.** The 256-iteration loop re-read `worldclient.provider.getLightBrightnessTable()` and
+recomputed `this.torchFlickerX * 0.1F + 1.5F` and `f * 0.65F + 0.35F` on every iteration, even
+though none of them change inside the loop. `f5` was already assigned exactly `f4` in vanilla.
+
+**Fix.** Hoist the three values into locals and keep `float f5 = f4` as the explicit CSE. No table,
+no allocation, no platform-specific behavior.
+
+**Verification.** `perfbench.LightmapBench` JVM replica: 4,608 float comparisons / 0 mismatches;
+TeaVM/V8 replica `lightmap_cse_bit_exact`: 4,608 / 0. Edge cases include gamma, night vision, boss
+color, End dimension and negative/large sun brightness.
+
+**Benchmark.** JDK17 3.021 → 2.825 µs/update (1.07×, 6.49% less); JDK25 2.983 → 2.842 µs (1.05×,
+4.73% less); V8 6,635.358 → 6,449.422 ns (1.03×, 2.80% less). At a source-estimated 20 lightmap
+updates/s this is a few microseconds of CPU per second, not an FPS claim.
 
 ---
 

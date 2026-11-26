@@ -261,3 +261,31 @@ python3 -m unittest discover -s tests -v
 # Or run a specific verification/benchmark class:
 ./perfbench/run_bench.sh perfbench.VerifyMatrixRotate
 ```
+
+### Cross-runtime LUT validation
+
+The mathematical LUT work has a repeatable suite that covers HotSpot 17/25, the project's real
+TeaVM 0.9.2 JavaScript output under Node/V8, an isolated WebAssembly PoC, an AOT C PoC, generator
+regeneration, unit tests and JIT/JFR profiling:
+
+```sh
+./perfbench/run_all.sh
+```
+
+Override environment-specific prerequisites with `JDK17`, `JDK25`, `TEAVM_JARS` and `WABT_MODULE`.
+Logs are written to `perfbench/results/` (gitignored). The suite does **not** run a full Chromium or
+full-game FPS benchmark; see `perfbench/CROSS_RUNTIME.md` for the actual execution environment and
+unavailable tests.
+
+Regenerate and verify the committed source-embedded LUTs:
+
+```sh
+python3 perfbench/gen_luts.py --gamma-only
+python3 perfbench/gen_luts.py --check
+python3 -m unittest discover -s tests -v
+```
+
+Detailed deliverables: `perfbench/CROSS_RUNTIME.md` (execution/benchmark strategies),
+`perfbench/HOTSPOTS.md` (hotspot inventory), `perfbench/OPPORTUNITY_MATRIX.md` (candidate matrix),
+`perfbench/LUTS.md` (table design contract), `perfbench/FINDINGS.md` and `perfbench/REPORT.md`
+(measured findings and final report).

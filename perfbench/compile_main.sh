@@ -13,7 +13,8 @@ STUBS="$HERE/build/stubs"
 mkdir -p "$STUBS"
 "$JAVA_HOME/bin/java" -Xmx2g -cp "$ROOT/buildtools/deps/eclipse-formatter.jar" \
   org.eclipse.jdt.internal.compiler.batch.Main -proc:none -nowarn \
-  -source 1.8 -target 1.8 -encoding UTF-8 -d "$STUBS" \
+  -source 1.8 -target 1.8 -encoding UTF-8 \
+  -sourcepath "$ROOT/sources/main/java" -d "$STUBS" \
   $(find "$HERE/stubs" -name '*.java') > /dev/null 2>&1
 "$JAVA_HOME/bin/java" -Xmx3g -cp "$ROOT/buildtools/deps/eclipse-formatter.jar" \
   org.eclipse.jdt.internal.compiler.batch.Main -proc:none -nowarn -proceedOnError \

@@ -744,16 +744,23 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 				float f = worldclient.getSunBrightness(1.0F);
 				float f1 = f * 0.95F + 0.05F;
 
+				// Hoist the frame-invariant quantities out of the 256-iteration lightmap loop.
+				// The values are bit-identical to the original expressions: each one is a pure
+				// float expression over values that the loop does not modify, and f5 was already
+				// spelled exactly the same as f4 in vanilla (dead common subexpression).
+				float[] brightnessTable = worldclient.provider.getLightBrightnessTable();
+				float torchFlickerScale = this.torchFlickerX * 0.1F + 1.5F;
+				float sunScale = f * 0.65F + 0.35F;
+
 				for (int i = 0; i < 256; ++i) {
-					float f2 = worldclient.provider.getLightBrightnessTable()[i / 16] * f1;
-					float f3 = worldclient.provider.getLightBrightnessTable()[i % 16]
-							* (this.torchFlickerX * 0.1F + 1.5F);
+					float f2 = brightnessTable[i / 16] * f1;
+					float f3 = brightnessTable[i % 16] * torchFlickerScale;
 					if (worldclient.getLastLightningBolt() > 0) {
-						f2 = worldclient.provider.getLightBrightnessTable()[i / 16];
+						f2 = brightnessTable[i / 16];
 					}
 
-					float f4 = f2 * (f * 0.65F + 0.35F);
-					float f5 = f2 * (f * 0.65F + 0.35F);
+					float f4 = f2 * sunScale;
+					float f5 = f4;
 					float f6 = f3 * ((f3 * 0.6F + 0.4F) * 0.6F + 0.4F);
 					float f7 = f3 * (f3 * f3 * 0.6F + 0.4F);
 					float f8 = f4 + f3;

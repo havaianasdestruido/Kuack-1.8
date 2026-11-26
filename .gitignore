@@ -10,3 +10,10 @@ MinecraftSrc.zip
 /##TEAVM.TMP##/*
 # perfbench: compiled output (class files, generated logs) is not source
 /perfbench/build/
+/perfbench/teavm/build/
+/perfbench/wasm/build/
+/perfbench/wasm/node_modules/
+/perfbench/native/build/
+/perfbench/results/
+__pycache__/
+*.pyc
