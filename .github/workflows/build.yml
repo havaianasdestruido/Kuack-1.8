@@ -50,6 +50,7 @@ jobs:
           ffmpeg -version | head -n 1
 
       - name: Download license-restricted build inputs
+        if: ${{ hashFiles('sources/main/java/net/minecraft/client/Minecraft.java') == '' }}
         env:
           MCP918_URL: ${{ inputs.mcp918_url || vars.MCP918_URL || secrets.MCP918_URL }}
           MINECRAFT_JAR_URL: ${{ inputs.minecraft_jar_url || vars.MINECRAFT_1_8_8_JAR_URL || secrets.MINECRAFT_1_8_8_JAR_URL }}
@@ -73,38 +74,77 @@ jobs:
 
           mkdir -p "$RUNNER_TEMP/eagler-build" "$RUNNER_TEMP/eagler-maven" "$GITHUB_WORKSPACE/dist"
 
-          jq -n \
-            --arg repo "$GITHUB_WORKSPACE" \
-            --arg mcp "$RUNNER_TEMP/eagler-inputs/mcp918.zip" \
-            --arg jar "$RUNNER_TEMP/eagler-inputs/1.8.8.jar" \
-            --arg assets "$RUNNER_TEMP/eagler-inputs/1.8.json" \
-            --arg out "$GITHUB_WORKSPACE/dist" \
-            --arg tmp "$RUNNER_TEMP/eagler-build" \
-            --arg maven "$RUNNER_TEMP/eagler-maven" \
-            --arg index "$GITHUB_WORKSPACE/buildtools/production-index.html" \
-            --arg favicon "$GITHUB_WORKSPACE/buildtools/production-favicon.png" \
-            --arg offline "$GITHUB_WORKSPACE/sources/setup/workspace_template/javascript/OfflineDownloadTemplate.txt" \
-            '{
-              repositoryFolder: $repo,
-              modCoderPack: $mcp,
-              minecraftJar: $jar,
-              assetsIndex: $assets,
-              outputDirectory: $out,
-              temporaryDirectory: $tmp,
-              mavenLocal: $maven,
-              productionIndex: $index,
-              productionFavicon: $favicon,
-              generateOfflineDownload: true,
-              offlineDownloadTemplate: $offline,
-              minifying: true,
-              writeSourceMap: false,
-              keepTemporaryFiles: false
-            }' > "$RUNNER_TEMP/eagler-build-config.json"
+          if [ -f "$GITHUB_WORKSPACE/sources/main/java/net/minecraft/client/Minecraft.java" ]; then
+            jq -n \
+              --arg repo "$GITHUB_WORKSPACE" \
+              --arg out "$GITHUB_WORKSPACE/dist" \
+              --arg tmp "$RUNNER_TEMP/eagler-build" \
+              --arg maven "$RUNNER_TEMP/eagler-maven" \
+              --arg index "$GITHUB_WORKSPACE/buildtools/production-index.html" \
+              --arg favicon "$GITHUB_WORKSPACE/buildtools/production-favicon.png" \
+              --arg offline "$GITHUB_WORKSPACE/sources/setup/workspace_template/javascript/OfflineDownloadTemplate.txt" \
+              '{
+                repositoryFolder: $repo,
+                outputDirectory: $out,
+                temporaryDirectory: $tmp,
+                mavenLocal: $maven,
+                productionIndex: $index,
+                productionFavicon: $favicon,
+                generateOfflineDownload: true,
+                offlineDownloadTemplate: $offline,
+                minifying: true,
+                writeSourceMap: false,
+                keepTemporaryFiles: false
+              }' > "$RUNNER_TEMP/eagler-build-config.json"
+          else
+            jq -n \
+              --arg repo "$GITHUB_WORKSPACE" \
+              --arg mcp "$RUNNER_TEMP/eagler-inputs/mcp918.zip" \
+              --arg jar "$RUNNER_TEMP/eagler-inputs/1.8.8.jar" \
+              --arg assets "$RUNNER_TEMP/eagler-inputs/1.8.json" \
+              --arg out "$GITHUB_WORKSPACE/dist" \
+              --arg tmp "$RUNNER_TEMP/eagler-build" \
+              --arg maven "$RUNNER_TEMP/eagler-maven" \
+              --arg index "$GITHUB_WORKSPACE/buildtools/production-index.html" \
+              --arg favicon "$GITHUB_WORKSPACE/buildtools/production-favicon.png" \
+              --arg offline "$GITHUB_WORKSPACE/sources/setup/workspace_template/javascript/OfflineDownloadTemplate.txt" \
+              '{
+                repositoryFolder: $repo,
+                modCoderPack: $mcp,
+                minecraftJar: $jar,
+                assetsIndex: $assets,
+                outputDirectory: $out,
+                temporaryDirectory: $tmp,
+                mavenLocal: $maven,
+                productionIndex: $index,
+                productionFavicon: $favicon,
+                generateOfflineDownload: true,
+                offlineDownloadTemplate: $offline,
+                minifying: true,
+                writeSourceMap: false,
+                keepTemporaryFiles: false
+              }' > "$RUNNER_TEMP/eagler-build-config.json"
+          fi
 
           if [ "$TEAVM_CACHE_HIT" != "true" ]; then
             jq --arg url "$TEAVM_MAVEN_URL" '.mavenURL = $url' \
               "$RUNNER_TEMP/eagler-build-config.json" > "$RUNNER_TEMP/eagler-build-config.tmp.json"
             mv "$RUNNER_TEMP/eagler-build-config.tmp.json" "$RUNNER_TEMP/eagler-build-config.json"
+          fi
+
+      - name: Compile buildtools
+        run: |
+          set -euo pipefail
+          if [ -d "$GITHUB_WORKSPACE/buildtools/src/main/java" ]; then
+            mkdir -p "$RUNNER_TEMP/buildtools-classes"
+            find "$GITHUB_WORKSPACE/buildtools/src/main/java" -name "*.java" > "$RUNNER_TEMP/buildtools-sources.txt"
+            javac -version
+            javac -source 1.8 -target 1.8 -encoding UTF-8 \
+              -cp "$GITHUB_WORKSPACE/buildtools/deps/*" \
+              -d "$RUNNER_TEMP/buildtools-classes" \
+              @"$RUNNER_TEMP/buildtools-sources.txt"
+            jar cf "$RUNNER_TEMP/BuildTools.jar" -C "$RUNNER_TEMP/buildtools-classes" .
+            cp "$RUNNER_TEMP/BuildTools.jar" "$GITHUB_WORKSPACE/buildtools/BuildTools.jar"
           fi
 
       - name: Compile client

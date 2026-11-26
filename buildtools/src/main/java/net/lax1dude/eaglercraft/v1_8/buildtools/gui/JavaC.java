@@ -64,6 +64,7 @@ public class JavaC {
 		File argFile = new File(tmpDirectory, "sourceFiles.txt");
 		try(PrintWriter writer = new PrintWriter(new FileWriter(argFile))) {
 			
+			if(mcSourceJar != null) {
 			System.out.println("Extracting decompiled source...");
 			
 			byte[] copyBuffer = new byte[16384];
@@ -88,8 +89,11 @@ public class JavaC {
 					}
 				}
 			}
-			
-			System.out.println("Scanning source folder paths...");
+		}else {
+			System.out.println("Using in-repo source (no decompiled jar extraction needed)...");
+		}
+		
+		System.out.println("Scanning source folder paths...");
 			
 			for(int i = 0; i < eaglerSourceDirs.length; ++i) {
 				discoverSourceFiles(eaglerSourceDirs[i], writer);
@@ -115,10 +119,16 @@ public class JavaC {
 		commandBuilder.add("-sourcepath");
 		
 		StringBuilder sourcePathBuilder = new StringBuilder();
-		sourcePathBuilder.append(mcSourceJar.getAbsolutePath());
+		boolean sourcePathFirst = true;
+		if(mcSourceJar != null) {
+			sourcePathBuilder.append(mcSourceJar.getAbsolutePath());
+			sourcePathFirst = false;
+		}
 		
 		for(int i = 0; i < eaglerSourceDirs.length; ++i) {
-			sourcePathBuilder.append(pathSeparator).append(eaglerSourceDirs[i].getAbsolutePath());
+			if(!sourcePathFirst) sourcePathBuilder.append(pathSeparator);
+			sourcePathBuilder.append(eaglerSourceDirs[i].getAbsolutePath());
+			sourcePathFirst = false;
 		}
 
 		commandBuilder.add(sourcePathBuilder.toString());

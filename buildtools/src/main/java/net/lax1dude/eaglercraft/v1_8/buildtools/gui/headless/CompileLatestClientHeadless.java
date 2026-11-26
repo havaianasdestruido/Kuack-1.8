@@ -126,9 +126,12 @@ public class CompileLatestClientHeadless {
 		boolean minifying = true;
 		try {
 			repositoryFolder = new File(configJSON.optString("repositoryFolder", "."));
-			modCoderPack = new File(configJSON.getString("modCoderPack"));
-			minecraftJar = new File(configJSON.getString("minecraftJar"));
-			assetsIndex = new File(configJSON.getString("assetsIndex"));
+			String mcpPath = configJSON.optString("modCoderPack", null);
+			String mcJarPath = configJSON.optString("minecraftJar", null);
+			String assetsPath = configJSON.optString("assetsIndex", null);
+			modCoderPack = (mcpPath != null && mcpPath.length() > 0) ? new File(mcpPath) : null;
+			minecraftJar = (mcJarPath != null && mcJarPath.length() > 0) ? new File(mcJarPath) : null;
+			assetsIndex = (assetsPath != null && assetsPath.length() > 0) ? new File(assetsPath) : null;
 			outputDirectory = new File(configJSON.getString("outputDirectory"));
 			String tmpDir = configJSON.optString("temporaryDirectory");
 			temporaryDirectory = tmpDir == null ? new File(outputDirectory, "build") : new File(tmpDir);
@@ -192,10 +195,12 @@ public class CompileLatestClientHeadless {
 		
 		System.out.println("Loaded config successfully:");
 		System.out.println();
+		boolean sourceInRepo = (new File(repositoryFolder, "sources/main/java/net/minecraft/client/Minecraft.java")).isFile();
 		System.out.println(" - Repository Folder: " + repositoryFolder.getAbsolutePath().replace('\\', '/'));
-		System.out.println(" - Mod Coder Pack: " + modCoderPack.getAbsolutePath().replace('\\', '/'));
-		System.out.println(" - Minecraft 1.8.8: " + minecraftJar.getAbsolutePath().replace('\\', '/'));
-		System.out.println(" - Assets Index 1.8: " + assetsIndex.getAbsolutePath().replace('\\', '/'));
+		System.out.println(" - In-Repo Source: " + sourceInRepo);
+		System.out.println(" - Mod Coder Pack: " + (modCoderPack == null ? "null" : modCoderPack.getAbsolutePath().replace('\\', '/')));
+		System.out.println(" - Minecraft 1.8.8: " + (minecraftJar == null ? "null" : minecraftJar.getAbsolutePath().replace('\\', '/')));
+		System.out.println(" - Assets Index 1.8: " + (assetsIndex == null ? "null" : assetsIndex.getAbsolutePath().replace('\\', '/')));
 		System.out.println(" - Temporary Directory: " + temporaryDirectory.getAbsolutePath().replace('\\', '/'));
 		System.out.println(" - Output Directory: " + outputDirectory.getAbsolutePath().replace('\\', '/'));
 		System.out.println(" - FFmpeg Executable: " + ffmpeg.replace('\\', '/'));
@@ -268,27 +273,35 @@ public class CompileLatestClientHeadless {
 				FFMPEG.foundFFMPEG = ffmpeg;
 			}
 			
-			if(!mcpDataTMP.isDirectory() && !mcpDataTMP.mkdirs()) {
-				throw new CompileFailureException("Error: failed to create \"" + mcpDataTMP.getAbsolutePath() + "\"!");
-			}
-			
-			if(!InitMCP.initTask(modCoderPack, mcpDataTMP)) {
-				throw new CompileFailureException("Error: could not initialize MCP from \"" + modCoderPack.getAbsolutePath() + "\"!");
-			}
-			
-			if(!minecraftSrcTmp.isDirectory() && !minecraftSrcTmp.mkdirs()) {
-				throw new CompileFailureException("Error: failed to create \"" + minecraftSrcTmp.getAbsolutePath() + "\"!");
-			}
-			
-			if(!DecompileMinecraft.decompileMinecraft(mcpDataTMP, minecraftJar, minecraftSrcTmp, assetsIndex, false)) {
-				throw new CompileFailureException("Error: could not decompile and patch 1.8.8.jar from \"" + minecraftJar.getAbsolutePath() + "\"!");
-			}
-			
-			try {
-				FileUtils.copyFile(new File(repositoryFolder, "patches/minecraft/output_license.txt"), new File(temporaryDirectory, "MinecraftSrc/LICENSE"));
-			}catch(IOException ex) {
-				System.err.println("Error: failed to write LICENSE in temporary directory!");
-				ex.printStackTrace();
+			if(!sourceInRepo) {
+				if(modCoderPack == null || minecraftJar == null || assetsIndex == null) {
+					throw new CompileFailureException("Missing modCoderPack/minecraftJar/assetsIndex in config and no in-repo source found at sources/main/java/net/minecraft/client/Minecraft.java!");
+				}
+				if(!mcpDataTMP.isDirectory() && !mcpDataTMP.mkdirs()) {
+					throw new CompileFailureException("Error: failed to create \"" + mcpDataTMP.getAbsolutePath() + "\"!");
+				}
+				
+				if(!InitMCP.initTask(modCoderPack, mcpDataTMP)) {
+					throw new CompileFailureException("Error: could not initialize MCP from \"" + modCoderPack.getAbsolutePath() + "\"!");
+				}
+				
+				if(!minecraftSrcTmp.isDirectory() && !minecraftSrcTmp.mkdirs()) {
+					throw new CompileFailureException("Error: failed to create \"" + minecraftSrcTmp.getAbsolutePath() + "\"!");
+				}
+				
+				if(!DecompileMinecraft.decompileMinecraft(mcpDataTMP, minecraftJar, minecraftSrcTmp, assetsIndex, false)) {
+					throw new CompileFailureException("Error: could not decompile and patch 1.8.8.jar from \"" + minecraftJar.getAbsolutePath() + "\"!");
+				}
+				
+				try {
+					FileUtils.copyFile(new File(repositoryFolder, "patches/minecraft/output_license.txt"), new File(temporaryDirectory, "MinecraftSrc/LICENSE"));
+				}catch(IOException ex) {
+					System.err.println("Error: failed to write LICENSE in temporary directory!");
+					ex.printStackTrace();
+				}
+			}else {
+				System.out.println("Detected in-repo patched source - skipping MCP decompile/patch step.");
+				System.out.println();
 			}
 			
 			System.out.println();
@@ -319,7 +332,8 @@ public class CompileLatestClientHeadless {
 
 			try {
 				try {
-					compileResultCode = JavaC.runJavaC(new File(minecraftSrcTmp, "minecraft_src_javadoc.jar"),
+					File mcSrcJar = sourceInRepo ? null : new File(minecraftSrcTmp, "minecraft_src_javadoc.jar");
+					compileResultCode = JavaC.runJavaC(mcSrcJar,
 							compiledResultClasses, temporaryDirectory, TeaVMBinaries.getTeaVMRuntimeClasspath(),
 						new File(repositoryFolder, "sources/main/java"), new File(repositoryFolder, "sources/teavm/java"));
 				}catch(IOException ex) {
@@ -489,16 +503,29 @@ public class CompileLatestClientHeadless {
 			System.out.println();
 			System.out.println("Running EPKCompiler on assets...");
 			
-			EPKCompiler.compilerMain(epkCompiler, new String[] {
-					((new File(minecraftSrcTmp, "minecraft_res_patch.jar")).getAbsolutePath() + System.getProperty("path.separator") +
-					(new File(repositoryFolder, "sources/resources")).getAbsolutePath()), (new File(outputDirectory, "assets.epk")).getAbsolutePath() });
+			String assetsInput;
+			if(sourceInRepo) {
+				assetsInput = (new File(repositoryFolder, "sources/resources")).getAbsolutePath();
+			}else {
+				assetsInput = (new File(minecraftSrcTmp, "minecraft_res_patch.jar")).getAbsolutePath() + System.getProperty("path.separator") +
+					(new File(repositoryFolder, "sources/resources")).getAbsolutePath();
+			}
+			EPKCompiler.compilerMain(epkCompiler, new String[] { assetsInput, (new File(outputDirectory, "assets.epk")).getAbsolutePath() });
 			
 			System.out.println();
 			System.out.println("Running EPKCompiler on languages.zip...");
 			
-			EPKCompiler.compilerMain(epkCompiler, new String[] {
-					(new File(minecraftSrcTmp, "minecraft_languages.zip")).getAbsolutePath(),
+			File languagesSourceZip = sourceInRepo ? null : new File(minecraftSrcTmp, "minecraft_languages.zip");
+			File languagesSourceDir = new File(repositoryFolder, "sources/lang");
+			if(sourceInRepo && languagesSourceDir.isDirectory()) {
+				EPKCompiler.compilerMain(epkCompiler, new String[] {
+					languagesSourceDir.getAbsolutePath(),
 					(new File(temporaryDirectory, "languages.epk")).getAbsolutePath() });
+			}else {
+				EPKCompiler.compilerMain(epkCompiler, new String[] {
+					languagesSourceZip.getAbsolutePath(),
+					(new File(temporaryDirectory, "languages.epk")).getAbsolutePath() });
+			}
 
 			System.out.println();
 			System.out.println("Creating languages directory...");
@@ -506,18 +533,33 @@ public class CompileLatestClientHeadless {
 			
 			byte[] copyBuffer = new byte[16384];
 			int i;
-			try(ZipInputStream zis = new ZipInputStream(new FileInputStream(new File(minecraftSrcTmp, "minecraft_languages.zip")))) {
-				ZipEntry etr;
-				while((etr = zis.getNextEntry()) != null) {
-					if(!etr.isDirectory()) {
-						File phile = new File(langDirectory, etr.getName());
-						File parent = phile.getParentFile();
-						if(!parent.exists() && !parent.mkdirs()) {
-							throw new IOException("Could not create directory: " + parent.getAbsolutePath());
+			if(sourceInRepo && languagesSourceDir.isDirectory()) {
+				if(!langDirectory.isDirectory() && !langDirectory.mkdirs()) {
+					throw new IOException("Could not create directory: " + langDirectory.getAbsolutePath());
+				}
+				File[] langFiles = languagesSourceDir.listFiles();
+				if(langFiles != null) {
+					for(int li = 0; li < langFiles.length; ++li) {
+						File lf = langFiles[li];
+						if(lf.isFile()) {
+							FileUtils.copyFile(lf, new File(langDirectory, lf.getName()));
 						}
-						try(FileOutputStream os = new FileOutputStream(phile)) {
-							while((i = zis.read(copyBuffer)) != -1) {
-								os.write(copyBuffer, 0, i);
+					}
+				}
+			}else {
+				try(ZipInputStream zis = new ZipInputStream(new FileInputStream(languagesSourceZip))) {
+					ZipEntry etr;
+					while((etr = zis.getNextEntry()) != null) {
+						if(!etr.isDirectory()) {
+							File phile = new File(langDirectory, etr.getName());
+							File parent = phile.getParentFile();
+							if(!parent.exists() && !parent.mkdirs()) {
+								throw new IOException("Could not create directory: " + parent.getAbsolutePath());
+							}
+							try(FileOutputStream os = new FileOutputStream(phile)) {
+								while((i = zis.read(copyBuffer)) != -1) {
+									os.write(copyBuffer, 0, i);
+								}
 							}
 						}
 					}

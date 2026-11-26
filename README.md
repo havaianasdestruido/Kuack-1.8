@@ -26,6 +26,8 @@ of the worlds most popular game -->
 
 ## Getting Started:
 
+This repository now includes the **full patched Minecraft 1.8.8 + EaglercraftX 1.8 source code and assets** directly in `sources/` (no decompile/patch step required for normal builds).
+
 ### To compile the latest version of the client, on Windows:
 
 1. Make sure you have at least Java 11 installed and added to your PATH, it is recommended to use Java 17
