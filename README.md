@@ -1,6 +1,8 @@
 # Kuack 1.8
 
-Pronunced as `KILL-ack`. <!-- a-ACK!! -->
+EaglerCraftX enhanced.
+
+Pronunced as Quack.
 
 ### Play Minecraft 1.8 in your browser, supports singleplayer and multiplayer
 
