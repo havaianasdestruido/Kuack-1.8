@@ -258,6 +258,10 @@ public class EagRuntime {
 		PlatformApplication.openLink(url);
 	}
 
+	public static void setWindowTitle(String title) {
+		PlatformApplication.setWindowTitle(title);
+	}
+
 	public static void displayFileChooser(String mime, String ext) {
 		PlatformApplication.displayFileChooser(mime, ext);
 	}

@@ -48,6 +48,12 @@ public class PlatformApplication {
 		win = glfwWindow;
 	}
 
+	public static void setWindowTitle(String title) {
+		if(win != 0l) {
+			glfwSetWindowTitle(win, title == null ? "" : title);
+		}
+	}
+
 	public static void openLink(String url) {
 		try {
 			Desktop.getDesktop().browse(new URI(url));

@@ -92,6 +92,7 @@ import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.ServerList;
 import net.minecraft.client.multiplayer.WorldClient;
 import net.minecraft.client.network.NetHandlerPlayClient;
+import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.client.particle.EffectRenderer;
 import net.minecraft.client.renderer.BlockRendererDispatcher;
 import net.minecraft.client.renderer.EntityRenderer;
@@ -297,6 +298,13 @@ public class Minecraft implements IThreadListener {
 	long debugUpdateTime = getSystemTime();
 	int fpsCounter;
 	long prevFrameTime = -1L;
+	/**+
+	 * Last string passed to Display.setTitle, so the browser tab title is only
+	 * touched when the server name, username or ping actually change
+	 */
+	private String currentWindowTitle = null;
+	private long windowTitleUpdateTime = -1L;
+	private static final long windowTitleInterval = 1000L;
 	/**+
 	 * Profiler currently displayed in the debug screen pie chart
 	 */
@@ -519,7 +527,85 @@ public class Minecraft implements IThreadListener {
 
 	private void createDisplay() {
 		Display.create();
-		Display.setTitle("Eaglercraft 1.8.8");
+		currentWindowTitle = buildWindowTitle();
+		Display.setTitle(currentWindowTitle);
+	}
+
+	/**+
+	 * Builds the game window/tab title, in the format
+	 * "Kuack-1.8 - [SERVER NAME]:[USERNAME] | [PING]ms"
+	 * 
+	 * The server name comes from the ServerData of the server currently joined,
+	 * the username from the game session (which the server can override when it
+	 * logs the player in), and the ping from the tab list entry of the local
+	 * player, which the server keeps updated with the real latency
+	 */
+	public String buildWindowTitle() {
+		String serverName;
+		String username;
+		long ping = -1L;
+
+		if (theWorld == null && thePlayer == null) {
+			// main menu, nothing to report yet
+			return "Kuack 1.8";
+		}
+
+		if (isSingleplayer()) {
+			serverName = "Singleplayer";
+			if (theWorld != null) {
+				String worldName = theWorld.getWorldInfo().getWorldName();
+				if (worldName != null && worldName.length() > 0) {
+					serverName = worldName;
+				}
+			}
+		} else if (currentServerData != null) {
+			serverName = currentServerData.serverName;
+			if (serverName == null || serverName.length() <= 0) {
+				serverName = currentServerData.serverIP;
+			}
+		} else {
+			serverName = "Multiplayer";
+		}
+
+		username = session.getProfile().getName();
+		if (thePlayer != null && thePlayer.getName() != null && thePlayer.getName().length() > 0) {
+			username = thePlayer.getName();
+		} else if (username == null || username.length() <= 0) {
+			username = EaglerProfile.getName();
+		}
+
+		NetHandlerPlayClient nethandler = getNetHandler();
+		if (nethandler != null && thePlayer != null) {
+			NetworkPlayerInfo info = nethandler.getPlayerInfo(thePlayer.getUniqueID());
+			if (info == null) {
+				info = nethandler.getPlayerInfo(thePlayer.getName());
+			}
+			if (info != null) {
+				ping = info.getResponseTime();
+			}
+		}
+
+		StringBuilder sb = new StringBuilder("Kuack-1.8 - ");
+		sb.append(serverName == null || serverName.length() <= 0 ? "???" : serverName);
+		sb.append(':').append(username == null || username.length() <= 0 ? "???" : username);
+		sb.append(" | ").append(ping >= 0L ? Long.toString(ping) : "?").append("ms");
+		return sb.toString();
+	}
+
+	/**+
+	 * Refreshes the window/tab title, throttled to once per second
+	 */
+	private void updateWindowTitle() {
+		long now = getSystemTime();
+		if (windowTitleUpdateTime >= 0L && now - windowTitleUpdateTime < windowTitleInterval) {
+			return;
+		}
+		windowTitleUpdateTime = now;
+		String title = buildWindowTitle();
+		if (!title.equals(currentWindowTitle)) {
+			currentWindowTitle = title;
+			Display.setTitle(title);
+		}
 	}
 
 	private static boolean isJvm64bit() {
@@ -1291,6 +1377,8 @@ public class Minecraft implements IThreadListener {
 
 		SingleplayerServerController.runTick();
 		RelayUpdateChecker.runTick();
+
+		this.updateWindowTitle();
 
 		this.mcProfiler.startSection("gui");
 		if (!this.isGamePaused) {

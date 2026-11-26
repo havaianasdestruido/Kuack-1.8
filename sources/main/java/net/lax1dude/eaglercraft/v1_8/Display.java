@@ -38,7 +38,7 @@ public class Display {
 	}
 
 	public static void setTitle(String string) {
-		
+		EagRuntime.setWindowTitle(string);
 	}
 
 	public static boolean isCloseRequested() {
