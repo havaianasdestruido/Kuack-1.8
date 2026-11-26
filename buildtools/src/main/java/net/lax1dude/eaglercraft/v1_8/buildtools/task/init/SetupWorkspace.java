@@ -108,13 +108,14 @@ public class SetupWorkspace {
 			throw new IOException("Could not create \"" + workspaceDirectory.getAbsolutePath() + "\"!");
 		}
 		
-		if(!minecraftJavadocTmp.isFile()) {
+		boolean inRepoSource = (new File("./sources/main/java/net/minecraft")).isDirectory();
+		if(!minecraftJavadocTmp.isFile() && !inRepoSource) {
 			System.err.println("ERROR: could not find 'minecraft_src_javadoc.jar' in your current temporary directory!");
 			System.err.println("Run the 'init' command again to generate it");
 			return false;
 		}
 		
-		if(!minecraftResJar.isFile()) {
+		if(!minecraftResJar.isFile() && !inRepoSource) {
 			System.err.println("ERROR: could not find 'minecraft_res_patch.jar' in your current temporary directory!");
 			System.err.println("Run the 'init' command again to generate it");
 			return false;
@@ -255,7 +256,11 @@ public class SetupWorkspace {
 			minecraftResJar = tmpPatchedPatchResOut;
 			
 		}else {
-			System.out.println("Extracting files from \"minecraft_src_javadoc.jar\" to \"/src/main/java/\"...");
+			if(minecraftJavadocTmp.isFile()) {
+				System.out.println("Extracting files from \"minecraft_src_javadoc.jar\" to \"/src/main/java/\"...");
+			}else if(inRepoSource) {
+				System.out.println("Using in-repo minecraft source from /sources/main/java (skipping jar extraction)...");
+			}
 		}
 			
 		try {
@@ -263,21 +268,27 @@ public class SetupWorkspace {
 				System.err.println("ERROR: Could not create destination directory!");
 				return false;
 			}
-			extractJarTo(minecraftJavadocTmp, srcMainJava);
+			if(minecraftJavadocTmp.isFile()) {
+				extractJarTo(minecraftJavadocTmp, srcMainJava);
+			}
 		}catch(IOException ex) {
 			System.err.println("ERROR: could not extract \"" + minecraftJavadocTmp.getName() + ".jar\" to \"" +
 					srcMainJava.getAbsolutePath() + "\"!");
 			throw ex;
 		}
 		
-		System.out.println("Extracting files from \"minecraft_res_patch.jar\" to \"/desktopRuntime/resources/\"...");
-		
-		try {
-			extractJarTo(minecraftResJar, resourcesExtractTo);
-		}catch(IOException ex) {
-			System.err.println("ERROR: could not extract \"" + minecraftResJar.getName() + "\" to \"" + 
-					resourcesExtractTo.getAbsolutePath() + "\"!");
-			throw ex;
+		if(minecraftResJar.isFile()) {
+			System.out.println("Extracting files from \"minecraft_res_patch.jar\" to \"/desktopRuntime/resources/\"...");
+			
+			try {
+				extractJarTo(minecraftResJar, resourcesExtractTo);
+			}catch(IOException ex) {
+				System.err.println("ERROR: could not extract \"" + minecraftResJar.getName() + "\" to \"" + 
+						resourcesExtractTo.getAbsolutePath() + "\"!");
+				throw ex;
+			}
+		}else if(inRepoSource) {
+			System.out.println("Using in-repo resources from /sources/resources (skipping jar extraction)...");
 		}
 		
 		if(applyPullRequest) {
@@ -285,14 +296,18 @@ public class SetupWorkspace {
 			minecraftResJar.delete();
 		}
 		
-		System.out.println("Extracting files from \"minecraft_languages.zip\" to \"/javascript/lang/\"...");
-		
-		try {
-			extractJarTo(mcLanguagesZip, mcLanguagesExtractTo);
-		}catch(IOException ex) {
-			System.err.println("ERROR: could not extract \"" + mcLanguagesZip.getName() + "\" to \"" + 
-					mcLanguagesExtractTo.getAbsolutePath() + "\"!");
-			throw ex;
+		if(mcLanguagesZip.isFile()) {
+			System.out.println("Extracting files from \"minecraft_languages.zip\" to \"/javascript/lang/\"...");
+			
+			try {
+				extractJarTo(mcLanguagesZip, mcLanguagesExtractTo);
+			}catch(IOException ex) {
+				System.err.println("ERROR: could not extract \"" + mcLanguagesZip.getName() + "\" to \"" + 
+						mcLanguagesExtractTo.getAbsolutePath() + "\"!");
+				throw ex;
+			}
+		}else if(inRepoSource) {
+			System.out.println("Using in-repo languages from workspace template (skipping zip extraction)...");
 		}
 		
 		System.out.println("Creating eclipse project for desktop runtime...");
