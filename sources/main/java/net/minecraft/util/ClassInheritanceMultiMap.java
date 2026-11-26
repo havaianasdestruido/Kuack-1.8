@@ -1,6 +1,7 @@
 package net.minecraft.util;
 
 import java.util.AbstractSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,19 @@ import com.google.common.collect.Sets;
  */
 public class ClassInheritanceMultiMap<T> extends AbstractSet<T> {
 	private static final Set<Class<?>> field_181158_a = Sets.newHashSet();
+	/**+
+	 * EAGLER: memo of "which of this map's knownKeys isAssignableFrom this concrete class".
+	 * add()/remove() used to run Class.isAssignableFrom() against EVERY key in knownKeys for EVERY
+	 * entity operation, and knownKeys only ever grows for the life of a session (it accumulates
+	 * every entity class that is ever queried), so an entity add/remove cost O(keys) reflective
+	 * calls. Which keys match depends only on the concrete class and on this map's key set, so the
+	 * answer is cached per concrete class. The cache is per-instance (two sections can legitimately
+	 * have different key sets) and is dropped only when this instance learns a new key, which is the
+	 * only thing that can change the answer. Bounded by the number of distinct concrete entity
+	 * classes ever placed in this section; allocated lazily, so sections holding no entities cost
+	 * nothing.
+	 */
+	private Map<Class<?>, List<Class<?>>> field_181160_b;
 	private final Map<Class<?>, List<T>> map = Maps.newHashMap();
 	private final Set<Class<?>> knownKeys = Sets.newIdentityHashSet();
 	private final Class<T> baseClass;
@@ -49,6 +63,29 @@ public class ClassInheritanceMultiMap<T> extends AbstractSet<T> {
 
 	}
 
+	/**+
+	 * EAGLER: the memoised assignable-key list for a concrete class in this map.
+	 */
+	private List<Class<?>> func_181156_a(Class<?> concrete) {
+		if (this.field_181160_b == null) {
+			this.field_181160_b = new HashMap<>();
+		}
+
+		List<Class<?>> cached = this.field_181160_b.get(concrete);
+		if (cached == null) {
+			cached = Lists.newArrayList();
+			for (Class<?> oclass : this.knownKeys) {
+				if (oclass.isAssignableFrom(concrete)) {
+					cached.add(oclass);
+				}
+			}
+
+			this.field_181160_b.put(concrete, cached);
+		}
+
+		return cached;
+	}
+
 	protected void createLookup(Class<?> clazz) {
 		field_181158_a.add(clazz);
 
@@ -60,6 +97,10 @@ public class ClassInheritanceMultiMap<T> extends AbstractSet<T> {
 		}
 
 		this.knownKeys.add(clazz);
+		// EAGLER: a new key can change which keys match every concrete class in this map
+		if (this.field_181160_b != null) {
+			this.field_181160_b.clear();
+		}
 	}
 
 	protected Class<?> func_181157_b(Class<?> parClass1) {
@@ -75,10 +116,9 @@ public class ClassInheritanceMultiMap<T> extends AbstractSet<T> {
 	}
 
 	public boolean add(T parObject) {
-		for (Class oclass : this.knownKeys) {
-			if (oclass.isAssignableFrom(parObject.getClass())) {
-				this.func_181743_a(parObject, oclass);
-			}
+		List<Class<?>> assignable = func_181156_a(parObject.getClass());
+		for (int i = 0, l = assignable.size(); i < l; ++i) {
+			this.func_181743_a(parObject, assignable.get(i));
 		}
 
 		return true;
@@ -97,13 +137,12 @@ public class ClassInheritanceMultiMap<T> extends AbstractSet<T> {
 	public boolean remove(Object parObject) {
 		Object object = parObject;
 		boolean flag = false;
+		List<Class<?>> assignable = func_181156_a(object.getClass());
 
-		for (Class oclass : this.knownKeys) {
-			if (oclass.isAssignableFrom(object.getClass())) {
-				List list = (List) this.map.get(oclass);
-				if (list != null && list.remove(object)) {
-					flag = true;
-				}
+		for (int i = 0, l = assignable.size(); i < l; ++i) {
+			List list = (List) this.map.get(assignable.get(i));
+			if (list != null && list.remove(object)) {
+				flag = true;
 			}
 		}
 

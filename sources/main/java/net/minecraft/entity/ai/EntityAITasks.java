@@ -1,8 +1,10 @@
 package net.minecraft.entity.ai;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.profiler.Profiler;
 import net.lax1dude.eaglercraft.v1_8.log4j.LogManager;
 import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
@@ -38,6 +40,15 @@ public class EntityAITasks {
 	 * executed.
 	 */
 	private List<EntityAITasks.EntityAITaskEntry> executingTaskEntries = Lists.newArrayList();
+	/**+
+	 * EAGLER: identity-set mirror of executingTaskEntries. Every "is this task already running?"
+	 * query below (in onUpdateTasks and inside canUse's per-task loop) used to be a linear scan of
+	 * executingTaskEntries, which made a single onUpdateTasks pass O(tasks^2) and canUse's inner
+	 * loop O(tasks^3) across a whole setup pass. EntityAITaskEntry does not override equals or
+	 * hashCode, so a plain HashSet gives exactly the same identity semantics as List.contains for
+	 * O(1). Every mutation of executingTaskEntries is mirrored here.
+	 */
+	private final Set<EntityAITasks.EntityAITaskEntry> executingTaskSet = Sets.newHashSet();
 	private final Profiler theProfiler;
 	private int tickCount;
 	private int tickRate = 3;
@@ -64,7 +75,7 @@ public class EntityAITasks {
 					.next();
 			EntityAIBase entityaibase = entityaitasks$entityaitaskentry.action;
 			if (entityaibase == task) {
-				if (this.executingTaskEntries.contains(entityaitasks$entityaitaskentry)) {
+				if (this.executingTaskSet.remove(entityaitasks$entityaitaskentry)) {
 					entityaibase.resetTask();
 					this.executingTaskEntries.remove(entityaitasks$entityaitaskentry);
 				}
@@ -88,7 +99,7 @@ public class EntityAITasks {
 					}
 
 					entityaitasks$entityaitaskentry = (EntityAITasks.EntityAITaskEntry) iterator.next();
-					boolean flag = this.executingTaskEntries.contains(entityaitasks$entityaitaskentry);
+					boolean flag = this.executingTaskSet.contains(entityaitasks$entityaitaskentry);
 					if (!flag) {
 						break;
 					}
@@ -97,6 +108,7 @@ public class EntityAITasks {
 							|| !this.canContinue(entityaitasks$entityaitaskentry)) {
 						entityaitasks$entityaitaskentry.action.resetTask();
 						this.executingTaskEntries.remove(entityaitasks$entityaitaskentry);
+						this.executingTaskSet.remove(entityaitasks$entityaitaskentry);
 						break;
 					}
 				}
@@ -105,6 +117,7 @@ public class EntityAITasks {
 						&& entityaitasks$entityaitaskentry.action.shouldExecute()) {
 					entityaitasks$entityaitaskentry.action.startExecuting();
 					this.executingTaskEntries.add(entityaitasks$entityaitaskentry);
+					this.executingTaskSet.add(entityaitasks$entityaitaskentry);
 				}
 			}
 		} else {
@@ -116,6 +129,7 @@ public class EntityAITasks {
 				if (!this.canContinue(entityaitasks$entityaitaskentry1)) {
 					entityaitasks$entityaitaskentry1.action.resetTask();
 					iterator1.remove();
+					this.executingTaskSet.remove(entityaitasks$entityaitaskentry1);
 				}
 			}
 		}
@@ -151,11 +165,11 @@ public class EntityAITasks {
 			if (entityaitasks$entityaitaskentry != taskEntry) {
 				if (taskEntry.priority >= entityaitasks$entityaitaskentry.priority) {
 					if (!this.areTasksCompatible(taskEntry, entityaitasks$entityaitaskentry)
-							&& this.executingTaskEntries.contains(entityaitasks$entityaitaskentry)) {
+							&& this.executingTaskSet.contains(entityaitasks$entityaitaskentry)) {
 						return false;
 					}
 				} else if (!entityaitasks$entityaitaskentry.action.isInterruptible()
-						&& this.executingTaskEntries.contains(entityaitasks$entityaitaskentry)) {
+						&& this.executingTaskSet.contains(entityaitasks$entityaitaskentry)) {
 					return false;
 				}
 			}

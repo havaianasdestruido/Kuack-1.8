@@ -2,7 +2,6 @@ package net.minecraft.entity.monster;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Sets;
-import java.util.Collections;
 import java.util.List;
 import net.lax1dude.eaglercraft.v1_8.EaglercraftRandom;
 import java.util.Set;
@@ -421,11 +420,10 @@ public class EntityEnderman extends EntityMob {
 			double d0 = this.getTargetDistance();
 			List list = this.taskOwner.worldObj.getEntitiesWithinAABB(EntityPlayer.class,
 					this.taskOwner.getEntityBoundingBox().expand(d0, 4.0D, d0), this.targetEntitySelector);
-			Collections.sort(list, this.theNearestAttackableTargetSorter);
 			if (list.isEmpty()) {
 				return false;
 			} else {
-				this.player = (EntityPlayer) list.get(0);
+				this.player = (EntityPlayer) findNearest(list, this.taskOwner);
 				return true;
 			}
 		}
