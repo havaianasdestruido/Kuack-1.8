@@ -1,5 +1,6 @@
+# Kuack 1.8
 
-# EaglercraftX 1.8
+Pronunced as `KILL-ack`. <!-- a-ACK!! -->
 
 ### Play Minecraft 1.8 in your browser, supports singleplayer and multiplayer
 
