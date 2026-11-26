@@ -85,6 +85,14 @@ public class RenderChunk {
 
 	}
 
+	/**
+	 * @return this chunk's stable index inside the ViewFrustum it belongs to,
+	 *         unique and in the range 0 .. renderChunks.length - 1
+	 */
+	public int getIndex() {
+		return this.index;
+	}
+
 	public boolean setFrameIndex(int frameIndexIn) {
 		if (this.frameIndex == frameIndexIn) {
 			return false;

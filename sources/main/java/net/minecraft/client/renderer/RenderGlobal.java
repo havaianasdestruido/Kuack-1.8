@@ -915,7 +915,8 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			// the built-in SodiumMC renderer keeps its own cached chunk lists,
 			// it does not allocate anything per frame
 			this.sodiumRenderChunks = this.sodiumRenderer.getRenderChunks(this.sodiumProvidor, d3,
-					d4 + (double) viewEntity.getEyeHeight(), d5, this.renderDistanceChunks);
+					d4 + (double) viewEntity.getEyeHeight(), d5, this.renderDistanceChunks,
+					viewEntity.rotationPitch, viewEntity.rotationYaw);
 		} else if (!flag && this.displayListEntitiesDirty) {
 			this.displayListEntitiesDirty = false;
 			this.renderInfosChanged = true;

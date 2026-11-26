@@ -55,19 +55,47 @@ def dist_sq(pos, x, y, z):
     return dx * dx + dy * dy + dz * dz
 
 
-def insertion_sort(chunks, x, y, z, translucent):
+def keyed_sort(chunks, x, y, z, from_scratch):
+    """Mirror of SodiumChunkRenderer.sort(), which orders the candidate list.
+
+    The list is normally sorted by insertion sort because a camera gliding
+    forwards barely reorders it, but after a candidate rebuild the previous
+    order is worthless and insertion sort degenerates into a quadratic walk,
+    so that case goes through a merge sort instead. Both must agree.
+    """
+    keys = [dist_sq(c, x, y, z) for c in chunks]
+    if from_scratch and len(chunks) > 64:
+        order = sorted(range(len(chunks)), key=lambda i: keys[i])
+        return [chunks[i] for i in order]
     chunks = list(chunks)
     for i in range(1, len(chunks)):
         chunk = chunks[i]
-        d = dist_sq(chunk, x, y, z)
+        key = keys[i]
         j = i - 1
-        while j >= 0 and dist_sq(chunks[j], x, y, z) > d:
+        while j >= 0 and keys[j] > key:
             chunks[j + 1] = chunks[j]
+            keys[j + 1] = keys[j]
             j -= 1
         chunks[j + 1] = chunk
-    if translucent:
-        chunks.reverse()
+        keys[j + 1] = key
     return chunks
+
+
+def translucent_pass(chunks):
+    """The translucent layer is drawn by walking the sorted list backwards."""
+    return list(reversed(chunks))
+
+
+def visible_filter(visible, dirty, generation):
+    """Mirror of markVisible()/wasVisible(): an O(1) stamp, not a scan.
+
+    RenderGlobal asks "was this chunk visible last frame" once per dirty chunk.
+    A teleport can leave thousands of them dirty in the same frame, so a linear
+    scan of the visible list per dirty chunk is quadratic; the renderer keeps a
+    per chunk index stamp table instead.
+    """
+    marks = dict.fromkeys(visible, generation)
+    return [index for index in dirty if marks.get(index) == generation]
 
 
 def rebuild_candidates(chunk_x, chunk_y, chunk_z, distance, view, get_chunk):
@@ -132,27 +160,38 @@ class SodiumConfigTest(unittest.TestCase):
 class SodiumSortTest(unittest.TestCase):
     def test_front_to_back(self):
         chunks = [(0, 0, 0), (32, 0, 0), (16, 0, 0), (48, 0, 0)]
-        order = insertion_sort(chunks, 8.0, 8.0, 8.0, translucent=False)
+        order = keyed_sort(chunks, 8.0, 8.0, 8.0, from_scratch=False)
         self.assertEqual(order, [(0, 0, 0), (16, 0, 0), (32, 0, 0), (48, 0, 0)])
 
     def test_translucent_pass_is_exact_reverse(self):
         chunks = [(48, 0, 0), (0, 0, 0), (32, 0, 0), (16, 0, 0)]
-        opaque = insertion_sort(chunks, 8.0, 8.0, 8.0, translucent=False)
-        translucent = insertion_sort(chunks, 8.0, 8.0, 8.0, translucent=True)
-        self.assertEqual(translucent, list(reversed(opaque)),
+        opaque = keyed_sort(chunks, 8.0, 8.0, 8.0, from_scratch=False)
+        self.assertEqual(translucent_pass(opaque), list(reversed(opaque)),
                          'translucent blending requires back to front')
 
-    def test_sort_is_stable_for_equal_distances(self):
-        # two sections centered around the camera are equidistant, neither may
-        # be dropped or duplicated by the swap based reverse
-        chunks = [(0, 0, 0), (16, 0, 0)]
-        order = insertion_sort(chunks, 16.0, 8.0, 8.0, translucent=True)
-        self.assertEqual(sorted(order), sorted(chunks))
-        self.assertEqual(len(order), 2)
+    def test_both_sorts_agree(self):
+        # 300 chunks is well past the threshold where a rebuild uses merge sort
+        chunks = [((i * 37) % 320, ((i * 11) % 16) * 16, (i * 53) % 320) for i in range(300)]
+        self.assertEqual(keyed_sort(chunks, 160.0, 64.0, 160.0, from_scratch=True),
+                         keyed_sort(chunks, 160.0, 64.0, 160.0, from_scratch=False))
+
+    def test_merge_sort_keeps_every_chunk(self):
+        chunks = [((i * 37) % 320, 64, (i * 53) % 320) for i in range(500)]
+        order = keyed_sort(chunks, 160.0, 64.0, 160.0, from_scratch=True)
+        self.assertEqual(sorted(order), sorted(chunks), 'no chunk may be lost or duplicated')
+        keys = [dist_sq(c, 160.0, 64.0, 160.0) for c in order]
+        self.assertEqual(keys, sorted(keys), 'output must be non-decreasing in distance')
 
     def test_already_sorted_list_is_untouched(self):
         chunks = [(0, 0, 0), (16, 0, 0), (32, 0, 0)]
-        self.assertEqual(insertion_sort(chunks, 8.0, 8.0, 8.0, False), chunks)
+        self.assertEqual(keyed_sort(chunks, 8.0, 8.0, 8.0, from_scratch=False), chunks)
+
+    def test_sort_is_stable_for_equal_distances(self):
+        # two sections centered around the camera are equidistant, neither may
+        # be dropped or duplicated
+        chunks = [(0, 0, 0), (16, 0, 0)]
+        order = keyed_sort(chunks, 16.0, 8.0, 8.0, from_scratch=False)
+        self.assertEqual(order, chunks)
 
 
 class SodiumCandidateTest(unittest.TestCase):
@@ -191,8 +230,13 @@ class SodiumCandidateTest(unittest.TestCase):
 
 
 def should_rescan(dirty, prev_chunk, chunk, prev_distance, distance):
-    """Mirror of the cache invalidation test in getRenderChunks()."""
+    """Mirror of the candidate invalidation test in getRenderChunks()."""
     return dirty or chunk != prev_chunk or distance != prev_distance
+
+
+def should_rebuild_view(candidates_stale, moved, turned):
+    """Mirror of the early return: nothing moved, nothing turned, nothing dirty."""
+    return candidates_stale or moved or turned
 
 
 class SodiumCacheTest(unittest.TestCase):
@@ -212,6 +256,39 @@ class SodiumCacheTest(unittest.TestCase):
     def test_rescan_when_marked_dirty(self):
         # loadRenderers()/updateChunkPositions() invalidate the cached list
         self.assertTrue(should_rescan(True, (0, 4, 0), (0, 4, 0), 8, 8))
+
+    def test_stationary_camera_reuses_the_list(self):
+        self.assertFalse(should_rebuild_view(False, False, False))
+
+    def test_view_is_rebuilt_when_anything_changes(self):
+        self.assertTrue(should_rebuild_view(True, False, False))
+        self.assertTrue(should_rebuild_view(False, True, False))
+        self.assertTrue(should_rebuild_view(False, False, True))
+
+
+class SodiumVisibilityTest(unittest.TestCase):
+    def setUp(self):
+        # indices of the chunks in the visible list, as RenderChunk.getIndex()
+        # would report them (5 chunks visible out of 2000 frustum slots)
+        self.visible = [7, 11, 400, 1201, 1999]
+
+    def test_only_visible_chunks_survive_the_cull(self):
+        dirty = [7, 8, 11, 400, 500, 1201, 1999]
+        self.assertEqual(visible_filter(self.visible, dirty, 3), [7, 11, 400, 1201, 1999])
+
+    def test_nothing_visible_means_nothing_rebuilt(self):
+        self.assertEqual(visible_filter(self.visible, [0, 1, 2], 3), [])
+
+    def test_stamp_from_a_previous_frame_does_not_count(self):
+        # a chunk that was visible last frame but has since left the view must
+        # not keep being rebuilt, so the stamp has to be per frame, not sticky
+        marks = dict.fromkeys(self.visible, 3)   # what markVisible() wrote
+        self.assertEqual(marks.get(7), 3)
+        self.assertNotEqual(marks.get(7), 4, 'generation 4 must not match the stale stamp')
+
+    def test_out_of_range_indices_are_ignored(self):
+        # a chunk from a previous ViewFrustum can have an index past the table
+        self.assertEqual(visible_filter([7], [7, 99999], 1), [7])
 
 
 class SodiumBudgetTest(unittest.TestCase):
