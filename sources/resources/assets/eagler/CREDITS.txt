@@ -745,3 +745,14 @@
  * THE SOFTWARE.
  
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ Bundled Resource Packs
+ ~~~~~~~~~~~~~~~~~~~~~~
+
+ Xray Ultimate (v5.4.4):
+  - Created by Filmjolk
+
+ 1994 Retro (0.1.2.1V):
+  - Created by WindarteArg
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
