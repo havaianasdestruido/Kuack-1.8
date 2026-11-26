@@ -216,13 +216,22 @@ range-check logic.
 | `bench_blockpos.js` | Node.js replica: getHeight/isAreaLoaded allocation counts + recheckGaps probe logic + 1,444 boundary differential cases | 0 allocs in probe path; 0 mismatches |
 
 **Compilation.** `./perfbench/compile_main.sh` compiles the entire tree with ECJ and fails only if a
-file that used to compile starts failing. The current expected set is **1,525 problems across 105
-files** on both JDK 17 and JDK 25 — all pre-existing platform-stub gaps (TeaVM/OpenGL). Earlier
-reports recorded 1,525/104 or 1,527/105 from older stub revisions; the current committed
-`perfbench/errorfiles.baseline.txt` has 105 files and `./perfbench/run_all.sh` verifies the gate on
-both JDKs with **no new failing files**. Nothing in any change touches TeaVM-incompatible APIs:
-`java.util` collections, arrays, `Math.*` and the engine's own tables only — no threads, no
-reflection in production, no `ThreadLocal`, no unbounded caches.
+file that used to compile starts failing. The committed pristine-HEAD baseline is **1,525 problems
+across 105 files**. After the current branch's one-word `World.isChunkLoaded` visibility fix, both JDK
+17 and JDK 25 report **1,524 problems across 104 files**: `RenderGlobal.java` now compiles, and no
+new file fails. Earlier reports recorded 1,525/104 or 1,527/105 from older stub revisions; the
+baseline file intentionally remains at 105 files so a regression is still detected. Nothing in any
+change touches TeaVM-incompatible APIs: `java.util` collections, arrays, `Math.*` and the engine's
+own tables only — no threads, no reflection in production, no `ThreadLocal`, no unbounded caches.
+
+**CI investigation.** Both base `main` run `45869906106` / job `140082318468` and the initial PR #25
+run `45882359151` / job `140124542039` failed at `RenderGlobal.java:574` with
+`isChunkLoaded(int,int,boolean) has protected access in World`; the pristine `main` failure proves it
+was a pre-existing build break, not caused by this performance work. The current branch makes that
+method `public` — a one-word visibility widening, no dispatch/body/gameplay change — so the existing
+cross-package call compiles. A post-fix `./perfbench/run_all.sh` passed all repeatable steps. CI uses
+real JDK 17 `javac`, license-restricted inputs and the Maven TeaVM cache, so its `Compile web client`
+check is the authoritative full-client build result.
 
 **Benchmark environment.** Earlier entries (#7-#9) could not be run on a JVM in this sandbox and were
 verified with faithful Node.js algorithm replicas; that is still true for those numbers. For #10 and
@@ -305,8 +314,10 @@ java -cp "<classes>:perfbench/build/main:perfbench/build/stubs" perfbench.Verify
 ## Addendum — current cross-runtime PR (deliverable G, 2026-11-26)
 
 This addendum is the final performance report for the current branch. Earlier sections document prior
-algorithmic work; numbers below are from the final `./perfbench/run_all.sh` run in
-`perfbench/results/*.txt`. **No full-game FPS or Chromium frame-time was measured.**
+algorithmic work; numbers below are from one captured `./perfbench/run_all.sh` run in the gitignored
+`perfbench/results/*.txt` logs. A later post-CI-fix rerun passed all steps and overwrote those logs;
+small timing differences on this noisy 2-vCPU sandbox are expected. **No full-game FPS or Chromium
+frame-time was measured.**
 
 ### Affected files and methods
 
@@ -315,6 +326,7 @@ algorithmic work; numbers below are from the final `./perfbench/run_all.sh` run 
 | `sources/main/java/net/minecraft/client/renderer/texture/MipmapGammaBlend.java` | `blend`, `blendComponent`, `gamma22` | Up to 20 `Math.pow` calls per output texel: 4/16 decodes `(float)Math.pow((float)(v&255)/255.0F,2.2)` + 4 encodes `Math.pow(avg,1/2.2)` |
 | `sources/main/java/net/minecraft/client/renderer/texture/GeneratedGammaTables.java` | generated constant arrays + `activeTable()` / `gamma22()` | New; no runtime table generation |
 | `sources/main/java/net/minecraft/client/renderer/EntityRenderer.java` | `updateLightmap` | Repeated `getLightBrightnessTable()` lookup and three invariant float expressions inside a 256-iteration loop |
+| `sources/main/java/net/minecraft/world/World.java` | `isChunkLoaded(int,int,boolean)` visibility `protected` → `public` | One-word build-compatibility fix for the existing `RenderGlobal` call; no behavior or gameplay change |
 | `perfbench/gen_luts.py`, `perfbench/native/gen_header.py`, `perfbench/wasm/gen_wat.js` | development-time generators | No runtime dependency |
 | `perfbench/run_all.sh`, `run_bench.sh`, `compile_main.sh`, `jit_gc_profile.sh` | repeatable suite | Before/after, equivalence, JIT/JFR |
 | `perfbench/teavm/`, `perfbench/js/`, `perfbench/wasm/`, `perfbench/native/`, `perfbench/src/perfbench/`, `tests/test_generated_luts.py` | real TeaVM/V8 probe, V8 math bench, WASM/native PoCs, JVM verifiers, regeneration tests | Development/benchmark only |
@@ -352,6 +364,11 @@ with `VerifyMatrixRotate` / `MatrixRotateBench` and does not modify that file.
 | Startup trade-off | JVM cold clinit 853.50 µs JDK17 / 826.02 µs JDK25 vs 202.75 / 199.07 µs old runtime table; steady-state lookup parity 0.523 / 0.522 ns/op. TeaVM parse/clinit 3.541/2.675 ms vs 3.465/2.670 ms first process |
 
 ### Original vs optimized times and percentage changes
+
+The table below is one captured `./perfbench/run_all.sh` snapshot. A later post-CI-fix rerun passed
+all steps and overwrote the gitignored result logs; small timing differences on this noisy 2-vCPU
+sandbox are expected. The reproducible artifacts are the checked-in harnesses, generators and
+equivalence checks, not a single nanosecond median.
 
 | Runtime / workload | Original | Optimized | Change |
 |---|---:|---:|---|
@@ -446,9 +463,11 @@ a browser input-distribution capture, and a GPU-aware WASM/native interop study.
 here.
 
 **Unresolved correctness risks / unexecuted tests:** real Chromium/full-game FPS/frame-time p95/p99;
-full `dist/classes.js` client build with real JDK 17 `javac` and license-restricted inputs (attempt
-failed here only because the sandbox JRE lacks `javac`; an uncommitted ECJ shim then hit a pre-existing
-`RenderGlobal.java:574` visibility diagnostic); desktop LWJGL launch; JNI/Panama; GraalVM Native
-Image / Graal JIT; SpiderMonkey/JavaScriptCore; WASM SIMD; browser profile cache behavior; real game
-texture-atlas input distribution. The one-time JVM/JS startup regression from embedding constants is
-documented and accepted, not hidden. No numbers are fabricated for unavailable environments.
+full `dist/classes.js` client build **in this sandbox** (the JRE has no `javac`; after the visibility
+fix a temporary ECJ shim compiled all 2,452 files, then TeaVM 0.9.2 rejected the shim-generated
+bytecode); desktop LWJGL launch; JNI/Panama; GraalVM Native Image / Graal JIT;
+SpiderMonkey/JavaScriptCore; WASM SIMD; browser profile cache behavior; real game texture-atlas
+input distribution. CI uses real JDK 17 `javac`, license-restricted inputs and the Maven TeaVM cache,
+so its `Compile web client` check is the authoritative full-client build result. The one-time JVM/JS
+startup regression from embedding constants is documented and accepted, not hidden. No numbers are
+fabricated for unavailable environments.

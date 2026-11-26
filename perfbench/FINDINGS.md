@@ -4,7 +4,7 @@ Working notes for the algorithmic-hotspot sweep. Every entry records: file(s), o
 bottleneck, old vs new complexity, the verification used, and the measured benchmark.
 
 Benchmarks run under `JAVA_HOME=/tmp/jdkpkg/jdk4py/java-runtime`, `-Xmx2g -XX:+UseParallelGC`.
-Full-tree compile gate: `./perfbench/compile_main.sh` (current expected set: 1525 problems / 105 error files; see REPORT.md for reconciliation).
+Full-tree compile gate: `./perfbench/compile_main.sh` (current after the CI visibility fix: 1524 problems / 104 error files; pristine HEAD baseline 1525 / 105, see REPORT.md).
 
 ---
 
@@ -535,7 +535,8 @@ HotSpot 17 and 25. Real TeaVM 0.9.2 → V8: `gamma_vs_prechange_browser_table` 2
 difference vs verbatim vanilla *browser arithmetic* is pre-existing in the shipped runtime table and
 is preserved, not introduced.
 
-**Benchmark** (final `./perfbench/run_all.sh` logs; medians; microbench only, no FPS):
+**Benchmark** (one captured final `./perfbench/run_all.sh` snapshot; medians; microbench only, no
+FPS):
 
 | workload | before | after | change |
 |---|---:|---:|---|

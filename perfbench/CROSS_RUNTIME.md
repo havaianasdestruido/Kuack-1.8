@@ -96,7 +96,7 @@ These are three different concepts and were kept separate:
 |---|---|---|---|---|---|---|---|
 | **Chromium/V8 existing Java→JS output** | Built `classes.js`, browser profile, WebGL/DOM, assets | Supported production path; the shipped game is already JS; project platform code targets it | Browser sandbox and GPU/frame pacing cannot be measured in this sandbox; V8 version differences possible | Browser parse + TeaVM clinit + GL init | Static web client / offline HTML | Low for existing build; browser harness missing here | **Supported path; full Chromium run unavailable** |
 | **Native Java/JVM desktop** | Full JDK, LWJGL/GLFW native libs, desktop assets, replacement for browser JSO | `sources/lwjgl/java` and `desktopRuntime` jars show an intended desktop path; HotSpot JIT/intrinsics available and measured here | Browser APIs are pervasive in `sources/teavm/java`: 146 `@JSBody`, 134 `JSObject`, 92 `window`, 87 `WebGL`, 23 `WebSocket`, 20 `navigator`, 17 `localStorage`, 11 `document`, 6 `XMLHttpRequest`. WebGL, DOM, networking and storage need real platform adapters; a dummy adapter would break gameplay | JVM class loading + JIT warm-up; no browser parse | Native launcher / JRRE bundling | High (platform layer, GL, audio, input, assets, networking) | **Experimental source path; full launch not proven** |
-| **Java bytecode / HotSpot optimization** | ECJ/JDK 17, platform stubs for compile-only tests | Real classes can be compiled with ECJ; HotSpot 17/25 inlines `MipmapGammaBlend.gamma22`, intrinsifies `Math.pow` and keeps lookup steady-state at parity with a runtime-generated table | Compile gate reports 1,525 expected platform-stub problems across 105 files; no full JVM game launch; no JMH dependency | Cold clinit measured: 853.50 µs JDK17 / 826.02 µs JDK25 for embedded constants vs 202.75 / 199.07 µs for a 256-`Math.pow` runtime table | Only affects JVM/desktop path unless source is shared with TeaVM | Low for source-level changes | **Measured PoC + shipped shared-source optimization** |
+| **Java bytecode / HotSpot optimization** | ECJ/JDK 17, platform stubs for compile-only tests | Real classes can be compiled with ECJ; HotSpot 17/25 inlines `MipmapGammaBlend.gamma22`, intrinsifies `Math.pow` and keeps lookup steady-state at parity with a runtime-generated table | Compile gate reports 1,524 remaining platform-stub problems across 104 files after the CI visibility fix (pristine HEAD: 1,525 / 105); no full JVM game launch; no JMH dependency | Cold clinit measured: 853.50 µs JDK17 / 826.02 µs JDK25 for embedded constants vs 202.75 / 199.07 µs for a 256-`Math.pow` runtime table | Only affects JVM/desktop path unless source is shared with TeaVM | Low for source-level changes | **Measured PoC + shipped shared-source optimization** |
 | **Java-to-JavaScript / TeaVM 0.9.2** | JDK 17, TeaVM 0.9.2 jars, `TeaVMBridge.jar`, Node/Chromium to run JS | Production transpiler; probe built with the real bridge and `ADVANCED`; generated JS inspected | Java `float` arithmetic lowers to JS doubles with no `Math.fround`; `float[]` constants become `$rt_createFloatArrayFromData([...])` / `Float32Array`; JDK 25 class files fail TeaVM 0.9.2 relocated ASM (`major version 69`) | Gamma-only JS: parse 3.541 ms / clinit 2.675 ms embedded vs 3.465 / 2.670 ms runtime-generated | Generated `classes.js`; no new runtime | Low–medium (generator + exactness) | **Supported; real TeaVM JS probe shipped as dev harness** |
 | **JS/V8-specific optimizations** | Node/V8, generated JS, deterministic inputs | Typed arrays, integer indexing and method inlining measured; `Math.pow` is ~40.6 ns vs ~0.84 ns gamma LUT; `Math.sin` ~9.97 ns vs ~1.39 ns f32 LUT | `Math.sqrt` 1.61 ns is already faster than any table; ordinary arrays / interpolation / `Math.floor` indexing are not wins; hidden-class/GC effects are workload-specific | Per-module parse + JIT warm-up; 256-`Math.pow` table construction 21.5 µs vs 5.9 µs literal fill in V8 | JS code only | Low for measured micro-optimizations | **Measured; only exact bounded-domain LUT shipped** |
 | **WebAssembly isolated subsystem** | WAT/WASM toolchain, coarse-grained interface, JS↔WASM boundary | Viable for a self-contained 256-value gamma decode; 1,478-byte module; coarse batch LUT 0.680 ns/op at n=65,536 vs 43.165 ns/op pow | MVP WASM has no `f64.pow`; prototype imports JS `Math.pow`. Fine-grained per-op WASM call costs 2.755 ns vs 0.939 ns JS LUT. TeaVM 0.9.2 classic WASM lacks the JSO interop this game uses; whole-game conversion would need a new interop layer | `WebAssembly.compile` 0.346 ms, instantiate 0.315 ms, 1 MiB linear memory | Adds a `.wasm` artifact and JS glue; browser security/CORS/caching considerations | Medium for one kernel; very high for full game | **Experimental PoC; not production** |
@@ -138,23 +138,34 @@ its `pow` baseline is glibc `libm`. Neither PoC transpiles the game. A whole-gam
 would also need to replace JSO/WebGL/DOM/WebSocket bindings; TeaVM's JSO documentation notes classic
 WASM/WASI does not provide the JavaScript interop that this browser path uses.
 
-### A.7 Full client build attempt (explicitly unavailable)
+### A.7 CI visibility fix and full-client build attempt
 
 The real headless compiler was attempted with a config pointing at the in-repo patched source,
 `/tmp/eagler-maven` TeaVM jars, a PyPI-provided `ffmpeg` binary and JDK 17. It reached resource
-packing and source scanning. Two sandbox blockers prevented completion:
+packing, source scanning and Java compilation. Both the base `main` CI run `45869906106` / job
+`140082318468` and the initial PR #25 run `45882359151` / job `140124542039` failed at
+`sources/main/java/net/minecraft/client/renderer/RenderGlobal.java:574` because
+`World.isChunkLoaded(int,int,boolean)` was `protected` but called from another package. This branch
+now includes a **one-word visibility fix** (`protected` → `public`, no behavior change) for that
+existing call, satisfying `PROMPT.md`'s "builds must keep working" rule. It also removes
+`RenderGlobal.java` from the ECJ error set (1,525 / 105 → 1,524 / 104), with no gameplay or rendering
+behavior change. A post-fix `./perfbench/run_all.sh` passed all repeatable steps.
+
+Sandbox-only blockers to a complete local `dist/classes.js` build remain:
 
 1. `jdk4py` supplies a **JRE without `javac`**; the headless compiler invokes
    `<repo>/bin/javac`. A temporary, uncommitted ECJ-as-`javac` shim was used only to see how far the
-   build could get; it was removed afterwards.
-2. With the shim, ECJ reported a pre-existing diagnostic unrelated to this PR:
-   `sources/main/java/net/minecraft/client/renderer/RenderGlobal.java:574` —
-   `World.isChunkLoaded(int,int,boolean) ... is not visible`. No file in this PR touches `RenderGlobal`
-   or `World`. CI uses a real JDK 17 `javac`, so CI remains the authoritative full-client build check.
+   build could get; it was removed afterwards. After the visibility fix, that shim compiled all 2,452
+   source files successfully, but TeaVM 0.9.2's class parser then rejected the ECJ-generated bytecode
+   (`ProgramParser: Index 1 is out of range`). A direct `TeaVMBridgeImpl` probe reproduced the same
+   parser exception, confirming it is an artifact of replacing `javac` with ECJ, not a
+   production-source failure.
+2. Maven Central / `raw.githubusercontent.com` are unreachable here; TeaVM jars came from a GitHub
+   mirror for the probe. CI has real JDK 17 `javac`, license-restricted inputs and the Maven TeaVM
+   cache, so its `Compile web client` check is the authoritative full-client build result.
 
-Maven Central / `raw.githubusercontent.com` were also unreachable from this sandbox; TeaVM jars were
-obtained from a GitHub mirror for the probe. The full `dist/classes.js` build and browser launch are
-therefore marked **unavailable**, not claimed as passing.
+The full `dist/classes.js` build and browser launch are therefore **unavailable in this sandbox**, not
+claimed as passing locally. No full-game FPS is claimed.
 
 ---
 
@@ -182,7 +193,7 @@ WABT_MODULE=/path/to/wabt \
 | 01 | `python3 -m unittest discover -s tests -v` | 12 tests: generator regeneration, constant-only sources, shell syntax |
 | 02/03 | `bash -n ...`, `python3 -m py_compile ...` | Script/Python syntax |
 | 04 | `gen_luts.py --check`, `gen_header.py --check`, `gen_wat.js --check` | Deterministic source regeneration |
-| 05/06 | `JAVA_HOME=<JDK17/JDK25> ./perfbench/compile_main.sh` | Full-tree ECJ gate: 1,525 expected problems / 105 expected files, no new error files |
+| 05/06 | `JAVA_HOME=<JDK17/JDK25> ./perfbench/compile_main.sh` | Full-tree ECJ gate: currently 1,524 problems / 104 files vs pristine HEAD baseline 1,525 / 105, no new error files |
 | 07/08 | `JAVA_HOME=<JDK17/JDK25> PERFBENCH_REBUILD=1 ./perfbench/run_bench.sh perfbench.AllBench` | JVM verification + microbenchmarks on both HotSpot versions |
 | 09–11 | `./perfbench/teavm/build_probe.sh`, `run_probe.js`, `run_startup.js` | Real TeaVM 0.9.2 JS, V8 steady-state / equivalence / startup |
 | 12 | `node ./perfbench/js/bench_v8_math.js` | V8 `Math.*`, typed/ordinary arrays, indexing, fround, method calls |
@@ -206,6 +217,12 @@ node ./perfbench/js/bench_v8_math.js
 numbers below are isolated deterministic workloads; a 4× filter speedup is not a 4× FPS claim.
 
 ### E.1 Final measured snapshot (from `perfbench/results/*.txt`)
+
+These numbers are one captured `./perfbench/run_all.sh` snapshot. A later rerun after the CI
+visibility fix passed every step and overwrote the gitignored `perfbench/results/*.txt` logs; on this
+noisy 2-vCPU sandbox, nanosecond-scale medians shift slightly between runs. The checked-in sources,
+commands, generators and equivalence counts are the reproducible artifacts, not any single timing
+median. Full-game FPS remains unavailable.
 
 | Workload | Original | Optimized | Change |
 |---|---:|---:|---|
