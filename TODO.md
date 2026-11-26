@@ -3,8 +3,9 @@
 everything that is **bold** is a prority.
 
 
-- [ ] **add [SodiumMC](https://github.com/CaffeineMC/sodium) baked-in with the game**
+- [x] **add [SodiumMC](https://github.com/CaffeineMC/sodium) baked-in with the game**
 - [ ] **add [Distant Horizons](https://gitlab.com/distant-horizons-team/distant-horizons) baked-in with the game**
+- [ ] compile to WASM instead of JS, since it's way faster and TeaVM supports it natively.
 - [ ] **add [in-game music](https://bafybeiayojww5jfyzvlmtuk7l5ufkt7nlfto7mhwmzf2vs4bvsjd5ouiuq.ipfs.nftstorage.link/?filename=Music_For_Eaglercraft.zip)**
 - [ ] **add new config "performance presets" where the user can change between presets made for ultra low-end devices up to high-end devices**
 - - [ ] Toaster preset mode
@@ -13,10 +14,10 @@ everything that is **bold** is a prority.
   - [ ] Bacteria preset mode 
 - [ ] (better) mobile support
 - - [ ] Joysticks, better fullscreen support, etc.
-- [ ] performance optimizations
+- [x] performance optimizations
   - [x] fixing some hotloops and removed barely used code
     - [x] math/LUT sweep: `Matrix4f.rotate` now uses the engine's sine table (2.42x per rotation) and the mipmap gamma filter uses a 256-entry decode table (4.6x) — see `perfbench/FINDINGS.md` #10/#11
-  - [ ] particle physics: `EntityFX` runs the full entity collision path (`World.getCollidingBoundingBoxes`, 94.8 ns/call, ~0.76 ms/tick at 4,000 particles) — needs allocation reuse in collision code, tracked at the top of `perfbench/HOTSPOTS.md`
+  - [ ] particle physics: `EntityFX` runs the full entity collision path (`World.getCollidingBoundingBoxes`, 79-95 ns/call, ~0.76 ms/tick at 4,000 particles) — needs allocation reuse in collision code, tracked at the top of `perfbench/HOTSPOTS.md`
   - [ ] `BlockModelRenderer` per-block allocations and the AO property lookups (see `perfbench/HOTSPOTS.md`)
 - [ ] toggle between reporting or not that the client is cracked (for some servers that rejects cracked users, use at your own risk, dont abuse this or you may get banned from some servers, dont be an asshole)
 - - [ ] _oficial client spoofing_
