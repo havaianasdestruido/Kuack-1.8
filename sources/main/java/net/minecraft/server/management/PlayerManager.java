@@ -335,7 +335,7 @@ public class PlayerManager {
 	}
 
 	class PlayerInstance {
-		private final List<EntityPlayerMP> playersWatchingChunk = Lists.newArrayList();
+		private final java.util.Set<EntityPlayerMP> playersWatchingChunk = com.google.common.collect.Sets.newLinkedHashSet();
 		private final ChunkCoordIntPair chunkCoords;
 		private short[] locationOfBlockChange = new short[64];
 		private int numBlocksToUpdate;
@@ -428,8 +428,7 @@ public class PlayerManager {
 		}
 
 		public void sendToAllPlayersWatchingChunk(Packet thePacket) {
-			for (int i = 0; i < this.playersWatchingChunk.size(); ++i) {
-				EntityPlayerMP entityplayermp = (EntityPlayerMP) this.playersWatchingChunk.get(i);
+			for (EntityPlayerMP entityplayermp : this.playersWatchingChunk) {
 				if (!entityplayermp.loadedChunks.contains(this.chunkCoords)) {
 					entityplayermp.playerNetServerHandler.sendPacket(thePacket);
 				}
