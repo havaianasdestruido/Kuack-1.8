@@ -1,5 +1,6 @@
 package net.minecraft.client.renderer.chunk;
 
+import net.caffeinemc.mods.sodium.client.render.chunk.region.SodiumRenderSection;
 import net.lax1dude.eaglercraft.v1_8.opengl.EaglercraftGPU;
 import net.minecraft.client.renderer.GLAllocation;
 import net.minecraft.client.renderer.RenderGlobal;
@@ -29,6 +30,7 @@ import net.minecraft.world.World;
  */
 public class ListedRenderChunk extends RenderChunk {
 	private final int[] baseDisplayList;
+	private SodiumRenderSection sodiumSection;
 
 	public ListedRenderChunk(World worldIn, RenderGlobal renderGlobalIn, BlockPos pos, int indexIn) {
 		super(worldIn, renderGlobalIn, pos, indexIn);
@@ -38,23 +40,61 @@ public class ListedRenderChunk extends RenderChunk {
 		}
 	}
 
+	public SodiumRenderSection getSodiumSection() {
+		if (this.sodiumSection == null) {
+			this.sodiumSection = new SodiumRenderSection();
+			BlockPos pos = this.getPosition();
+			if (pos != null) {
+				this.sodiumSection.updatePosition(pos);
+			}
+		}
+		return this.sodiumSection;
+	}
+
+	@Override
+	public void setPosition(BlockPos pos) {
+		super.setPosition(pos);
+		getSodiumSection().updatePosition(pos);
+	}
+
+	@Override
+	public void stopCompileTask() {
+		super.stopCompileTask();
+		if (this.sodiumSection != null) {
+			this.sodiumSection.freeAllLayers();
+		}
+	}
+
 	public int getDisplayList(EnumWorldBlockLayer layer, CompiledChunk parCompiledChunk) {
 		return !parCompiledChunk.isLayerEmpty(layer) ? this.baseDisplayList[layer.ordinal()] : -1;
 	}
 
+	public void flushLayerDisplayList(int layerOrdinal) {
+		if (this.baseDisplayList != null && layerOrdinal >= 0 && layerOrdinal < this.baseDisplayList.length) {
+			EaglercraftGPU.flushDisplayList(this.baseDisplayList[layerOrdinal]);
+		}
+	}
+
+	@Override
 	public void deleteGlResources() {
 		super.deleteGlResources();
+		if (this.sodiumSection != null) {
+			this.sodiumSection.freeAllLayers();
+		}
 		for (int i = 0; i < this.baseDisplayList.length; ++i) {
 			GLAllocation.deleteDisplayLists(this.baseDisplayList[i]);
 		}
 	}
 
+	@Override
 	public void rebuildChunk(float x, float y, float z, ChunkCompileTaskGenerator generator) {
 		super.rebuildChunk(x, y, z, generator);
 		EnumWorldBlockLayer[] layers = EnumWorldBlockLayer._VALUES;
+		SodiumRenderSection sec = getSodiumSection();
 		for (int i = 0; i < layers.length; ++i) {
 			if (generator.getCompiledChunk().isLayerEmpty(layers[i])) {
 				EaglercraftGPU.flushDisplayList(this.baseDisplayList[i]);
+				sec.freeLayer(i);
 			}
 		}
 	}

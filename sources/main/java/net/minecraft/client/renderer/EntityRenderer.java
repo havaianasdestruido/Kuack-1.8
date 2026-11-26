@@ -13,6 +13,7 @@ import java.util.concurrent.Callable;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 
+import net.caffeinemc.mods.sodium.client.SodiumClientMod;
 import net.lax1dude.eaglercraft.v1_8.Display;
 import net.lax1dude.eaglercraft.v1_8.Mouse;
 import net.lax1dude.eaglercraft.v1_8.log4j.LogManager;
@@ -951,7 +952,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 					this.setupOverlayRendering();
 					GlStateManager.disableLighting();
 					GlStateManager.enableBlend();
-					if (Minecraft.isFancyGraphicsEnabled()) {
+					if (SodiumClientMod.options().quality.enableVignette && Minecraft.isFancyGraphicsEnabled()) {
 						this.mc.ingameGUI.renderVignette(this.mc.thePlayer.getBrightness(parFloat1), l, i1);
 					}
 					this.mc.ingameGUI.renderGameOverlayCrosshairs(l, i1);
@@ -1487,7 +1488,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 			byte b0 = 5;
 			if (df) {
 				b0 = 8;
-			} else if (this.mc.gameSettings.fancyGraphics) {
+			} else if (SodiumClientMod.options().quality.weatherQuality.isFancy(this.mc.gameSettings.fancyGraphics)) {
 				b0 = 10;
 			}
 

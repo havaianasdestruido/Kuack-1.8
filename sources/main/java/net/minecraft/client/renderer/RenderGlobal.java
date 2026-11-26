@@ -19,6 +19,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import net.caffeinemc.mods.sodium.client.SodiumClientMod;
+import net.caffeinemc.mods.sodium.client.gui.SodiumGameOptions.ChunkBuildDeferMode;
+import net.caffeinemc.mods.sodium.client.render.SodiumWorldRenderer;
 import net.lax1dude.eaglercraft.v1_8.log4j.LogManager;
 import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
 import net.lax1dude.eaglercraft.v1_8.minecraft.ChunkUpdateManager;
@@ -132,7 +135,9 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 	/**+
 	 * List of OpenGL lists for the current render pass
 	 */
-	private List<RenderGlobal.ContainerLocalRenderInformation> renderInfos = Lists.newArrayListWithCapacity(69696);
+	private List<RenderGlobal.ContainerLocalRenderInformation> renderInfos = Lists.newArrayListWithCapacity(16);
+	private final List<RenderChunk> sodiumVisibleChunks = Lists.newArrayListWithCapacity(4096);
+	private final BlockPos sodiumEntityPos = new BlockPos(0, 0, 0);
 	private final Set<TileEntity> field_181024_n = Sets.newHashSet();
 	private ViewFrustum viewFrustum;
 	/**+
@@ -194,7 +199,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		GlStateManager.bindTexture(0);
 		this.updateDestroyBlockIcons();
 		this.vboEnabled = false;
-		this.renderContainer = new RenderList();
+		this.renderContainer = SodiumWorldRenderer.instance().getRenderContainer();
 		this.renderChunkFactory = new ListChunkFactory();
 		this.generateStars();
 		this.generateSky();
@@ -203,6 +208,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 
 	public void onResourceManagerReload(IResourceManager var1) {
 		this.updateDestroyBlockIcons();
+		SodiumWorldRenderer.instance().onResourceManagerReload(var1);
 	}
 
 	private void updateDestroyBlockIcons() {
@@ -371,6 +377,9 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		if (worldClientIn != null) {
 			worldClientIn.addWorldAccess(this);
 			this.loadRenderers();
+		} else {
+			this.sodiumVisibleChunks.clear();
+			SodiumWorldRenderer.instance().onWorldUnload();
 		}
 
 	}
@@ -388,8 +397,10 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 				}
 			}
 
-			Blocks.leaves.setGraphicsLevel(mc.gameSettings.shaders || mc.gameSettings.fancyGraphics);
-			Blocks.leaves2.setGraphicsLevel(mc.gameSettings.shaders || mc.gameSettings.fancyGraphics);
+			boolean fancyLeaves = mc.gameSettings.shaders
+					|| SodiumClientMod.options().quality.leavesQuality.isFancy(mc.gameSettings.fancyGraphics);
+			Blocks.leaves.setGraphicsLevel(fancyLeaves);
+			Blocks.leaves2.setGraphicsLevel(fancyLeaves);
 			this.renderDistanceChunks = this.mc.gameSettings.renderDistanceChunks;
 
 			if (this.viewFrustum != null) {
@@ -400,9 +411,11 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			synchronized (this.field_181024_n) {
 				this.field_181024_n.clear();
 			}
+			this.sodiumVisibleChunks.clear();
 
 			this.viewFrustum = new ViewFrustum(this.theWorld, this.mc.gameSettings.renderDistanceChunks, this,
 					this.renderChunkFactory);
+			SodiumWorldRenderer.instance().onWorldReload(this.viewFrustum);
 			if (this.theWorld != null) {
 				Entity entity = this.mc.getRenderViewEntity();
 				if (entity != null) {
@@ -535,15 +548,13 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			}
 
 			this.theWorld.theProfiler.endStartSection("entities");
+			SodiumWorldRenderer sodiumRenderer = SodiumWorldRenderer.instance();
 
-			label738: for (int ii = 0, ll = this.renderInfos.size(); ii < ll; ++ii) {
-				RenderGlobal.ContainerLocalRenderInformation renderglobal$containerlocalrenderinformation = this.renderInfos
-						.get(ii);
-				Chunk chunk = this.theWorld.getChunkFromBlockCoords(
-						renderglobal$containerlocalrenderinformation.renderChunk.getPosition());
+			label738: for (int ii = 0, ll = this.sodiumVisibleChunks.size(); ii < ll; ++ii) {
+				RenderChunk visibleChunk = this.sodiumVisibleChunks.get(ii);
+				Chunk chunk = this.theWorld.getChunkFromBlockCoords(visibleChunk.getPosition());
 				ClassInheritanceMultiMap classinheritancemultimap = chunk
-						.getEntityLists()[renderglobal$containerlocalrenderinformation.renderChunk.getPosition().getY()
-								/ 16];
+						.getEntityLists()[visibleChunk.getPosition().getY() / 16];
 				if (!classinheritancemultimap.isEmpty()) {
 					Iterator iterator = classinheritancemultimap.iterator();
 
@@ -556,8 +567,10 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 							}
 
 							entity2 = (Entity) iterator.next();
-							flag2 = this.renderManager.shouldRender(entity2, camera, d0, d1, d2)
-									|| entity2.riddenByEntity == this.mc.thePlayer;
+							boolean isPlayerMount = entity2.riddenByEntity == this.mc.thePlayer;
+							boolean isSelf = entity2 == this.mc.getRenderViewEntity();
+							flag2 = (isPlayerMount || isSelf || sodiumRenderer.isEntityVisible(entity2, d3, d4, d5))
+									&& (this.renderManager.shouldRender(entity2, camera, d0, d1, d2) || isPlayerMount);
 							if (light) {
 								entity2.renderDynamicLightsEagler(partialTicks, flag2);
 							}
@@ -568,10 +581,12 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 							boolean flag3 = this.mc.getRenderViewEntity() instanceof EntityLivingBase
 									? ((EntityLivingBase) this.mc.getRenderViewEntity()).isPlayerSleeping()
 									: false;
-							if ((entity2 != this.mc.getRenderViewEntity() || this.mc.gameSettings.thirdPersonView != 0
-									|| flag3)
+							this.sodiumEntityPos.x = MathHelper.floor_double(entity2.posX);
+							this.sodiumEntityPos.y = MathHelper.floor_double(entity2.posY);
+							this.sodiumEntityPos.z = MathHelper.floor_double(entity2.posZ);
+							if ((!isSelf || this.mc.gameSettings.thirdPersonView != 0 || flag3)
 									&& (entity2.posY < 0.0D || entity2.posY >= 256.0D
-											|| this.theWorld.isBlockLoaded(new BlockPos(entity2)))) {
+											|| this.theWorld.isBlockLoaded(this.sodiumEntityPos))) {
 								++this.countEntitiesRendered;
 								this.renderManager.renderEntitySimple(entity2, partialTicks);
 								break;
@@ -588,22 +603,24 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			this.theWorld.theProfiler.endStartSection("blockentities");
 			RenderHelper.enableStandardItemLighting();
 
-			for (int ii = 0, ll = this.renderInfos.size(); ii < ll; ++ii) {
-				RenderGlobal.ContainerLocalRenderInformation renderglobal$containerlocalrenderinformation1 = this.renderInfos
-						.get(ii);
-				List list1 = renderglobal$containerlocalrenderinformation1.renderChunk.getCompiledChunk()
-						.getTileEntities();
+			for (int ii = 0, ll = this.sodiumVisibleChunks.size(); ii < ll; ++ii) {
+				RenderChunk visibleChunk = this.sodiumVisibleChunks.get(ii);
+				List list1 = visibleChunk.getCompiledChunk().getTileEntities();
 				if (!list1.isEmpty()) {
 					for (int m = 0, n = list1.size(); m < n; ++m) {
-						TileEntityRendererDispatcher.instance.renderTileEntity((TileEntity) list1.get(m), partialTicks,
-								-1);
+						TileEntity te = (TileEntity) list1.get(m);
+						if (sodiumRenderer.isTileEntityVisible(te, d3, d4, d5)) {
+							TileEntityRendererDispatcher.instance.renderTileEntity(te, partialTicks, -1);
+						}
 					}
 				}
 			}
 
 			synchronized (this.field_181024_n) {
 				for (TileEntity tileentity : this.field_181024_n) {
-					TileEntityRendererDispatcher.instance.renderTileEntity(tileentity, partialTicks, -1);
+					if (sodiumRenderer.isTileEntityVisible(tileentity, d3, d4, d5)) {
+						TileEntityRendererDispatcher.instance.renderTileEntity(tileentity, partialTicks, -1);
+					}
 				}
 			}
 
@@ -667,22 +684,24 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			renderManager.setRenderPosition(d3, d4, d5);
 
 			this.theWorld.theProfiler.endStartSection("shadow_entities");
-			for (RenderGlobal.ContainerLocalRenderInformation containerlocalrenderinformation : this.renderInfos) {
-				RenderChunk currentRenderChunk = containerlocalrenderinformation.renderChunk;
+			for (int ii = 0, ll = this.sodiumVisibleChunks.size(); ii < ll; ++ii) {
+				RenderChunk currentRenderChunk = this.sodiumVisibleChunks.get(ii);
 
 				if (!entityChunkCull.shouldCull(currentRenderChunk)) {
-					Chunk chunk = this.theWorld
-							.getChunkFromBlockCoords(containerlocalrenderinformation.renderChunk.getPosition());
+					Chunk chunk = this.theWorld.getChunkFromBlockCoords(currentRenderChunk.getPosition());
 					ClassInheritanceMultiMap<Entity> classinheritancemultimap = chunk
-							.getEntityLists()[containerlocalrenderinformation.renderChunk.getPosition().getY() / 16];
+							.getEntityLists()[currentRenderChunk.getPosition().getY() / 16];
 					if (!classinheritancemultimap.isEmpty()) {
 						Iterator<Entity> iterator = classinheritancemultimap.iterator();
 						while (iterator.hasNext()) {
 							Entity entity2 = iterator.next();
 							if (!entityObjectCull.shouldCull(currentRenderChunk, renderManager, entity2)
 									|| entity2.riddenByEntity == this.mc.thePlayer) {
+								this.sodiumEntityPos.x = MathHelper.floor_double(entity2.posX);
+								this.sodiumEntityPos.y = MathHelper.floor_double(entity2.posY);
+								this.sodiumEntityPos.z = MathHelper.floor_double(entity2.posZ);
 								if (entity2.posY < 0.0D || entity2.posY >= 256.0D
-										|| this.theWorld.isBlockLoaded(new BlockPos(entity2))) {
+										|| this.theWorld.isBlockLoaded(this.sodiumEntityPos)) {
 									++this.countEntitiesRendered;
 									this.renderManager.renderEntitySimple(entity2, partialTicks);
 									mc.entityRenderer.disableLightmap();
@@ -803,10 +822,8 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		int i = this.viewFrustum.renderChunks.length;
 		int j = 0;
 
-		for (int ii = 0, ll = this.renderInfos.size(); ii < ll; ++ii) {
-			RenderGlobal.ContainerLocalRenderInformation renderglobal$containerlocalrenderinformation = this.renderInfos
-					.get(ii);
-			CompiledChunk compiledchunk = renderglobal$containerlocalrenderinformation.renderChunk.compiledChunk;
+		for (int ii = 0, ll = this.sodiumVisibleChunks.size(); ii < ll; ++ii) {
+			CompiledChunk compiledchunk = this.sodiumVisibleChunks.get(ii).compiledChunk;
 			if (compiledchunk != CompiledChunk.DUMMY && !compiledchunk.isEmpty()) {
 				++j;
 			}
@@ -861,8 +878,10 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		}
 
 		this.mc.mcProfiler.endStartSection("culling");
-		BlockPos blockpos1 = new BlockPos(d3, d4 + (double) viewEntity.getEyeHeight(), d5);
-		RenderChunk renderchunk = this.viewFrustum.getRenderChunk(blockpos1);
+		SodiumWorldRenderer sodiumRenderer = SodiumWorldRenderer.instance();
+		sodiumRenderer.beginTerrainSetup(camera, d3, d4, d5, frameCount);
+		double eyeY = d4 + (double) viewEntity.getEyeHeight();
+		BlockPos blockpos1 = new BlockPos(d3, eyeY, d5);
 		BlockPos blockpos = new BlockPos(MathHelper.floor_double(d3 / 16.0D) * 16,
 				MathHelper.floor_double(d4 / 16.0D) * 16, MathHelper.floor_double(d5 / 16.0D) * 16);
 		this.displayListEntitiesDirty = this.displayListEntitiesDirty || !this.chunksToUpdate.isEmpty()
@@ -880,80 +899,12 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		boolean flag = this.debugFixedClippingHelper != null;
 		if (!flag && this.displayListEntitiesDirty) {
 			this.displayListEntitiesDirty = false;
-			this.renderInfos = Lists.newArrayList();
-			LinkedList linkedlist = Lists.newLinkedList();
-			boolean flag1 = this.mc.renderChunksMany;
-			if (renderchunk != null) {
-				boolean flag2 = false;
-				RenderGlobal.ContainerLocalRenderInformation renderglobal$containerlocalrenderinformation3 = new RenderGlobal.ContainerLocalRenderInformation(
-						renderchunk, (EnumFacing) null, 0);
-				Set set1 = this.getVisibleFacings(blockpos1);
-				if (set1.size() == 1) {
-					Vector3f vector3f = this.getViewVector(viewEntity, partialTicks);
-					EnumFacing enumfacing = EnumFacing.getFacingFromVector(vector3f.x, vector3f.y, vector3f.z)
-							.getOpposite();
-					set1.remove(enumfacing);
-				}
-
-				if (set1.isEmpty()) {
-					flag2 = true;
-				}
-
-				if (flag2 && !playerSpectator) {
-					this.renderInfos.add(renderglobal$containerlocalrenderinformation3);
-				} else {
-					if (playerSpectator && this.theWorld.getBlockState(blockpos1).getBlock().isOpaqueCube()) {
-						flag1 = false;
-					}
-
-					renderchunk.setFrameIndex(frameCount);
-					linkedlist.add(renderglobal$containerlocalrenderinformation3);
-				}
-			} else {
-				int i = blockpos1.getY() > 0 ? 248 : 8;
-
-				for (int j = -this.renderDistanceChunks; j <= this.renderDistanceChunks; ++j) {
-					for (int k = -this.renderDistanceChunks; k <= this.renderDistanceChunks; ++k) {
-						RenderChunk renderchunk1 = this.viewFrustum
-								.getRenderChunk(new BlockPos((j << 4) + 8, i, (k << 4) + 8));
-						if (renderchunk1 != null
-								&& ((ICamera) camera).isBoundingBoxInFrustum(renderchunk1.boundingBox)) {
-							renderchunk1.setFrameIndex(frameCount);
-							linkedlist.add(new RenderGlobal.ContainerLocalRenderInformation(renderchunk1,
-									(EnumFacing) null, 0));
-						}
-					}
-				}
-			}
-
-			while (!linkedlist.isEmpty()) {
-				RenderGlobal.ContainerLocalRenderInformation renderglobal$containerlocalrenderinformation1 = (RenderGlobal.ContainerLocalRenderInformation) linkedlist
-						.poll();
-				RenderChunk renderchunk3 = renderglobal$containerlocalrenderinformation1.renderChunk;
-				EnumFacing enumfacing2 = renderglobal$containerlocalrenderinformation1.facing;
-				BlockPos blockpos2 = renderchunk3.getPosition();
-				this.renderInfos.add(renderglobal$containerlocalrenderinformation1);
-				EnumFacing[] facings = EnumFacing._VALUES;
-				for (int i = 0; i < facings.length; ++i) {
-					EnumFacing enumfacing1 = facings[i];
-					RenderChunk renderchunk2 = this.func_181562_a(blockpos, renderchunk3, enumfacing1);
-					if ((!flag1 || !renderglobal$containerlocalrenderinformation1.setFacing // TODO:
-							.contains(enumfacing1.getOpposite()))
-							&& (!flag1 || enumfacing2 == null
-									|| renderchunk3.getCompiledChunk().isVisible(enumfacing2.getOpposite(),
-											enumfacing1))
-							&& renderchunk2 != null && renderchunk2.setFrameIndex(frameCount)
-							&& ((ICamera) camera).isBoundingBoxInFrustum(renderchunk2.boundingBox)) {
-						RenderGlobal.ContainerLocalRenderInformation renderglobal$containerlocalrenderinformation = new RenderGlobal.ContainerLocalRenderInformation(
-								renderchunk2, enumfacing1, renderglobal$containerlocalrenderinformation1.counter + 1);
-						renderglobal$containerlocalrenderinformation.setFacing
-								.addAll(renderglobal$containerlocalrenderinformation1.setFacing);
-						renderglobal$containerlocalrenderinformation.setFacing.add(enumfacing1);
-						linkedlist.add(renderglobal$containerlocalrenderinformation);
-					}
-				}
-			}
+			Vector3f viewVec = this.getViewVector(viewEntity, partialTicks);
+			sodiumRenderer.setupVisibleTerrain(this.viewFrustum, this.theWorld, d3, d4, d5, eyeY, viewVec.x, viewVec.y,
+					viewVec.z, this.renderDistanceChunks, frameCount, playerSpectator, this.mc.renderChunksMany,
+					this.sodiumVisibleChunks);
 		}
+		sodiumRenderer.markVisibleChunkAnimations(this.sodiumVisibleChunks);
 
 		if (this.debugFixTerrainFrustum) {
 			this.fixTerrainFrustum(d3, d4, d5);
@@ -962,15 +913,23 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 
 		Set set = this.chunksToUpdate;
 		this.chunksToUpdate = Sets.newLinkedHashSet();
+		ChunkBuildDeferMode deferMode = SodiumClientMod.options().performance.chunkBuildDeferMode;
 
-		for (int ii = 0, ll = this.renderInfos.size(); ii < ll; ++ii) {
-			RenderGlobal.ContainerLocalRenderInformation renderglobal$containerlocalrenderinformation2 = this.renderInfos
-					.get(ii);
-			RenderChunk renderchunk4 = renderglobal$containerlocalrenderinformation2.renderChunk;
+		for (int ii = 0, ll = this.sodiumVisibleChunks.size(); ii < ll; ++ii) {
+			RenderChunk renderchunk4 = this.sodiumVisibleChunks.get(ii);
 			if (renderchunk4.isNeedsUpdate() || set.contains(renderchunk4)) {
 				this.displayListEntitiesDirty = true;
-				if (this.mc.gameSettings.chunkFix ? this.isPositionInRenderChunkHack(blockpos1, renderchunk4)
-						: this.isPositionInRenderChunk(blockpos, renderchunk4)) {
+				boolean isNear = this.mc.gameSettings.chunkFix ? this.isPositionInRenderChunkHack(blockpos1, renderchunk4)
+						: this.isPositionInRenderChunk(blockpos, renderchunk4);
+				boolean buildImmediate = false;
+				if (isNear && deferMode != ChunkBuildDeferMode.ALWAYS) {
+					if (deferMode == ChunkBuildDeferMode.NEVER || renderchunk4.sodiumDeferStamp == frameCount - 1) {
+						buildImmediate = true;
+					} else {
+						renderchunk4.sodiumDeferStamp = frameCount;
+					}
+				}
+				if (buildImmediate) {
 					this.mc.mcProfiler.startSection("build near");
 					this.renderDispatcher.updateChunkNow(renderchunk4);
 					renderchunk4.setNeedsUpdate(false);
@@ -1090,13 +1049,10 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 				this.prevRenderSortZ = entityIn.posZ;
 				int k = 0;
 
-				for (int ii = 0, ll = this.renderInfos.size(); ii < ll; ++ii) {
-					RenderGlobal.ContainerLocalRenderInformation renderglobal$containerlocalrenderinformation = this.renderInfos
-							.get(ii);
-					if (renderglobal$containerlocalrenderinformation.renderChunk.compiledChunk
-							.isLayerStarted(blockLayerIn) && k++ < 15) {
-						this.renderDispatcher
-								.updateTransparencyLater(renderglobal$containerlocalrenderinformation.renderChunk);
+				for (int ii = 0, ll = this.sodiumVisibleChunks.size(); ii < ll; ++ii) {
+					RenderChunk visibleChunk = this.sodiumVisibleChunks.get(ii);
+					if (visibleChunk.compiledChunk.isLayerStarted(blockLayerIn) && k++ < 15) {
+						this.renderDispatcher.updateTransparencyLater(visibleChunk);
 					}
 				}
 			}
@@ -1107,13 +1063,13 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		this.mc.mcProfiler.startSection("filterempty");
 		int l = 0;
 		boolean flag = blockLayerIn == EnumWorldBlockLayer.TRANSLUCENT;
-		int i1 = flag ? this.renderInfos.size() - 1 : 0;
-		int i = flag ? -1 : this.renderInfos.size();
+		int totalVisible = this.sodiumVisibleChunks.size();
+		int i1 = flag ? totalVisible - 1 : 0;
+		int i = flag ? -1 : totalVisible;
 		int j1 = flag ? -1 : 1;
 
 		for (int j = i1; j != i; j += j1) {
-			RenderChunk renderchunk = ((RenderGlobal.ContainerLocalRenderInformation) this.renderInfos
-					.get(j)).renderChunk;
+			RenderChunk renderchunk = this.sodiumVisibleChunks.get(j);
 			if (!renderchunk.getCompiledChunk().isLayerEmpty(blockLayerIn)) {
 				++l;
 				this.renderContainer.addRenderChunk(renderchunk, blockLayerIn);
@@ -1457,7 +1413,15 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 
 	public void renderClouds(float partialTicks, int pass) {
 		if (this.mc.theWorld.provider.isSurfaceWorld()) {
-			if (this.mc.gameSettings.func_181147_e() == 2) {
+			int cloudMode = this.mc.gameSettings.func_181147_e();
+			if (cloudMode == 0) {
+				return;
+			}
+			if (SodiumWorldRenderer.instance().renderClouds(this.mc, this.theWorld, this.cloudTickCounter, partialTicks,
+					pass, cloudMode == 2)) {
+				return;
+			}
+			if (cloudMode == 2) {
 				this.renderCloudsFancy(partialTicks, pass);
 			} else {
 				GlStateManager.disableCull();
@@ -2521,10 +2485,8 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		int j = 0;
 		int k = 0;
 
-		for (int ii = 0, ll = this.renderInfos.size(); ii < ll; ++ii) {
-			RenderGlobal.ContainerLocalRenderInformation renderglobal$containerlocalrenderinformation = this.renderInfos
-					.get(ii);
-			CompiledChunk compiledchunk = renderglobal$containerlocalrenderinformation.renderChunk.compiledChunk;
+		for (int ii = 0, ll = this.sodiumVisibleChunks.size(); ii < ll; ++ii) {
+			CompiledChunk compiledchunk = this.sodiumVisibleChunks.get(ii).compiledChunk;
 			if (compiledchunk != CompiledChunk.DUMMY && !compiledchunk.isEmpty()) {
 				++j;
 				k += compiledchunk.getTileEntities().size();

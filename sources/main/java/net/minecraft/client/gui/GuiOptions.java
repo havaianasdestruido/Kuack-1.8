@@ -1,5 +1,6 @@
 package net.minecraft.client.gui;
 
+import net.caffeinemc.mods.sodium.client.gui.SodiumOptionsGUI;
 import net.lax1dude.eaglercraft.v1_8.EagRuntime;
 import net.lax1dude.eaglercraft.v1_8.Mouse;
 import net.lax1dude.eaglercraft.v1_8.internal.EnumCursorType;
@@ -197,7 +198,7 @@ public class GuiOptions extends GuiScreen implements GuiYesNoCallback {
 
 			if (parGuiButton.id == 101) {
 				this.mc.gameSettings.saveOptions();
-				this.mc.displayGuiScreen(new GuiVideoSettings(this, this.game_settings_1));
+				this.mc.displayGuiScreen(new SodiumOptionsGUI(this, this.game_settings_1));
 			}
 
 			if (parGuiButton.id == 100) {

@@ -14,6 +14,8 @@ import java.util.concurrent.Callable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import net.caffeinemc.mods.sodium.client.render.SodiumWorldRenderer;
+import net.caffeinemc.mods.sodium.client.render.texture.SpriteUtil;
 import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
 import net.lax1dude.eaglercraft.v1_8.opengl.WorldRenderer;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.DeferredStateManager;
@@ -307,8 +309,15 @@ public class EffectRenderer {
 
 					acceleratedParticleRenderer.begin(partialTicks);
 
+					SodiumWorldRenderer sodiumRenderer = SodiumWorldRenderer.instance();
 					for (int k = 0; k < this.fxLayers[i][j].size(); ++k) {
 						final EntityFX entityfx = (EntityFX) this.fxLayers[i][j].get(k);
+						if (!sodiumRenderer.shouldRenderParticle(entityfx)) {
+							continue;
+						}
+						if (i == 1 && entityfx.particleIcon != null) {
+							SpriteUtil.markSpriteActive(entityfx.particleIcon);
+						}
 
 						try {
 							if (!entityfx.renderAccelerated(acceleratedParticleRenderer, entityIn, partialTicks, f, f4,

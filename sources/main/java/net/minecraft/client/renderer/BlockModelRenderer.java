@@ -3,6 +3,11 @@ package net.minecraft.client.renderer;
 import java.util.BitSet;
 import java.util.List;
 
+import net.caffeinemc.mods.sodium.client.SodiumClientMod;
+import net.caffeinemc.mods.sodium.client.model.light.SodiumFaceCuller;
+import net.caffeinemc.mods.sodium.client.model.light.SodiumLightDataCache;
+import net.caffeinemc.mods.sodium.client.render.texture.SpriteUtil;
+import net.lax1dude.eaglercraft.v1_8.minecraft.EaglerTextureAtlasSprite;
 import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
 import net.lax1dude.eaglercraft.v1_8.opengl.WorldRenderer;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.DeferredStateManager;
@@ -12,6 +17,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.chunk.CompiledChunk;
 import net.minecraft.client.renderer.texture.TextureUtil;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.model.IBakedModel;
@@ -72,22 +78,44 @@ public class BlockModelRenderer {
 		}
 	}
 
+	private final float[] sharedQuadBounds = new float[EnumFacing._VALUES.length * 2];
+	private final BitSet sharedBoundsFlags = new BitSet(3);
+	private final BlockModelRenderer.AmbientOcclusionFace sharedAoFace = new BlockModelRenderer.AmbientOcclusionFace();
+	private final BlockPos sharedSidePos = new BlockPos(0, 0, 0);
+	private final BlockPos.MutableBlockPos sharedCullScratch = new BlockPos.MutableBlockPos();
+
+	private static void recordQuadSprite(IBlockAccess blockAccessIn, BakedQuad quad) {
+		EaglerTextureAtlasSprite sprite = quad.getSprite();
+		if (sprite == null || !sprite.hasAnimationMetadata()) {
+			return;
+		}
+		if (blockAccessIn instanceof RegionRenderCache) {
+			CompiledChunk cc = ((RegionRenderCache) blockAccessIn).getActiveCompiledChunk();
+			if (cc != null) {
+				cc.addSodiumAnimatedSprite(sprite);
+				return;
+			}
+		}
+		SpriteUtil.markSpriteActive(sprite);
+	}
+
 	public boolean renderModelAmbientOcclusion(IBlockAccess blockAccessIn, IBakedModel modelIn, Block blockIn,
 			BlockPos blockPosIn, WorldRenderer worldRendererIn, boolean checkSides) {
 		boolean flag = false;
-		float[] afloat = new float[EnumFacing._VALUES.length * 2];
-		BitSet bitset = new BitSet(3);
-		BlockModelRenderer.AmbientOcclusionFace blockmodelrenderer$ambientocclusionface = new BlockModelRenderer.AmbientOcclusionFace();
+		float[] afloat = this.sharedQuadBounds;
+		BitSet bitset = this.sharedBoundsFlags;
+		bitset.clear();
+		BlockModelRenderer.AmbientOcclusionFace blockmodelrenderer$ambientocclusionface = this.sharedAoFace;
 
 		EnumFacing[] facings = EnumFacing._VALUES;
 		for (int i = 0; i < facings.length; ++i) {
 			EnumFacing enumfacing = facings[i];
 			List list = modelIn.getFaceQuads(enumfacing);
 			if (!list.isEmpty()) {
-				BlockPos blockpos = blockPosIn.offset(enumfacing);
+				BlockPos blockpos = blockPosIn.offsetEvenFaster(enumfacing, this.sharedSidePos);
 				if (!checkSides || blockIn.shouldSideBeRendered(blockAccessIn, blockpos, enumfacing)) {
 					this.renderModelAmbientOcclusionQuads(blockAccessIn, blockIn, blockPosIn, worldRendererIn, list,
-							afloat, bitset, blockmodelrenderer$ambientocclusionface);
+							afloat, bitset, blockmodelrenderer$ambientocclusionface, 0);
 					flag = true;
 				}
 			}
@@ -95,9 +123,14 @@ public class BlockModelRenderer {
 
 		List list1 = modelIn.getGeneralQuads();
 		if (list1.size() > 0) {
-			this.renderModelAmbientOcclusionQuads(blockAccessIn, blockIn, blockPosIn, worldRendererIn, list1, afloat,
-					bitset, blockmodelrenderer$ambientocclusionface);
-			flag = true;
+			int opaqueMask = (checkSides && SodiumClientMod.options().performance.useBlockFaceCulling)
+					? SodiumFaceCuller.computeNeighborOpaqueFullCubeMask(blockAccessIn, blockPosIn,
+							this.sharedCullScratch)
+					: 0;
+			if (this.renderModelAmbientOcclusionQuads(blockAccessIn, blockIn, blockPosIn, worldRendererIn, list1,
+					afloat, bitset, blockmodelrenderer$ambientocclusionface, opaqueMask)) {
+				flag = true;
+			}
 		}
 
 		return flag;
@@ -107,10 +140,11 @@ public class BlockModelRenderer {
 			BlockPos blockPosIn, WorldRenderer worldRendererIn, boolean checkSides) {
 		boolean isDeferred = DeferredStateManager.isDeferredRenderer();
 		boolean flag = false;
-		float[] afloat = isDeferred ? new float[EnumFacing._VALUES.length * 2] : null;
-		BitSet bitset = new BitSet(3);
+		float[] afloat = isDeferred ? this.sharedQuadBounds : null;
+		BitSet bitset = this.sharedBoundsFlags;
+		bitset.clear();
 
-		BlockPos.MutableBlockPos pointer = new BlockPos.MutableBlockPos();
+		BlockPos pointer = this.sharedSidePos;
 		EnumFacing[] facings = EnumFacing._VALUES;
 		for (int m = 0; m < facings.length; ++m) {
 			EnumFacing enumfacing = facings[m];
@@ -120,7 +154,7 @@ public class BlockModelRenderer {
 				if (!checkSides || blockIn.shouldSideBeRendered(blockAccessIn, blockpos, enumfacing)) {
 					int i = blockIn.getMixedBrightnessForBlock(blockAccessIn, blockpos);
 					this.renderModelStandardQuads(blockAccessIn, blockIn, blockPosIn, enumfacing, i, false,
-							worldRendererIn, list, bitset, afloat);
+							worldRendererIn, list, bitset, afloat, 0);
 					flag = true;
 				}
 			}
@@ -128,17 +162,22 @@ public class BlockModelRenderer {
 
 		List list1 = modelIn.getGeneralQuads();
 		if (list1.size() > 0) {
-			this.renderModelStandardQuads(blockAccessIn, blockIn, blockPosIn, (EnumFacing) null, -1, true,
-					worldRendererIn, list1, bitset, afloat);
-			flag = true;
+			int opaqueMask = (checkSides && SodiumClientMod.options().performance.useBlockFaceCulling)
+					? SodiumFaceCuller.computeNeighborOpaqueFullCubeMask(blockAccessIn, blockPosIn,
+							this.sharedCullScratch)
+					: 0;
+			if (this.renderModelStandardQuads(blockAccessIn, blockIn, blockPosIn, (EnumFacing) null, -1, true,
+					worldRendererIn, list1, bitset, afloat, opaqueMask)) {
+				flag = true;
+			}
 		}
 
 		return flag;
 	}
 
-	private void renderModelAmbientOcclusionQuads(IBlockAccess blockAccessIn, Block blockIn, BlockPos blockPosIn,
+	private boolean renderModelAmbientOcclusionQuads(IBlockAccess blockAccessIn, Block blockIn, BlockPos blockPosIn,
 			WorldRenderer worldRendererIn, List<BakedQuad> listQuadsIn, float[] quadBounds, BitSet boundsFlags,
-			BlockModelRenderer.AmbientOcclusionFace aoFaceIn) {
+			BlockModelRenderer.AmbientOcclusionFace aoFaceIn, int generalOpaqueCullMask) {
 		boolean isDeferred = DeferredStateManager.isDeferredRenderer();
 		boolean isDynamicLights = isDeferred || DynamicLightsStateManager.isDynamicLightsRender();
 		double d0 = (double) blockPosIn.getX();
@@ -154,8 +193,14 @@ public class BlockModelRenderer {
 			}
 		}
 
+		boolean renderedAny = false;
 		for (int i = 0, l = listQuadsIn.size(); i < l; ++i) {
 			BakedQuad bakedquad = listQuadsIn.get(i);
+			if (generalOpaqueCullMask != 0 && SodiumFaceCuller.isGeneralQuadOccluded(bakedquad, generalOpaqueCullMask)) {
+				continue;
+			}
+			renderedAny = true;
+			recordQuadSprite(blockAccessIn, bakedquad);
 			int[] vertData = isDynamicLights ? bakedquad.getVertexDataWithNormals() : bakedquad.getVertexData();
 			this.fillQuadBounds(blockIn, vertData, bakedquad.getFace(), quadBounds, boundsFlags,
 					isDynamicLights ? 8 : 7);
@@ -195,6 +240,7 @@ public class BlockModelRenderer {
 			worldRendererIn.putPosition(d0, d1, d2);
 		}
 
+		return renderedAny;
 	}
 
 	private void fillQuadBounds(Block blockIn, int[] vertexData, EnumFacing facingIn, float[] quadBounds,
@@ -271,9 +317,9 @@ public class BlockModelRenderer {
 	private final BlockPos blockpos4 = new BlockPos(0, 0, 0);
 	private final BlockPos blockpos5 = new BlockPos(0, 0, 0);
 
-	private void renderModelStandardQuads(IBlockAccess blockAccessIn, Block blockIn, BlockPos blockPosIn,
+	private boolean renderModelStandardQuads(IBlockAccess blockAccessIn, Block blockIn, BlockPos blockPosIn,
 			EnumFacing faceIn, int brightnessIn, boolean ownBrightness, WorldRenderer worldRendererIn,
-			List<BakedQuad> listQuadsIn, BitSet boundsFlags, float[] quadBounds) {
+			List<BakedQuad> listQuadsIn, BitSet boundsFlags, float[] quadBounds, int generalOpaqueCullMask) {
 		boolean isDeferred = DeferredStateManager.isDeferredRenderer();
 		boolean isDynamicLights = isDeferred || DynamicLightsStateManager.isDynamicLightsRender();
 		double d0 = (double) blockPosIn.getX();
@@ -292,8 +338,14 @@ public class BlockModelRenderer {
 			}
 		}
 
+		boolean renderedAny = false;
 		for (int m = 0, n = listQuadsIn.size(); m < n; ++m) {
 			BakedQuad bakedquad = listQuadsIn.get(m);
+			if (generalOpaqueCullMask != 0 && SodiumFaceCuller.isGeneralQuadOccluded(bakedquad, generalOpaqueCullMask)) {
+				continue;
+			}
+			renderedAny = true;
+			recordQuadSprite(blockAccessIn, bakedquad);
 			EnumFacing facingIn = bakedquad.getFace();
 			int[] vertData = isDynamicLights ? bakedquad.getVertexDataWithNormals() : bakedquad.getVertexData();
 			blockPosIn.offsetEvenFaster(facingIn, blockpos0);
@@ -419,6 +471,7 @@ public class BlockModelRenderer {
 			worldRendererIn.putPosition(d0, d1, d2);
 		}
 
+		return renderedAny;
 	}
 
 	private static int getAoBrightness(int parInt1, int parInt2, int parInt3, int parInt4) {
@@ -476,6 +529,7 @@ public class BlockModelRenderer {
 
 		for (int i = 0, l = parList.size(); i < l; ++i) {
 			BakedQuad bakedquad = parList.get(i);
+			SpriteUtil.markSpriteActive(bakedquad.getSprite());
 			worldrenderer.begin(7, DefaultVertexFormats.ITEM);
 			worldrenderer.addVertexData(bakedquad.getVertexData());
 			if (bakedquad.hasTintIndex()) {
@@ -505,6 +559,13 @@ public class BlockModelRenderer {
 
 		public void updateVertexBrightness(IBlockAccess blockAccessIn, Block blockIn, BlockPos blockPosIn,
 				EnumFacing facingIn, float[] quadBounds, BitSet boundsFlags) {
+			SodiumLightDataCache lightCache = (blockAccessIn instanceof RegionRenderCache)
+					? ((RegionRenderCache) blockAccessIn).getSodiumLightCache()
+					: null;
+			if (lightCache != null) {
+				updateVertexBrightnessCached(lightCache, blockPosIn, facingIn, quadBounds, boundsFlags);
+				return;
+			}
 			BlockPos blockpos = boundsFlags.get(0) ? blockPosIn.offsetEvenFaster(facingIn, blockpos0) : blockPosIn;
 			BlockModelRenderer.EnumNeighborInfo blockmodelrenderer$enumneighborinfo = BlockModelRenderer.EnumNeighborInfo
 					.getNeighbourInfo(facingIn);
@@ -663,6 +724,162 @@ public class BlockModelRenderer {
 				this.vertexColorMultiplier[blockmodelrenderer$vertextranslations.field_178198_j] = f12;
 			}
 
+		}
+
+		private void updateVertexBrightnessCached(SodiumLightDataCache cache, BlockPos blockPosIn, EnumFacing facingIn,
+				float[] quadBounds, BitSet boundsFlags) {
+			int px = blockPosIn.getX();
+			int py = blockPosIn.getY();
+			int pz = blockPosIn.getZ();
+			int fx = facingIn.getFrontOffsetX();
+			int fy = facingIn.getFrontOffsetY();
+			int fz = facingIn.getFrontOffsetZ();
+			boolean flush = boundsFlags.get(0);
+			int bx = flush ? (px + fx) : px;
+			int by = flush ? (py + fy) : py;
+			int bz = flush ? (pz + fz) : pz;
+
+			BlockModelRenderer.EnumNeighborInfo info = BlockModelRenderer.EnumNeighborInfo.getNeighbourInfo(facingIn);
+			EnumFacing n0 = info.field_178276_g[0];
+			EnumFacing n1 = info.field_178276_g[1];
+			EnumFacing n2 = info.field_178276_g[2];
+			EnumFacing n3 = info.field_178276_g[3];
+
+			int x1 = bx + n0.getFrontOffsetX(), y1 = by + n0.getFrontOffsetY(), z1 = bz + n0.getFrontOffsetZ();
+			long w1 = cache.get(x1, y1, z1);
+			int i = SodiumLightDataCache.unpackLight(w1);
+			float f = SodiumLightDataCache.unpackAO(w1);
+			boolean flag = SodiumLightDataCache.unpackTranslucent(cache.get(x1 + fx, y1 + fy, z1 + fz));
+
+			int x2 = bx + n1.getFrontOffsetX(), y2 = by + n1.getFrontOffsetY(), z2 = bz + n1.getFrontOffsetZ();
+			long w2 = cache.get(x2, y2, z2);
+			int j = SodiumLightDataCache.unpackLight(w2);
+			float f1 = SodiumLightDataCache.unpackAO(w2);
+			boolean flag1 = SodiumLightDataCache.unpackTranslucent(cache.get(x2 + fx, y2 + fy, z2 + fz));
+
+			int x3 = bx + n2.getFrontOffsetX(), y3 = by + n2.getFrontOffsetY(), z3 = bz + n2.getFrontOffsetZ();
+			long w3 = cache.get(x3, y3, z3);
+			int k = SodiumLightDataCache.unpackLight(w3);
+			float f2 = SodiumLightDataCache.unpackAO(w3);
+			boolean flag2 = SodiumLightDataCache.unpackTranslucent(cache.get(x3 + fx, y3 + fy, z3 + fz));
+
+			int x4 = bx + n3.getFrontOffsetX(), y4 = by + n3.getFrontOffsetY(), z4 = bz + n3.getFrontOffsetZ();
+			long w4 = cache.get(x4, y4, z4);
+			int l = SodiumLightDataCache.unpackLight(w4);
+			float f3 = SodiumLightDataCache.unpackAO(w4);
+			boolean flag3 = SodiumLightDataCache.unpackTranslucent(cache.get(x4 + fx, y4 + fy, z4 + fz));
+
+			float f4;
+			int i1;
+			if (!flag2 && !flag) {
+				f4 = f;
+				i1 = i;
+			} else {
+				long wc = cache.get(x1 + n2.getFrontOffsetX(), y1 + n2.getFrontOffsetY(), z1 + n2.getFrontOffsetZ());
+				f4 = SodiumLightDataCache.unpackAO(wc);
+				i1 = SodiumLightDataCache.unpackLight(wc);
+			}
+
+			float f5;
+			int j1;
+			if (!flag3 && !flag) {
+				f5 = f;
+				j1 = i;
+			} else {
+				long wc = cache.get(x1 + n3.getFrontOffsetX(), y1 + n3.getFrontOffsetY(), z1 + n3.getFrontOffsetZ());
+				f5 = SodiumLightDataCache.unpackAO(wc);
+				j1 = SodiumLightDataCache.unpackLight(wc);
+			}
+
+			float f6;
+			int k1;
+			if (!flag2 && !flag1) {
+				f6 = f1;
+				k1 = j;
+			} else {
+				long wc = cache.get(x2 + n2.getFrontOffsetX(), y2 + n2.getFrontOffsetY(), z2 + n2.getFrontOffsetZ());
+				f6 = SodiumLightDataCache.unpackAO(wc);
+				k1 = SodiumLightDataCache.unpackLight(wc);
+			}
+
+			float f7;
+			int l1;
+			if (!flag3 && !flag1) {
+				f7 = f1;
+				l1 = j;
+			} else {
+				long wc = cache.get(x2 + n3.getFrontOffsetX(), y2 + n3.getFrontOffsetY(), z2 + n3.getFrontOffsetZ());
+				f7 = SodiumLightDataCache.unpackAO(wc);
+				l1 = SodiumLightDataCache.unpackLight(wc);
+			}
+
+			long wFront = cache.get(px + fx, py + fy, pz + fz);
+			long wSelf = cache.get(px, py, pz);
+			int i3 = (flush || !SodiumLightDataCache.unpackOpaque(wFront)) ? SodiumLightDataCache.unpackLight(wFront)
+					: SodiumLightDataCache.unpackLight(wSelf);
+			float f8 = flush ? SodiumLightDataCache.unpackAO(wFront) : SodiumLightDataCache.unpackAO(wSelf);
+
+			BlockModelRenderer.VertexTranslations vt = BlockModelRenderer.VertexTranslations
+					.getVertexTranslations(facingIn);
+			if (boundsFlags.get(1) && info.field_178289_i) {
+				float f29 = (f3 + f + f5 + f8) * 0.25F;
+				float f30 = (f2 + f + f4 + f8) * 0.25F;
+				float f31 = (f2 + f1 + f6 + f8) * 0.25F;
+				float f32 = (f3 + f1 + f7 + f8) * 0.25F;
+				float f13 = quadBounds[info.field_178286_j[0].field_178229_m]
+						* quadBounds[info.field_178286_j[1].field_178229_m];
+				float f14 = quadBounds[info.field_178286_j[2].field_178229_m]
+						* quadBounds[info.field_178286_j[3].field_178229_m];
+				float f15 = quadBounds[info.field_178286_j[4].field_178229_m]
+						* quadBounds[info.field_178286_j[5].field_178229_m];
+				float f16 = quadBounds[info.field_178286_j[6].field_178229_m]
+						* quadBounds[info.field_178286_j[7].field_178229_m];
+				float f17 = quadBounds[info.field_178287_k[0].field_178229_m]
+						* quadBounds[info.field_178287_k[1].field_178229_m];
+				float f18 = quadBounds[info.field_178287_k[2].field_178229_m]
+						* quadBounds[info.field_178287_k[3].field_178229_m];
+				float f19 = quadBounds[info.field_178287_k[4].field_178229_m]
+						* quadBounds[info.field_178287_k[5].field_178229_m];
+				float f20 = quadBounds[info.field_178287_k[6].field_178229_m]
+						* quadBounds[info.field_178287_k[7].field_178229_m];
+				float f21 = quadBounds[info.field_178284_l[0].field_178229_m]
+						* quadBounds[info.field_178284_l[1].field_178229_m];
+				float f22 = quadBounds[info.field_178284_l[2].field_178229_m]
+						* quadBounds[info.field_178284_l[3].field_178229_m];
+				float f23 = quadBounds[info.field_178284_l[4].field_178229_m]
+						* quadBounds[info.field_178284_l[5].field_178229_m];
+				float f24 = quadBounds[info.field_178284_l[6].field_178229_m]
+						* quadBounds[info.field_178284_l[7].field_178229_m];
+				float f25 = quadBounds[info.field_178285_m[0].field_178229_m]
+						* quadBounds[info.field_178285_m[1].field_178229_m];
+				float f26 = quadBounds[info.field_178285_m[2].field_178229_m]
+						* quadBounds[info.field_178285_m[3].field_178229_m];
+				float f27 = quadBounds[info.field_178285_m[4].field_178229_m]
+						* quadBounds[info.field_178285_m[5].field_178229_m];
+				float f28 = quadBounds[info.field_178285_m[6].field_178229_m]
+						* quadBounds[info.field_178285_m[7].field_178229_m];
+				this.vertexColorMultiplier[vt.field_178191_g] = f29 * f13 + f30 * f14 + f31 * f15 + f32 * f16;
+				this.vertexColorMultiplier[vt.field_178200_h] = f29 * f17 + f30 * f18 + f31 * f19 + f32 * f20;
+				this.vertexColorMultiplier[vt.field_178201_i] = f29 * f21 + f30 * f22 + f31 * f23 + f32 * f24;
+				this.vertexColorMultiplier[vt.field_178198_j] = f29 * f25 + f30 * f26 + f31 * f27 + f32 * f28;
+				int i2 = getAoBrightness(l, i, j1, i3);
+				int j2 = getAoBrightness(k, i, i1, i3);
+				int k2 = getAoBrightness(k, j, k1, i3);
+				int l2 = getAoBrightness(l, j, l1, i3);
+				this.vertexBrightness[vt.field_178191_g] = getVertexBrightness(i2, j2, k2, l2, f13, f14, f15, f16);
+				this.vertexBrightness[vt.field_178200_h] = getVertexBrightness(i2, j2, k2, l2, f17, f18, f19, f20);
+				this.vertexBrightness[vt.field_178201_i] = getVertexBrightness(i2, j2, k2, l2, f21, f22, f23, f24);
+				this.vertexBrightness[vt.field_178198_j] = getVertexBrightness(i2, j2, k2, l2, f25, f26, f27, f28);
+			} else {
+				this.vertexBrightness[vt.field_178191_g] = getAoBrightness(l, i, j1, i3);
+				this.vertexBrightness[vt.field_178200_h] = getAoBrightness(k, i, i1, i3);
+				this.vertexBrightness[vt.field_178201_i] = getAoBrightness(k, j, k1, i3);
+				this.vertexBrightness[vt.field_178198_j] = getAoBrightness(l, j, l1, i3);
+				this.vertexColorMultiplier[vt.field_178191_g] = (f3 + f + f5 + f8) * 0.25F;
+				this.vertexColorMultiplier[vt.field_178200_h] = (f2 + f + f4 + f8) * 0.25F;
+				this.vertexColorMultiplier[vt.field_178201_i] = (f2 + f1 + f6 + f8) * 0.25F;
+				this.vertexColorMultiplier[vt.field_178198_j] = (f3 + f1 + f7 + f8) * 0.25F;
+			}
 		}
 	}
 

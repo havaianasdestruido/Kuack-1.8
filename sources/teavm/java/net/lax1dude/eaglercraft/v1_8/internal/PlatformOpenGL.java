@@ -220,6 +220,10 @@ public class PlatformOpenGL {
 		ctx.bufferSubData(target, offset, data == null ? null : EaglerArrayBufferAllocator.getDataView32F(data));
 	}
 	
+	public static final void _wglCopyBufferSubData(int readTarget, int writeTarget, int readOffset, int writeOffset, int size) {
+		ctx.copyBufferSubData(readTarget, writeTarget, readOffset, writeOffset, size);
+	}
+	
 	public static final void _wglBindVertexArray(IBufferArrayGL obj) {
 		ctx.bindVertexArray(obj == null ? null : ((OpenGLObjects.BufferArrayGL)obj).ptr);
 	}

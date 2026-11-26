@@ -54,6 +54,7 @@ public class ViewFrustum {
 					BlockPos blockpos = new BlockPos(k * 16, l * 16, i1 * 16);
 					this.renderChunks[j1] = renderChunkFactory.makeRenderChunk(this.world, this.renderGlobal, blockpos,
 							j++);
+					this.renderChunks[j1].sodiumSetGridIndex(j1);
 				}
 			}
 		}
@@ -163,5 +164,9 @@ public class ViewFrustum {
 		} else {
 			return null;
 		}
+	}
+
+	public RenderChunk sodiumGetRenderChunk(BlockPos pos) {
+		return this.getRenderChunk(pos);
 	}
 }

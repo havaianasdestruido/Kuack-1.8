@@ -14,6 +14,7 @@ import java.util.TimeZone;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
+import net.caffeinemc.mods.sodium.client.render.SodiumWorldRenderer;
 import net.lax1dude.eaglercraft.v1_8.Display;
 import net.lax1dude.eaglercraft.v1_8.EagRuntime;
 import net.lax1dude.eaglercraft.v1_8.HString;
@@ -474,6 +475,7 @@ public class GuiOverlayDebug extends Gui {
 				}
 			}
 
+			SodiumWorldRenderer.instance().appendDebugLines(arraylist);
 			return arraylist;
 		}
 	}

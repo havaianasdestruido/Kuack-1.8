@@ -4,6 +4,8 @@ import java.util.List;
 
 import com.google.common.collect.Lists;
 
+import net.caffeinemc.mods.sodium.client.render.chunk.occlusion.VisibilityEncoding;
+import net.lax1dude.eaglercraft.v1_8.minecraft.EaglerTextureAtlasSprite;
 import net.lax1dude.eaglercraft.v1_8.opengl.WorldRenderer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
@@ -42,12 +44,18 @@ public class CompiledChunk {
 		public boolean isVisible(EnumFacing facing, EnumFacing facing2) {
 			return true;
 		}
+
+		public long getSodiumVisibilityData() {
+			return VisibilityEncoding.EVERYTHING;
+		}
 	};
 	private final boolean[] layersUsed = new boolean[EnumWorldBlockLayer._VALUES.length];
 	private final boolean[] layersStarted = new boolean[EnumWorldBlockLayer._VALUES.length];
 	private boolean empty = true;
 	private final List<TileEntity> tileEntities = Lists.newArrayList();
 	private SetVisibility setVisibility = new SetVisibility();
+	private long sodiumVisibilityData = VisibilityEncoding.NULL;
+	private List<EaglerTextureAtlasSprite> sodiumAnimatedSprites = null;
 	private WorldRenderer.State state;
 	private WorldRenderer.State stateWater;
 
@@ -86,6 +94,32 @@ public class CompiledChunk {
 
 	public void setVisibility(SetVisibility visibility) {
 		this.setVisibility = visibility;
+		this.sodiumVisibilityData = VisibilityEncoding.fromSetVisibility(visibility);
+	}
+
+	public long getSodiumVisibilityData() {
+		return this.sodiumVisibilityData;
+	}
+
+	public void setSodiumVisibilityData(long encoded) {
+		this.sodiumVisibilityData = encoded;
+		VisibilityEncoding.applyToSetVisibility(encoded, this.setVisibility);
+	}
+
+	public void addSodiumAnimatedSprite(EaglerTextureAtlasSprite sprite) {
+		if (sprite == null || !sprite.hasAnimationMetadata()) {
+			return;
+		}
+		if (this.sodiumAnimatedSprites == null) {
+			this.sodiumAnimatedSprites = Lists.newArrayListWithCapacity(4);
+		} else if (this.sodiumAnimatedSprites.contains(sprite)) {
+			return;
+		}
+		this.sodiumAnimatedSprites.add(sprite);
+	}
+
+	public List<EaglerTextureAtlasSprite> getSodiumAnimatedSprites() {
+		return this.sodiumAnimatedSprites;
 	}
 
 	public WorldRenderer.State getState() {

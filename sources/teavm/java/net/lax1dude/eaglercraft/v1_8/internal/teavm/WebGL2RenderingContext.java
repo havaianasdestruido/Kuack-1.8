@@ -40,6 +40,8 @@ public interface WebGL2RenderingContext extends WebGLRenderingContext {
 	int RGBA8                          = 0x00008058;
 	int R8                             = 0x00008229;
 	int RED                            = 0x00001903;
+	int COPY_READ_BUFFER               = 0x00008F36;
+	int COPY_WRITE_BUFFER              = 0x00008F37;
 	
 	WebGLQuery createQuery();
 
@@ -89,5 +91,7 @@ public interface WebGL2RenderingContext extends WebGLRenderingContext {
 			int type, ArrayBufferView pixels);
 
 	void framebufferTextureLayer(int target, int attachment, WebGLTexture texture, int level, int layer);
+
+	void copyBufferSubData(int readTarget, int writeTarget, int readOffset, int writeOffset, int size);
 
 }

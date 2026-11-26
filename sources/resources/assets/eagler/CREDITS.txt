@@ -745,3 +745,15 @@
  * THE SOFTWARE.
  
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  Baked-in Sodium Render Engine for Kuack-1.8 / EaglercraftX 1.8
+
+   Clean-room WebGL 2.0 / OpenGL ES 3.0 implementation inspired by
+   Sodium by CaffeineMC (https://github.com/CaffeineMC/sodium):
+   - 8x4x8 GPU Region Arena VBO/IBO slab batching
+   - 64-bit bitmask VisGraph & zero-allocation BFS + fog occlusion culler
+   - Separable O(1) box-blur biome color blending & 3D AO light cache
+   - General quad face culling & radix/insertion translucent quad sorting
+   - On-demand visible sprite animation gating & cached face-culled clouds
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

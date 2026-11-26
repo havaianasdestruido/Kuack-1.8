@@ -1,5 +1,6 @@
 package net.minecraft.client.renderer;
 
+import net.caffeinemc.mods.sodium.client.render.texture.SpriteUtil;
 import net.lax1dude.eaglercraft.v1_8.minecraft.EaglerTextureAtlasSprite;
 import net.lax1dude.eaglercraft.v1_8.opengl.WorldRenderer;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.BlockVertexIDs;
@@ -10,6 +11,7 @@ import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.chunk.CompiledChunk;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
@@ -39,6 +41,10 @@ import net.minecraft.world.IBlockAccess;
 public class BlockFluidRenderer {
 	private EaglerTextureAtlasSprite[] atlasSpritesLava = new EaglerTextureAtlasSprite[2];
 	private EaglerTextureAtlasSprite[] atlasSpritesWater = new EaglerTextureAtlasSprite[2];
+	private final BlockPos sharedTmpPos = new BlockPos(0, 0, 0);
+	private final BlockPos sharedHeightPos = new BlockPos(0, 0, 0);
+	private final BlockPos sharedHeightUpPos = new BlockPos(0, 0, 0);
+	private final boolean[] sharedSideFlags = new boolean[4];
 
 	public BlockFluidRenderer() {
 		this.initAtlasSprites();
@@ -54,7 +60,7 @@ public class BlockFluidRenderer {
 
 	public boolean renderFluid(IBlockAccess blockAccess, IBlockState blockStateIn, BlockPos blockPosIn,
 			WorldRenderer worldRendererIn) {
-		BlockPos tmp = new BlockPos(0, 0, 0);
+		BlockPos tmp = this.sharedTmpPos;
 		boolean deferred = DeferredStateManager.isDeferredRenderer();
 		boolean isDynamicLights = deferred || DynamicLightsStateManager.isDynamicLightsRender();
 		BlockLiquid blockliquid = (BlockLiquid) blockStateIn.getBlock();
@@ -72,14 +78,24 @@ public class BlockFluidRenderer {
 			flag &= !blockUp.isFullCube() || !blockUp.isBlockSolid(blockAccess, blockPosIn.up(tmp), EnumFacing.DOWN);
 		}
 		boolean flag1 = blockliquid.shouldSideBeRendered(blockAccess, blockPosIn.down(tmp), EnumFacing.DOWN);
-		boolean[] aboolean = new boolean[] {
-				blockliquid.shouldSideBeRendered(blockAccess, blockPosIn.north(tmp), EnumFacing.NORTH),
-				blockliquid.shouldSideBeRendered(blockAccess, blockPosIn.south(tmp), EnumFacing.SOUTH),
-				blockliquid.shouldSideBeRendered(blockAccess, blockPosIn.west(tmp), EnumFacing.WEST),
-				blockliquid.shouldSideBeRendered(blockAccess, blockPosIn.east(tmp), EnumFacing.EAST) };
+		boolean[] aboolean = this.sharedSideFlags;
+		aboolean[0] = blockliquid.shouldSideBeRendered(blockAccess, blockPosIn.north(tmp), EnumFacing.NORTH);
+		aboolean[1] = blockliquid.shouldSideBeRendered(blockAccess, blockPosIn.south(tmp), EnumFacing.SOUTH);
+		aboolean[2] = blockliquid.shouldSideBeRendered(blockAccess, blockPosIn.west(tmp), EnumFacing.WEST);
+		aboolean[3] = blockliquid.shouldSideBeRendered(blockAccess, blockPosIn.east(tmp), EnumFacing.EAST);
 		if (!flag && !flag1 && !aboolean[0] && !aboolean[1] && !aboolean[2] && !aboolean[3]) {
 			return false;
 		} else {
+			if (blockAccess instanceof RegionRenderCache) {
+				CompiledChunk cc = ((RegionRenderCache) blockAccess).getActiveCompiledChunk();
+				if (cc != null) {
+					cc.addSodiumAnimatedSprite(atextureatlassprite[0]);
+					cc.addSodiumAnimatedSprite(atextureatlassprite[1]);
+				}
+			} else {
+				SpriteUtil.markSpriteActive(atextureatlassprite[0]);
+				SpriteUtil.markSpriteActive(atextureatlassprite[1]);
+			}
 			boolean flag2 = false;
 			float f3 = 0.5F;
 			float f4 = 1.0F;
@@ -298,10 +314,20 @@ public class BlockFluidRenderer {
 	private float getFluidHeight(IBlockAccess blockAccess, BlockPos blockPosIn, Material blockMaterial) {
 		int i = 0;
 		float f = 0.0F;
+		BlockPos blockpos = this.sharedHeightPos;
+		BlockPos upPos = this.sharedHeightUpPos;
+		int bx = blockPosIn.getX();
+		int by = blockPosIn.getY();
+		int bz = blockPosIn.getZ();
 
 		for (int j = 0; j < 4; ++j) {
-			BlockPos blockpos = blockPosIn.add(-(j & 1), 0, -(j >> 1 & 1));
-			if (blockAccess.getBlockState(blockpos.up()).getBlock().getMaterial() == blockMaterial) {
+			blockpos.x = bx - (j & 1);
+			blockpos.y = by;
+			blockpos.z = bz - (j >> 1 & 1);
+			upPos.x = blockpos.x;
+			upPos.y = by + 1;
+			upPos.z = blockpos.z;
+			if (blockAccess.getBlockState(upPos).getBlock().getMaterial() == blockMaterial) {
 				return 1.0F;
 			}
 

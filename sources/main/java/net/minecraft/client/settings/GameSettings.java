@@ -1219,7 +1219,7 @@ public class GameSettings {
 		INVERT_MOUSE("options.invertMouse", false, true), SENSITIVITY("options.sensitivity", true, false),
 		FOV("options.fov", true, false, 30.0F, 110.0F, 1.0F), GAMMA("options.gamma", true, false),
 		SATURATION("options.saturation", true, false),
-		RENDER_DISTANCE("options.renderDistance", true, false, 1.0F, 18.0F, 1.0F),
+		RENDER_DISTANCE("options.renderDistance", true, false, 1.0F, 24.0F, 1.0F),
 		VIEW_BOBBING("options.viewBobbing", false, true), ANAGLYPH("options.anaglyph", false, true),
 		FRAMERATE_LIMIT("options.framerateLimit", true, false, 10.0F, 260.0F, 10.0F),
 		FBO_ENABLE("options.fboEnable", false, true), RENDER_CLOUDS("options.renderClouds", false, false),

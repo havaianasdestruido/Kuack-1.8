@@ -508,6 +508,21 @@ public class EaglercraftGPU {
 		p.drawElements(GL_TRIANGLES, mesh.indexCount, GL_UNSIGNED_SHORT, 0);
 	}
 
+	public static final void setupSodiumVAO(IBufferArrayGL vao, IBufferGL vbo, int attribs) {
+		FixedFunctionPipeline.setupSodiumVAO(vao, vbo, attribs);
+	}
+
+	public static final FixedFunctionPipeline prepareSodiumPipeline(int attribs) {
+		return FixedFunctionPipeline.setupRenderDisplayList(attribs);
+	}
+
+	public static final void drawSodiumElements(FixedFunctionPipeline pipeline, IBufferArrayGL vao, int indexCount,
+			int indexByteOffset) {
+		FixedFunctionPipeline updated = pipeline.update();
+		EaglercraftGPU.bindGLBufferArray(vao);
+		updated.drawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, indexByteOffset);
+	}
+
 	static boolean hasFramebufferHDR16FSupport = false;
 	static boolean hasFramebufferHDR32FSupport = false;
 	static boolean hasLinearHDR32FSupport = false;

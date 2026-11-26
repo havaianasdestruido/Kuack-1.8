@@ -19,6 +19,7 @@ import org.apache.commons.lang3.Validate;
 
 import com.google.common.collect.Lists;
 
+import net.caffeinemc.mods.sodium.client.SodiumClientMod;
 import net.lax1dude.eaglercraft.v1_8.Display;
 import net.lax1dude.eaglercraft.v1_8.EagRuntime;
 import net.lax1dude.eaglercraft.v1_8.EagUtils;
@@ -385,6 +386,7 @@ public class Minecraft implements IThreadListener {
 	 */
 	private void startGame() throws IOException {
 		this.gameSettings = new GameSettings(this);
+		SodiumClientMod.init();
 		this.defaultResourcePacks.add(this.mcDefaultResourcePack);
 		if (this.gameSettings.overrideHeight > 0 && this.gameSettings.overrideWidth > 0) {
 			this.displayWidth = this.gameSettings.overrideWidth;

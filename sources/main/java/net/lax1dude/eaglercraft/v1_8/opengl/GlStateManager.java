@@ -84,11 +84,11 @@ public class GlStateManager {
 	static float stateNormalZ = -1.0f;
 	static int stateNormalSerial = 0;
 
-	static boolean stateFog = false;
-	static boolean stateFogEXP = false;
-	static float stateFogDensity = 1.0f;
-	static float stateFogStart = 0.0f;
-	static float stateFogEnd = 1.0f;
+	public static boolean stateFog = false;
+	public static boolean stateFogEXP = false;
+	public static float stateFogDensity = 1.0f;
+	public static float stateFogStart = 0.0f;
+	public static float stateFogEnd = 1.0f;
 	static float stateFogColorR = 1.0f;
 	static float stateFogColorG = 1.0f;
 	static float stateFogColorB = 1.0f;

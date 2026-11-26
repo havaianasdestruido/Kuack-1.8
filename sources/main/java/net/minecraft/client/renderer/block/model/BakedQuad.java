@@ -1,5 +1,6 @@
 package net.minecraft.client.renderer.block.model;
 
+import net.lax1dude.eaglercraft.v1_8.minecraft.EaglerTextureAtlasSprite;
 import net.minecraft.util.EnumFacing;
 
 /**+
@@ -27,19 +28,23 @@ public class BakedQuad {
 	protected final int[] vertexDataWithNormals;
 	protected final int tintIndex;
 	protected final EnumFacing face;
+	protected final EaglerTextureAtlasSprite sprite;
 
 	public BakedQuad(int[] vertexDataIn, int tintIndexIn, EnumFacing faceIn) {
-		this.vertexData = vertexDataIn;
-		this.vertexDataWithNormals = null;
-		this.tintIndex = tintIndexIn;
-		this.face = faceIn;
+		this(vertexDataIn, null, tintIndexIn, faceIn, null);
 	}
 
 	public BakedQuad(int[] vertexDataIn, int[] vertexDataWithNormalsIn, int tintIndexIn, EnumFacing faceIn) {
+		this(vertexDataIn, vertexDataWithNormalsIn, tintIndexIn, faceIn, null);
+	}
+
+	public BakedQuad(int[] vertexDataIn, int[] vertexDataWithNormalsIn, int tintIndexIn, EnumFacing faceIn,
+			EaglerTextureAtlasSprite spriteIn) {
 		this.vertexData = vertexDataIn;
 		this.vertexDataWithNormals = vertexDataWithNormalsIn;
 		this.tintIndex = tintIndexIn;
 		this.face = faceIn;
+		this.sprite = spriteIn;
 	}
 
 	public int[] getVertexData() {
@@ -60,5 +65,9 @@ public class BakedQuad {
 
 	public EnumFacing getFace() {
 		return this.face;
+	}
+
+	public EaglerTextureAtlasSprite getSprite() {
+		return this.sprite;
 	}
 }

@@ -5,6 +5,8 @@ import static net.lax1dude.eaglercraft.v1_8.opengl.RealOpenGLEnums.*;
 import java.util.LinkedList;
 import java.util.List;
 
+import net.caffeinemc.mods.sodium.client.SodiumClientMod;
+import net.caffeinemc.mods.sodium.client.render.SodiumWorldRenderer;
 import net.lax1dude.eaglercraft.v1_8.log4j.LogManager;
 import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
 import net.lax1dude.eaglercraft.v1_8.opengl.EaglercraftGPU;
@@ -109,6 +111,9 @@ public class ChunkUpdateManager {
 		}else {
 			boolean flag = false;
 			long millis = System.currentTimeMillis();
+			long minBudgetDeadline = System.nanoTime()
+					+ (long) SodiumClientMod.options().advanced.chunkUpdateBudgetMs * 1000000L;
+			long effectiveTimeout = Math.max(timeout, minBudgetDeadline);
 			List<ChunkCompileTaskGenerator> droppedUpdates = new LinkedList();
 			while(!queue.isEmpty()) {
 				ChunkCompileTaskGenerator generator = queue.remove(0);
@@ -125,7 +130,7 @@ public class ChunkUpdateManager {
 				
 				++chunkUpdatesTotal;
 				
-				if(timeout < System.nanoTime()) {
+				if(effectiveTimeout < System.nanoTime()) {
 					break;
 				}
 			}
@@ -136,7 +141,7 @@ public class ChunkUpdateManager {
 
 	public boolean updateChunkLater(RenderChunk chunkRenderer) {
 		final ChunkCompileTaskGenerator chunkcompiletaskgenerator = chunkRenderer.makeCompileTaskChunk();
-		boolean flag = queue.size() < 100;
+		boolean flag = queue.size() < 512;
 		if (!flag) {
 			chunkcompiletaskgenerator.finish();
 		}else {
@@ -177,7 +182,7 @@ public class ChunkUpdateManager {
 			return true;
 		}
 		chunkcompiletaskgenerator.goddamnFuckingTimeout = System.currentTimeMillis();
-		if(queue.size() < 100) {
+		if(queue.size() < 512) {
 			chunkcompiletaskgenerator.addFinishRunnable(new Runnable() {
 				@Override
 				public void run() {
@@ -196,8 +201,14 @@ public class ChunkUpdateManager {
 
 	public void uploadChunk(final EnumWorldBlockLayer player, final WorldRenderer chunkRenderer,
 			final RenderChunk compiledChunkIn, final CompiledChunk parCompiledChunk) {
-		this.uploadDisplayList(chunkRenderer,
-				((ListedRenderChunk) compiledChunkIn).getDisplayList(player, parCompiledChunk), compiledChunkIn);
+		if (SodiumClientMod.options().performance.useRegionBatching && compiledChunkIn instanceof ListedRenderChunk) {
+			ListedRenderChunk listed = (ListedRenderChunk) compiledChunkIn;
+			listed.flushLayerDisplayList(player.ordinal());
+			SodiumWorldRenderer.instance().getRegionManager().uploadChunkLayer(listed, player, chunkRenderer);
+		} else {
+			this.uploadDisplayList(chunkRenderer,
+					((ListedRenderChunk) compiledChunkIn).getDisplayList(player, parCompiledChunk), compiledChunkIn);
+		}
 		chunkRenderer.setTranslation(0.0D, 0.0D, 0.0D);
 	}
 

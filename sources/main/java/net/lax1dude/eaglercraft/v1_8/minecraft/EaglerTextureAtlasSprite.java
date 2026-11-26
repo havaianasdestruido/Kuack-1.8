@@ -61,6 +61,7 @@ public class EaglerTextureAtlasSprite {
 	protected static String locationNameCompass = "builtin/compass";
 
 	protected TextureAnimationCache animationCache = null;
+	public boolean sodiumMarkedActive = false;
 
 	public EaglerTextureAtlasSprite(String spriteName) {
 		this.iconName = spriteName;

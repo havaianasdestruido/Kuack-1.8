@@ -822,6 +822,8 @@ public class RealOpenGLEnums {
 	public static final int GL_BLEND_EQUATION_RGB = 32777;
 	public static final int GL_BLEND_EQUATION_ALPHA = 34877;
 	public static final int GL_TEXTURE_MAX_ANISOTROPY = 34046;
+	public static final int GL_COPY_READ_BUFFER = 0x8F36;
+	public static final int GL_COPY_WRITE_BUFFER = 0x8F37;
 	public static final int GL_CONTEXT_LOST_WEBGL = -100;
 
 }

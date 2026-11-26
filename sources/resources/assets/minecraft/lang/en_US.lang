@@ -3158,3 +3158,13 @@ item.banner.straight_cross.lightBlue=Light Blue Cross
 item.banner.straight_cross.magenta=Magenta Cross
 item.banner.straight_cross.orange=Orange Cross
 item.banner.straight_cross.white=White Cross
+
+sodium.options.title=Sodium Video Settings
+sodium.options.pages.general=General
+sodium.options.pages.quality=Quality
+sodium.options.pages.performance=Performance
+sodium.options.pages.advanced=Advanced
+sodium.options.buttons.apply=Apply
+sodium.options.buttons.undo=Undo
+sodium.options.buttons.legacy=Legacy Video...
+

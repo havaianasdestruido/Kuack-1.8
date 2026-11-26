@@ -9,6 +9,7 @@ import java.util.Set;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import net.caffeinemc.mods.sodium.client.SodiumClientMod;
 import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
 import net.lax1dude.eaglercraft.v1_8.opengl.VertexFormat;
 import net.lax1dude.eaglercraft.v1_8.opengl.WorldRenderer;
@@ -73,6 +74,9 @@ public class RenderChunk {
 	public ShadowFrustumState shadowLOD0InFrustum = ShadowFrustumState.OUTSIDE;
 	public ShadowFrustumState shadowLOD1InFrustum = ShadowFrustumState.OUTSIDE;
 	public ShadowFrustumState shadowLOD2InFrustum = ShadowFrustumState.OUTSIDE;
+	public int sodiumVisibleFrame = -1;
+	public int sodiumDeferStamp = -1;
+	private int sodiumGridIndex = 0;
 	private EnumMap<EnumFacing, BlockPos> field_181702_p = Maps.newEnumMap(EnumFacing.class);
 
 	public RenderChunk(World worldIn, RenderGlobal renderGlobalIn, BlockPos blockPosIn, int indexIn) {
@@ -142,6 +146,8 @@ public class RenderChunk {
 		}
 
 		regionrendercache = new RegionRenderCache(this.world, blockpos.add(-1, -1, -1), blockpos1.add(1, 1, 1), 1);
+		regionrendercache.initSodiumCaches(blockpos.getX(), blockpos.getY(), blockpos.getZ(),
+				SodiumClientMod.options().quality.biomeBlendRadius, compiledchunk);
 		generator.setCompiledChunk(compiledchunk);
 
 		VisGraph visgraph = new VisGraph();
@@ -150,49 +156,64 @@ public class RenderChunk {
 			++renderChunksUpdated;
 			boolean[] aboolean = new boolean[EnumWorldBlockLayer._VALUES.length];
 			BlockRendererDispatcher blockrendererdispatcher = Minecraft.getMinecraft().getBlockRendererDispatcher();
+			BlockPos scanPos = new BlockPos(0, 0, 0);
+			int minX = blockpos.getX();
+			int minY = blockpos.getY();
+			int minZ = blockpos.getZ();
 
-			for (BlockPos blockpos$mutableblockpos : BlockPos.getAllInBox(blockpos, blockpos1)) {
-				IBlockState iblockstate = regionrendercache.getBlockStateFaster(blockpos$mutableblockpos);
-				Block block = iblockstate.getBlock();
-				if (block.isOpaqueCube()) {
-					visgraph.func_178606_a(blockpos$mutableblockpos);
-				}
-
-				if (block.hasTileEntity()) {
-					TileEntity tileentity = regionrendercache.getTileEntity(blockpos$mutableblockpos);
-					TileEntitySpecialRenderer tileentityspecialrenderer = TileEntityRendererDispatcher.instance
-							.getSpecialRenderer(tileentity);
-					if (tileentity != null && tileentityspecialrenderer != null) {
-						compiledchunk.addTileEntity(tileentity);
-						if (tileentityspecialrenderer.func_181055_a()) {
-							hashset.add(tileentity);
-						}
-					}
-				}
-
-				EnumWorldBlockLayer enumworldblocklayer1 = block.getBlockLayer();
-				int i = enumworldblocklayer1.ordinal();
-				if (block.getRenderType() != -1) {
-					WorldRenderer worldrenderer = generator.getRegionRenderCacheBuilder().getWorldRendererByLayerId(i);
-					if (!compiledchunk.isLayerStarted(enumworldblocklayer1)) {
-						compiledchunk.setLayerStarted(enumworldblocklayer1);
-						this.preRenderBlocks(worldrenderer, blockpos);
-					}
-
-					aboolean[i] |= blockrendererdispatcher.renderBlock(iblockstate, blockpos$mutableblockpos,
-							regionrendercache, worldrenderer);
-
-					if (block.eaglerShadersShouldRenderGlassHighlights()) {
-						enumworldblocklayer1 = EnumWorldBlockLayer.GLASS_HIGHLIGHTS;
-						worldrenderer = generator.getRegionRenderCacheBuilder()
-								.getWorldRendererByLayerId(enumworldblocklayer1.ordinal());
-						if (!compiledchunk.isLayerStarted(enumworldblocklayer1)) {
-							compiledchunk.setLayerStarted(enumworldblocklayer1);
-							this.preRenderBlocks(worldrenderer, blockpos);
+			for (int ly = 0; ly < 16; ++ly) {
+				int wy = minY + ly;
+				for (int lz = 0; lz < 16; ++lz) {
+					int wz = minZ + lz;
+					for (int lx = 0; lx < 16; ++lx) {
+						int wx = minX + lx;
+						scanPos.x = wx;
+						scanPos.y = wy;
+						scanPos.z = wz;
+						IBlockState iblockstate = regionrendercache.getBlockStateFaster(scanPos);
+						Block block = iblockstate.getBlock();
+						if (block.isOpaqueCube()) {
+							visgraph.markOpaque(lx, ly, lz);
 						}
 
-						aboolean[enumworldblocklayer1.ordinal()] |= blockrendererdispatcher.renderBlock(iblockstate,
-								blockpos$mutableblockpos, regionrendercache, worldrenderer);
+						if (block.hasTileEntity()) {
+							TileEntity tileentity = regionrendercache.getTileEntity(new BlockPos(wx, wy, wz));
+							TileEntitySpecialRenderer tileentityspecialrenderer = TileEntityRendererDispatcher.instance
+									.getSpecialRenderer(tileentity);
+							if (tileentity != null && tileentityspecialrenderer != null) {
+								compiledchunk.addTileEntity(tileentity);
+								if (tileentityspecialrenderer.func_181055_a()) {
+									hashset.add(tileentity);
+								}
+							}
+						}
+
+						EnumWorldBlockLayer enumworldblocklayer1 = block.getBlockLayer();
+						int i = enumworldblocklayer1.ordinal();
+						if (block.getRenderType() != -1) {
+							WorldRenderer worldrenderer = generator.getRegionRenderCacheBuilder()
+									.getWorldRendererByLayerId(i);
+							if (!compiledchunk.isLayerStarted(enumworldblocklayer1)) {
+								compiledchunk.setLayerStarted(enumworldblocklayer1);
+								this.preRenderBlocks(worldrenderer, blockpos);
+							}
+
+							aboolean[i] |= blockrendererdispatcher.renderBlock(iblockstate, scanPos, regionrendercache,
+									worldrenderer);
+
+							if (block.eaglerShadersShouldRenderGlassHighlights()) {
+								enumworldblocklayer1 = EnumWorldBlockLayer.GLASS_HIGHLIGHTS;
+								worldrenderer = generator.getRegionRenderCacheBuilder()
+										.getWorldRendererByLayerId(enumworldblocklayer1.ordinal());
+								if (!compiledchunk.isLayerStarted(enumworldblocklayer1)) {
+									compiledchunk.setLayerStarted(enumworldblocklayer1);
+									this.preRenderBlocks(worldrenderer, blockpos);
+								}
+
+								aboolean[enumworldblocklayer1.ordinal()] |= blockrendererdispatcher
+										.renderBlock(iblockstate, scanPos, regionrendercache, worldrenderer);
+							}
+						}
 					}
 				}
 			}
@@ -212,7 +233,7 @@ public class RenderChunk {
 			}
 		}
 
-		compiledchunk.setVisibility(visgraph.computeVisibility());
+		compiledchunk.setSodiumVisibilityData(visgraph.computeVisibilityEncoding());
 
 		HashSet hashset1 = Sets.newHashSet(hashset);
 		HashSet hashset2 = Sets.newHashSet(this.field_181056_j);
@@ -315,5 +336,13 @@ public class RenderChunk {
 
 	public BlockPos func_181701_a(EnumFacing parEnumFacing) {
 		return (BlockPos) this.field_181702_p.get(parEnumFacing);
+	}
+
+	public int sodiumGetGridIndex() {
+		return this.sodiumGridIndex;
+	}
+
+	public void sodiumSetGridIndex(int idx) {
+		this.sodiumGridIndex = idx;
 	}
 }

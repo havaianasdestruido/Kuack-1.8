@@ -11,6 +11,7 @@ import net.lax1dude.eaglercraft.v1_8.internal.buffer.FloatBuffer;
 
 import net.lax1dude.eaglercraft.v1_8.EagRuntime;
 import net.lax1dude.eaglercraft.v1_8.internal.IBufferArrayGL;
+import net.lax1dude.eaglercraft.v1_8.internal.IBufferGL;
 import net.lax1dude.eaglercraft.v1_8.internal.IProgramGL;
 import net.lax1dude.eaglercraft.v1_8.internal.IShaderGL;
 import net.lax1dude.eaglercraft.v1_8.internal.IUniformGL;
@@ -128,6 +129,44 @@ public class FixedFunctionPipeline {
 					VertexFormat.COMPONENT_LIGHTMAP_FORMAT, false, self.attribStride, self.attribLightmapOffset);
 		}
 		
+	}
+	
+	static void setupSodiumVAO(IBufferArrayGL vao, IBufferGL vbo, int attribs) {
+		FixedFunctionPipeline self = setupRenderDisplayList(attribs);
+		EaglercraftGPU.bindGLBufferArray(vao);
+		EaglercraftGPU.bindGLArrayBuffer(vbo);
+
+		_wglEnableVertexAttribArray(0);
+		_wglVertexAttribPointer(0, VertexFormat.COMPONENT_POSITION_SIZE,
+				VertexFormat.COMPONENT_POSITION_FORMAT, false, self.attribStride, 0);
+
+		if(self.attribTextureIndex != -1) {
+			_wglEnableVertexAttribArray(self.attribTextureIndex);
+			_wglVertexAttribPointer(self.attribTextureIndex, VertexFormat.COMPONENT_TEX_SIZE,
+					VertexFormat.COMPONENT_TEX_FORMAT, false, self.attribStride, self.attribTextureOffset);
+		}
+
+		if(self.attribColorIndex != -1) {
+			_wglEnableVertexAttribArray(self.attribColorIndex);
+			_wglVertexAttribPointer(self.attribColorIndex, VertexFormat.COMPONENT_COLOR_SIZE,
+					VertexFormat.COMPONENT_COLOR_FORMAT, true, self.attribStride, self.attribColorOffset);
+		}
+
+		if(self.attribNormalIndex != -1) {
+			_wglEnableVertexAttribArray(self.attribNormalIndex);
+			_wglVertexAttribPointer(self.attribNormalIndex, VertexFormat.COMPONENT_NORMAL_SIZE,
+					VertexFormat.COMPONENT_NORMAL_FORMAT, true, self.attribStride, self.attribNormalOffset);
+		}
+
+		if(self.attribLightmapIndex != -1) {
+			_wglEnableVertexAttribArray(self.attribLightmapIndex);
+			_wglVertexAttribPointer(self.attribLightmapIndex, VertexFormat.COMPONENT_LIGHTMAP_SIZE,
+					VertexFormat.COMPONENT_LIGHTMAP_FORMAT, false, self.attribStride, self.attribLightmapOffset);
+		}
+
+		if(self.attribNormalIndex == -1 && self.attribLightmapIndex < 4) {
+			_wglDisableVertexAttribArray(4);
+		}
 	}
 	
 	static FixedFunctionPipeline setupRenderDisplayList(int attribs) {

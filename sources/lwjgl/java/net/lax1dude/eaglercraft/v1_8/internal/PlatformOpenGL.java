@@ -210,6 +210,11 @@ public class PlatformOpenGL {
 				data == null ? 0l : EaglerLWJGLAllocator.getAddress(data));
 	}
 
+	public static final void _wglCopyBufferSubData(int readTarget, int writeTarget, int readOffset, int writeOffset,
+			int size) {
+		glCopyBufferSubData(readTarget, writeTarget, readOffset, writeOffset, size);
+	}
+
 	public static final void _wglBindVertexArray(IBufferArrayGL obj) {
 		glBindVertexArray(obj == null ? 0 : ((OpenGLObjects.BufferArrayGL) obj).ptr);
 	}

@@ -14,6 +14,7 @@ import java.util.concurrent.Callable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import net.caffeinemc.mods.sodium.client.render.texture.SpriteUtil;
 import net.lax1dude.eaglercraft.v1_8.HString;
 import net.lax1dude.eaglercraft.v1_8.internal.IFramebufferGL;
 import net.lax1dude.eaglercraft.v1_8.log4j.LogManager;
@@ -507,26 +508,43 @@ public class TextureMap extends AbstractTexture implements ITickableTextureObjec
 		EaglerTextureAtlasSprite textureatlassprite = (EaglerTextureAtlasSprite) this.mapUploadedSprites.get(iconName);
 		if (textureatlassprite == null) {
 			textureatlassprite = isEaglerPBRMode ? missingImagePBR : missingImage;
+		} else {
+			SpriteUtil.markSpriteActive(textureatlassprite);
 		}
 
 		return textureatlassprite;
 	}
 
 	public void updateAnimations() {
+		int total = this.listAnimatedSprites.size();
+		int updated = 0;
 		if (isEaglerPBRMode) {
-			for (int i = 0, l = this.listAnimatedSprites.size(); i < l; ++i) {
-				this.listAnimatedSprites.get(i).updateAnimationPBR(copyColorFramebuffer, copyMaterialFramebuffer,
-						height);
+			for (int i = 0; i < total; ++i) {
+				EaglerTextureAtlasSprite sprite = this.listAnimatedSprites.get(i);
+				if (SpriteUtil.shouldUpdateAnimation(sprite)) {
+					sprite.updateAnimationPBR(copyColorFramebuffer, copyMaterialFramebuffer, height);
+					++updated;
+				}
 			}
-			_wglBindFramebuffer(_GL_FRAMEBUFFER, null);
+			SpriteUtil.recordAnimationStats(total, updated);
+			if (updated > 0) {
+				_wglBindFramebuffer(_GL_FRAMEBUFFER, null);
+			}
 			return;
 		}
 
-		for (int i = 0, l = this.listAnimatedSprites.size(); i < l; ++i) {
-			this.listAnimatedSprites.get(i).updateAnimation(copyColorFramebuffer);
+		for (int i = 0; i < total; ++i) {
+			EaglerTextureAtlasSprite sprite = this.listAnimatedSprites.get(i);
+			if (SpriteUtil.shouldUpdateAnimation(sprite)) {
+				sprite.updateAnimation(copyColorFramebuffer);
+				++updated;
+			}
 		}
 
-		_wglBindFramebuffer(_GL_FRAMEBUFFER, null);
+		SpriteUtil.recordAnimationStats(total, updated);
+		if (updated > 0) {
+			_wglBindFramebuffer(_GL_FRAMEBUFFER, null);
+		}
 	}
 
 	private void destroyAnimationCaches() {

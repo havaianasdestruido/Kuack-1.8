@@ -5,6 +5,7 @@ import static net.lax1dude.eaglercraft.v1_8.opengl.RealOpenGLEnums.*;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import net.caffeinemc.mods.sodium.client.render.texture.SpriteUtil;
 import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
 import net.lax1dude.eaglercraft.v1_8.opengl.WorldRenderer;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.DeferredStateManager;
@@ -292,6 +293,7 @@ public class RenderItem implements IResourceManagerReloadListener {
 
 		for (int j = quads.size(); i < j; ++i) {
 			BakedQuad bakedquad = (BakedQuad) quads.get(i);
+			SpriteUtil.markSpriteActive(bakedquad.getSprite());
 			int k = color;
 			if (flag && bakedquad.hasTintIndex()) {
 				k = stack.getItem().getColorFromItemStack(stack, bakedquad.getTintIndex());

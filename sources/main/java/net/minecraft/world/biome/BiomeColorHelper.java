@@ -1,5 +1,8 @@
 package net.minecraft.world.biome;
 
+import net.caffeinemc.mods.sodium.client.SodiumClientMod;
+import net.caffeinemc.mods.sodium.client.model.color.SodiumBiomeColorCache;
+import net.minecraft.client.renderer.RegionRenderCache;
 import net.minecraft.util.BlockPos;
 import net.minecraft.world.IBlockAccess;
 
@@ -40,33 +43,66 @@ public class BiomeColorHelper {
 		}
 	};
 
+	private static final BlockPos.MutableBlockPos SCRATCH_POS = new BlockPos.MutableBlockPos();
+
 	private static int func_180285_a(IBlockAccess parIBlockAccess, BlockPos parBlockPos,
 			BiomeColorHelper.ColorResolver parColorResolver) {
-		int i = 0;
-		int j = 0;
-		int k = 0;
-
-		for (BlockPos.MutableBlockPos blockpos$mutableblockpos : BlockPos.getAllInBoxMutable(parBlockPos.add(-1, 0, -1),
-				parBlockPos.add(1, 0, 1))) {
-			int l = parColorResolver.getColorAtPos(parIBlockAccess.getBiomeGenForCoords(blockpos$mutableblockpos),
-					blockpos$mutableblockpos);
-			i += (l & 16711680) >> 16;
-			j += (l & '\uff00') >> 8;
-			k += l & 255;
+		int radius = SodiumClientMod.options().quality.biomeBlendRadius;
+		if (radius <= 0) {
+			return parColorResolver.getColorAtPos(parIBlockAccess.getBiomeGenForCoords(parBlockPos), parBlockPos);
 		}
 
-		return (i / 9 & 255) << 16 | (j / 9 & 255) << 8 | k / 9 & 255;
+		int sumR = 0;
+		int sumG = 0;
+		int sumB = 0;
+		int px = parBlockPos.getX();
+		int py = parBlockPos.getY();
+		int pz = parBlockPos.getZ();
+		BlockPos.MutableBlockPos mpos = SCRATCH_POS;
+		for (int dz = -radius; dz <= radius; ++dz) {
+			for (int dx = -radius; dx <= radius; ++dx) {
+				mpos.func_181079_c(px + dx, py, pz + dz);
+				int c = parColorResolver.getColorAtPos(parIBlockAccess.getBiomeGenForCoords(mpos), mpos);
+				sumR += (c >> 16) & 255;
+				sumG += (c >> 8) & 255;
+				sumB += c & 255;
+			}
+		}
+		int diameter = (radius << 1) + 1;
+		int area = diameter * diameter;
+		return ((sumR / area) & 255) << 16 | ((sumG / area) & 255) << 8 | ((sumB / area) & 255);
 	}
 
 	public static int getGrassColorAtPos(IBlockAccess parIBlockAccess, BlockPos parBlockPos) {
+		if (parIBlockAccess instanceof RegionRenderCache) {
+			SodiumBiomeColorCache cache = ((RegionRenderCache) parIBlockAccess).getSodiumBiomeCache();
+			if (cache != null) {
+				return cache.getColor(SodiumBiomeColorCache.TYPE_GRASS, parBlockPos.getX(), parBlockPos.getY(),
+						parBlockPos.getZ());
+			}
+		}
 		return func_180285_a(parIBlockAccess, parBlockPos, field_180291_a);
 	}
 
 	public static int getFoliageColorAtPos(IBlockAccess parIBlockAccess, BlockPos parBlockPos) {
+		if (parIBlockAccess instanceof RegionRenderCache) {
+			SodiumBiomeColorCache cache = ((RegionRenderCache) parIBlockAccess).getSodiumBiomeCache();
+			if (cache != null) {
+				return cache.getColor(SodiumBiomeColorCache.TYPE_FOLIAGE, parBlockPos.getX(), parBlockPos.getY(),
+						parBlockPos.getZ());
+			}
+		}
 		return func_180285_a(parIBlockAccess, parBlockPos, field_180289_b);
 	}
 
 	public static int getWaterColorAtPos(IBlockAccess parIBlockAccess, BlockPos parBlockPos) {
+		if (parIBlockAccess instanceof RegionRenderCache) {
+			SodiumBiomeColorCache cache = ((RegionRenderCache) parIBlockAccess).getSodiumBiomeCache();
+			if (cache != null) {
+				return cache.getColor(SodiumBiomeColorCache.TYPE_WATER, parBlockPos.getX(), parBlockPos.getY(),
+						parBlockPos.getZ());
+			}
+		}
 		return func_180285_a(parIBlockAccess, parBlockPos, field_180290_c);
 	}
 

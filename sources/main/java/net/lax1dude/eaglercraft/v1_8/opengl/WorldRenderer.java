@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Comparator;
 
+import net.caffeinemc.mods.sodium.client.SodiumClientMod;
+import net.caffeinemc.mods.sodium.client.util.SodiumQuadSorter;
 import net.lax1dude.eaglercraft.v1_8.EagRuntime;
 import net.lax1dude.eaglercraft.v1_8.internal.PlatformBufferFunctions;
 import net.lax1dude.eaglercraft.v1_8.log4j.LogManager;
@@ -87,6 +89,15 @@ public class WorldRenderer {
 	 */
 	public void func_181674_a(float parFloat1, float parFloat2, float parFloat3) {
 		int i = this.vertexCount / 4;
+		if (i <= 1) {
+			return;
+		}
+		if (SodiumClientMod.options().performance.useTranslucentFaceSorting) {
+			SodiumQuadSorter.sortQuadsDescending(this.intBuffer, this.floatBuffer, i, this.vertexFormat.attribStride,
+					(float) ((double) parFloat1 + this.xOffset), (float) ((double) parFloat2 + this.yOffset),
+					(float) ((double) parFloat3 + this.zOffset));
+			return;
+		}
 		final float[] afloat = new float[i];
 
 		for (int j = 0; j < i; ++j) {

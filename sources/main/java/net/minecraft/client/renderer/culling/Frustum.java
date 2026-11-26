@@ -61,4 +61,20 @@ public class Frustum implements ICamera {
 		return this.isBoxInFrustum(axisalignedbb.minX, axisalignedbb.minY, axisalignedbb.minZ, axisalignedbb.maxX,
 				axisalignedbb.maxY, axisalignedbb.maxZ);
 	}
+
+	public ClippingHelper sodiumGetClippingHelper() {
+		return this.clippingHelper;
+	}
+
+	public double sodiumGetX() {
+		return this.xPosition;
+	}
+
+	public double sodiumGetY() {
+		return this.yPosition;
+	}
+
+	public double sodiumGetZ() {
+		return this.zPosition;
+	}
 }

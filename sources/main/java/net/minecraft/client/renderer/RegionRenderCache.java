@@ -2,7 +2,10 @@ package net.minecraft.client.renderer;
 
 import java.util.Arrays;
 
+import net.caffeinemc.mods.sodium.client.model.color.SodiumBiomeColorCache;
+import net.caffeinemc.mods.sodium.client.model.light.SodiumLightDataCache;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.renderer.chunk.CompiledChunk;
 import net.minecraft.init.Blocks;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.BlockPos;
@@ -36,6 +39,11 @@ public class RegionRenderCache extends ChunkCache {
 	private final BlockPos position;
 	private int[] combinedLights;
 	private IBlockState[] blockStates;
+	private static final SodiumBiomeColorCache SHARED_BIOME_CACHE = new SodiumBiomeColorCache();
+	private static final SodiumLightDataCache SHARED_LIGHT_CACHE = new SodiumLightDataCache();
+	private SodiumBiomeColorCache sodiumBiomeCache;
+	private SodiumLightDataCache sodiumLightCache;
+	private CompiledChunk activeCompiledChunk;
 
 	public RegionRenderCache(World worldIn, BlockPos posFromIn, BlockPos posToIn, int subIn) {
 		super(worldIn, posFromIn, posToIn, subIn);
@@ -44,6 +52,27 @@ public class RegionRenderCache extends ChunkCache {
 		this.combinedLights = new int[8000];
 		Arrays.fill(this.combinedLights, -1);
 		this.blockStates = new IBlockState[8000];
+	}
+
+	public void initSodiumCaches(int sectionOriginX, int sectionOriginY, int sectionOriginZ, int blendRadius,
+			CompiledChunk targetCompiledChunk) {
+		SHARED_BIOME_CACHE.reset(this.worldObj, sectionOriginX, sectionOriginY, sectionOriginZ, blendRadius);
+		SHARED_LIGHT_CACHE.reset(this, sectionOriginX, sectionOriginY, sectionOriginZ);
+		this.sodiumBiomeCache = SHARED_BIOME_CACHE;
+		this.sodiumLightCache = SHARED_LIGHT_CACHE;
+		this.activeCompiledChunk = targetCompiledChunk;
+	}
+
+	public SodiumBiomeColorCache getSodiumBiomeCache() {
+		return this.sodiumBiomeCache;
+	}
+
+	public SodiumLightDataCache getSodiumLightCache() {
+		return this.sodiumLightCache;
+	}
+
+	public CompiledChunk getActiveCompiledChunk() {
+		return this.activeCompiledChunk;
 	}
 
 	public TileEntity getTileEntity(BlockPos blockpos) {
