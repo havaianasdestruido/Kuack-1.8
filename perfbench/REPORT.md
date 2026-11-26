@@ -33,6 +33,9 @@ The per-change detail (bottleneck, old vs new complexity, verification, benchmar
 | `world/World.java` | `loadedTileEntityList` List→LinkedHashSet; new allocation-free `getHeight(int,int)` and `isAreaLoaded(int,int,int,int)`; `getHeight(BlockPos)` delegates |
 | `world/WorldServer.java` | `getTileEntitiesIn()` indexed `size()`/`get(i)` → enhanced for-each over the Set |
 | `world/chunk/Chunk.java` | skylight probes (`recheckGaps`, `checkSkylightNeighborHeight`, `updateSkylightNeighborHeight`) use the allocation-free World overloads |
+| `lax1dude/.../vector/Matrix4f.java` | `rotate()` uses `MathHelper.cos/sin` (the engine's existing sine table) instead of native `Math.cos/sin`, with a fallback for \|angle\| ≥ 200,000 rad, NaN and ±Inf — FINDINGS #10 |
+| `client/renderer/texture/MipmapGammaBlend.java` (**new**) | 256-entry gamma decode table + the box-filter blend, extracted from `TextureUtil` so it is GL-free and testable — FINDINGS #11 |
+| `client/renderer/texture/TextureUtil.java` | `blendColors` delegates to `MipmapGammaBlend`; the per-thread scratch buffer and the two `Math.pow`-per-channel helpers moved with it |
 
 One candidate (`BiomeColorHelper` / `RegionRenderCache` biome-tint memo) was fully implemented,
 proved equivalent over 570,240 checks, **measured to be a non-win, and reverted** — see FINDINGS #2.
@@ -52,6 +55,8 @@ proved equivalent over 570,240 checks, **measured to be a non-win, and reverted*
 | 7 | `World.loadedTileEntityList` flush (`contains` per added tile entity) | **O(A·T)** identity comparisons per tick | **O(A)** (one O(1) `contains` per add) |
 | 8 | `WorldServer.getTileEntitiesIn()` iteration | O(T) indexed `size()`/`get(i)` | O(T) enhanced for-each (lower constant, Set-compatible) |
 | 9 | `Chunk` skylight probes (`getHeight`/`isAreaLoaded` via `BlockPos`) | 1 `BlockPos` alloc per column probe (~769/invocation worst case in `recheckGaps`) | **0** `BlockPos` allocs in probe path; primitive `int` height |
+| 10 | `Matrix4f.rotate` (every `GlStateManager.rotate`, model part, particle billboard, GUI item) | 2 native libm calls (`Math.cos` + `Math.sin`) per rotation, 2,000–6,000/frame | 2 table reads (existing 65,536-entry table), **0 new bytes**; 2.42× per rotation on the JVM, 5.0× on the pair in V8 |
+| 11 | `TextureUtil.generateMipmapData` gamma box filter | up to **20 `Math.pow`** per output texel (4 ch × 4 neighbours + 4 encode), 1,700 per 16×16 sprite chain | 16 table reads + 4 `Math.pow` (encode kept for exactness); **bit-identical** output; 4.6–5.1× |
 
 ---
 
@@ -148,6 +153,41 @@ harness (20,000 trials, 0 mismatches in AABB-filtered membership).
 | `isAreaLoaded(BlockPos,r)` per call | 1 | 0 |
 | `recheckGaps` worst case per invocation | up to ~769 | **0** (probe path) |
 
+**#10 `Matrix4f.rotate` → sine table** (`MatrixRotateBench`, medians of 60 trials):
+
+| measurement | before | after | speedup |
+|---|---|---|---|
+| one rotation (trig + 40 float ops) | 26.9–27.6 ns | 11.1–11.4 ns | **2.42×** |
+| the `Math.cos` + `Math.sin` pair alone | 14.1–14.8 ns | 0.9–1.3 ns | **11.8–15.0×** |
+| 500 rotations (typical frame) | 15.2 µs | 8.6–8.7 µs | saves 6.5–6.6 µs |
+| 2,400 rotations (busy frame) | 64.4–65.9 µs | 28.8–28.9 µs | saves **35.5–37.1 µs/frame** |
+| 7,200 rotations (crowded scene) | 194–205 µs | 97–102 µs | saves ~97–102 µs |
+| 20,000 rotations (worst case) | 576–589 µs | 285–301 µs | saves ~275–305 µs |
+
+Ranges are the spread of medians across independent runs.
+
+In the actual TeaVM target (`perfbench/js/bench_math_lut.js`, V8 12.4, with `Math.fround` modelling
+Java float semantics): trig pair 19.75 → 3.95 ns (**5.0×**); a 2,400-rotation frame batch 35.0 →
+11.7 µs, **saving 23.3 µs/frame** (0.14 % of a 60 Hz frame, 0.56 % of a 144 Hz frame). The JS win is
+smaller than the JVM win because `Math.fround` on the table index costs as much as the multiply
+(2.08 ns vs 1.09 ns measured).
+
+**#11 mipmap gamma filter** (`TextureGammaBench`, medians of 40 trials, realistic sprite data):
+
+| workload | before | after | speedup |
+|---|---|---|---|
+| one texel, linear filter (4 decode + 4 encode) | 281.6–282.1 ns | 58.9–61.7 ns | **4.57–4.78×** |
+| one texel, gamma filter (16 decode + 4 encode) | 248.6–252.5 ns | 49.8–51.1 ns | **4.94–4.99×** |
+| 16×16 sprite chain, 4 mip levels (85 texels) | 22.4–25.2 µs | 4.9–5.6 µs | 4.50–4.56× |
+| 1,024-sprite block atlas | 26.4 ms | 5.7 ms | **4.6×** |
+| 1,024-sprite atlas with transparency | 23.4–24.1 ms | 4.7–4.8 ms | **4.9–5.1×** |
+| 256×256 atlas, 5 mip levels | 6.3–6.5 ms | 1.3–1.4 ms | 4.5–4.9× |
+
+In the TeaVM target shape: decode 43.46 → 0.53 ns (**82×**), full gamma-branch texel 233.6 → 47.6 ns
+(4.9×; the retained `pow(avg, 1/2.2)` encode is now ~90 % of the remaining cost, which is why the
+end-to-end gain is 5× and not 20×). Table cost: 1 KiB, 256 `Math.pow` calls (~10 µs) once, static and
+stale-proof.
+
 Differential equivalence over 1,444 boundary/edge cases (chunk edges, negative coords, ±30,000,000
 world boundary, radius 0/1/16): **0 mismatches** between the `BlockPos` form and the primitive
 overloads; identical height and loaded/unloaded answers because both delegate to the pre-existing
@@ -164,21 +204,43 @@ range-check logic.
 | `VerifyChunkQueue` | 3,459 checks: full/partial/empty queues, radii 1–32, 7×7 centres, plus 5,000 randomised container ops proving same contents *and* same iteration order | 0 failures |
 | `VerifyChunkUnload` | 197,740 checks over 4,000 randomised load/unload/iterate/snapshot sequences | 0 failures |
 | `VerifyClassMap` | reference implementation vs the patched **real** class, 300 trials / 43,163 state comparisons with real entity classes | 0 failures |
-| `VerifyBiomeColor` | (reverted change) 570,240 checks | 0 failures |
+| `VerifyBiomeColor` | (reverted change) 570,240 checks — source now in `perfbench/src-reverted/` because the APIs it exercised were reverted | 0 failures |
+| `VerifyMatrixRotate` | 204,335 checks: 200k random rotations vs the original, axis invariance, fallback domain (`±200000`, `±1e6`, `±1e30`, `±Inf`, `NaN`), angle 0, in-place aliasing | 0 failures; max element delta 1.494e-4, max angular deviation 9.589e-5 rad (0.00549° = one table step); fallback and NaN/Inf **bit-identical** |
+| `VerifyGammaLut` | 8,295,168 checks: 256/256 decode entries bit-exact, exhaustive one-channel sweep × both filter branches, 4,000,000 random ARGB quadruples vs a verbatim copy of the vanilla code | 0 failures |
+| `bench_math_lut.js` | Node.js/V8 measurement of the engine's tables vs native `Math.*` (sin, cos, sqrt, 1/sqrt, atan2, pow, floor, `%`), LUT sizes/accuracies, and the two shipped changes as TeaVM compiles them | see tables above; basis for the rejections |
 | `bench_tile_entities.js` | Node.js replica: 20,000 add/remove/contains/removeAll equivalence trials + T=256→16384 × A=1→100 scaling | 0 mismatches; 16,433× fewer comparisons at T=16384,A=100 |
 | `bench_blockpos.js` | Node.js replica: getHeight/isAreaLoaded allocation counts + recheckGaps probe logic + 1,444 boundary differential cases | 0 allocs in probe path; 0 mismatches |
 
 **Compilation.** `./perfbench/compile_main.sh` compiles the entire tree with ECJ and fails only if a
-file that used to compile starts failing. Before any edit: 1,525 problems across 104 files, all
-pre-existing platform-stub gaps (TeaVM/OpenGL). The applied changes (9 files across findings #1,#3,#4,#5,#6
-plus 3 files for findings #7,#8,#9) introduce no new problems — the 1,525 / 104 baseline is unchanged.
-Nothing in any change touches TeaVM-incompatible APIs: only `java.util` sets/maps/lists, no threads,
-no reflection, no `ThreadLocal`.
+file that used to compile starts failing. This environment reports **1,527 problems across 105
+files** — all pre-existing platform-stub gaps (TeaVM/OpenGL), not 1,525/104 as earlier recorded. That
+number was reconciled by compiling the pristine tree (`git archive HEAD`) with the same compiler,
+stub classpath and JDK: **also 1,527 / 105, and the file sets are identical** (`diff` clean), so the
+documented 1525/104 came from an earlier stub revision, and every change in this report is
+error-neutral. The pristine set is now committed as `perfbench/errorfiles.baseline.txt` so the gate's
+regression check actually works in a fresh clone (`build/` is gitignored, so the old
+`build/errorfiles.baseline.txt` never existed). Nothing in any change touches TeaVM-incompatible
+APIs: `java.util` collections, arrays, `Math.*` and the engine's own tables only — no threads, no
+reflection, no `ThreadLocal`, no unbounded caches.
 
-**Benchmark caveat.** No JDK is available in the sandbox and the Adoptium release CDN is outside the
-allowed hosts, so the JVM compile gate and JMH-style benchmarks could not be run here; #7-#9 are
-verified with faithful Node.js algorithm replicas (differential equivalence + complexity scaling) as
-recorded above. Run `./perfbench/compile_main.sh` when a JDK is available to close the compile gate.
+**Benchmark environment.** Earlier entries (#7-#9) could not be run on a JVM in this sandbox and were
+verified with faithful Node.js algorithm replicas; that is still true for those numbers. For #10 and
+#11 a JDK was obtained during the session (jdk4py, Temurin **25.0.5.1**, `JAVA_HOME` as set by
+`run_bench.sh`; note it ships no `javac`, which is why ECJ remains the compiler), so both are measured
+on real Minecraft classes **and** re-measured in the actual execution target, V8 12.4.254.21 via
+Node 22.22.3. `run_bench.sh` now also puts `perfbench/build/stubs` on the run classpath, which is
+required by any benchmark that constructs a real `World`/`Entity`/`Item`.
+
+**Harness build.** `perfbench/run_bench.sh` now compiles the whole `perfbench/src` tree and fails if
+anything in it does not compile. The three sources belonging to the *reverted* #2 experiment
+(`VerifyBiomeColor`, `BiomeColorRealBench`, `BiomeColorSweep`) were moved to
+`perfbench/src-reverted/` — they reference production APIs that no longer exist — so the harness
+build is currently **clean (0 errors)**; previously it reported 16 errors on every run.
+
+**Not measured / not run.** SpiderMonkey and JavaScriptCore behaviour (only V8 was available — the
+conclusions about `Math.fround` and `Math.pow` are therefore V8-specific, though the *direction* —
+libm dominates, tables win — is engine-independent); real in-browser frame timings; the `#10` win
+inside a `FrameBuffer`-backed game loop (only the isolated rotation cost was measured).
 
 **Bug caught by the tests.** The first version of the `filterChunkLoadQueue` change aliased the live
 list and then cleared it, which would have emptied the queue on every re-filter. The differential test
@@ -191,6 +253,13 @@ original did.
 
 Full ranked table with per-site reasoning in `perfbench/HOTSPOTS.md`. Headlines:
 
+0. **Particle physics runs the full entity collision path** — `EntityFX` never sets `noClip`, so every
+   live particle (up to 4,000) calls `Entity.moveEntity` → `World.getCollidingBoundingBoxes` 1–3×
+   per tick. Measured (`ParticleCollisionBench`, real classes): **79–95 ns per call** for a
+   particle-sized AABB, with a fresh `ArrayList` + `AxisAlignedBB` each time; ≈**0.76 ms/tick
+   (≈15 ms/s)** and ≈8,000 short-lived allocations per tick at 4,000 particles. The fix is
+   allocation reuse + hoisting the per-block world-border test + merging `moveEntity`'s three
+   sequential sweeps — deliberately *not* done in this PR because it is collision code.
 1. `RenderGlobal.renderEntities:539` — redundant `getChunkFromBlockCoords` + `getPosition().getY()`
    per visible chunk per frame, although `RenderChunk.index` already encodes the section.
 2. `BlockModelRenderer:77-80` — `float[12]` + `BitSet(3)` + `AmbientOcclusionFace` allocated for
@@ -207,6 +276,16 @@ Full ranked table with per-site reasoning in `perfbench/HOTSPOTS.md`. Headlines:
 Measured and deliberately **not** changed, because the only available fixes would introduce stale
 caches (which the task forbids): `EnchantmentHelper.getMaxEnchantmentLevel` (129.3 ns/call, 3×/frame)
 and `World.countEntities` (0.016 ms per spawn tick at 4,000 entities).
+
+**The maths/LUT sweep.** The engine's transcendentals are already 99 % tabulated (`SIN_TABLE`,
+`func_181159_b`'s 257-entry asin/cos tables, the De Bruijn log2, the noise gradient tables, the light
+brightness table). The two sites that had escaped the tables are fixed above (#10, #11); everything
+else that looked like a table candidate was measured and rejected — sqrt LUT, magic-number rsqrt in
+JavaScript (11.8 ns vs 1.6 ns for `Math.sqrt`), smaller/lerped sine tables (slower than the existing
+65,536-entry one), dropping `Math.fround` from `MathHelper.sin/cos` (1.9× but it perturbs worldgen
+seeds), degree tables, `%`-free `wrapAngleTo180_*`, floor LUT (already at parity), `atan2` tables,
+block-property tables in the AO mesher, and `pow(2.718,-x)` → `exp`. Full table with numbers in
+`FINDINGS.md`.
 
 ---
 

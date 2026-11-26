@@ -35,6 +35,7 @@ import java.io.Serializable;
 
 import net.lax1dude.eaglercraft.v1_8.internal.buffer.ByteBuffer;
 import net.lax1dude.eaglercraft.v1_8.internal.buffer.FloatBuffer;
+import net.minecraft.util.MathHelper;
 
 /**
  * Holds a 4x4 float matrix.
@@ -603,8 +604,40 @@ public class Matrix4f extends Matrix implements Serializable {
 	public static Matrix4f rotate(float angle, Vector3f axis, Matrix4f src, Matrix4f dest) {
 		if (dest == null)
 			dest = new Matrix4f();
-		float c = (float) Math.cos(angle);
-		float s = (float) Math.sin(angle);
+		// sin/cos come from Minecraft's existing 65536-entry table instead of the
+		// native Math.cos/Math.sin pair, see perfbench/FINDINGS.md #10. This was the
+		// only remaining consumer of native trig on the render path: every rotated
+		// model part, armour layer, held item, tile entity, particle billboard, GUI
+		// item, sky/moon matrix and baked BlockModelRenderer element comes through
+		// GlStateManager.rotate (or FaceBakery) -> Matrix4f.rotate, i.e. 2 native
+		// libm calls per rotation, a few thousand rotations per frame.
+		//
+		// Cost of the swap: the table quantizes the angle to one index step,
+		// 2*pi/65536 = 9.587e-5 rad, so |cos| and |sin| move by at most 9.6e-5 and a
+		// rotated vector moves by at most 9.589e-5 rad (0.00549 degrees) - measured,
+		// see perfbench.VerifyMatrixRotate. That is far below one pixel of model
+		// displacement, and it is the same order of error the engine accepts
+		// everywhere else it needs a sine: MathHelper.sin/cos is the standard path
+		// for sky, cloud, particle, lightning and item-frame angles, and most of the
+		// angles that reach this method come from those same float tables (or are
+		// plain degree-to-radian conversions of entity yaw/pitch). At FaceBakery it
+		// moves baked element vertices by <= 1e-4 blocks. Nothing gameplay-side calls
+		// this: the callers are rendering and model baking only, so collision, entity
+		// movement and world generation are untouched.
+		//
+		// MathHelper.sin/cos saturate their int index for |angle| >= ~205887 rad
+		// (2048 * 2pi turns) and map NaN to index 0, so anything outside a generous
+		// sane domain is handed to the original double-precision path unchanged:
+		// the fallback keeps NaN/Infinity/bizarre inputs bit-identical to vanilla.
+		float c;
+		float s;
+		if (angle > -200000.0f && angle < 200000.0f) {
+			c = MathHelper.cos(angle);
+			s = MathHelper.sin(angle);
+		} else {
+			c = (float) Math.cos(angle);
+			s = (float) Math.sin(angle);
+		}
 		float oneminusc = 1.0f - c;
 		float xy = axis.x*axis.y;
 		float yz = axis.y*axis.z;

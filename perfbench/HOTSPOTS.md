@@ -4,6 +4,27 @@ Ranked by estimated impact on frame time / tick time. Each entry records the sit
 cost, and why it was left alone. Sites marked **measured** had a benchmark written; the number is the
 cost at a realistic input size.
 
+## The maths/LUT sweep (this session)
+
+Full detail in `FINDINGS.md` (existing-table inventory, trig call-site census, #10, #11, and the
+"measured rejections" table). Headlines:
+
+- **Implemented #10** — `Matrix4f.rotate` used native
+  `Math.cos`/`Math.sin` for every model-part/particle/GUI rotation; it now uses the engine's
+  existing sine table (2.42× per rotation on the JVM, 5.0× on the trig pair in V8, ~35 µs/frame at
+  2,400 rotations, 0 bytes of new memory, ≤9.6e-5 rad deviation).
+- **Implemented #11** — the mipmap box filter decoded channel bytes with `Math.pow(x, 2.2)`, 20
+  libm calls per mipmap texel, although the input has only 256 possible values; a 256-entry table
+  makes it 4.6–5.1× faster (≈21 ms per 1,024-sprite atlas) and is bit-identical.
+- **Rejected with measurements** — sqrt LUT, magic-number rsqrt in JavaScript, smaller/lerped sin
+  tables, dropping `Math.fround` from `MathHelper.sin/cos` (breaks worldgen determinism), degree
+  tables, `%`-removal in `wrapAngleTo180_*`, floor LUT, `atan2` tables, block-property tables in the
+  AO mesher, `pow(2.718,-x)` → `exp`. Every one has a number next to it in `FINDINGS.md`.
+- **The honest conclusion**: client-side transcendentals in this engine are already 99 % tabulated,
+  so the remaining math wins are tens of microseconds per frame, not milliseconds. The large
+  remaining CPU items in this codebase are allocation- and data-structure-shaped, not arithmetic —
+  the biggest one found during this sweep is listed first below.
+
 ## Measured, and deliberately not changed
 
 | site | shape | measurement | why not changed |
@@ -12,8 +33,31 @@ cost at a realistic input size.
 | `World.countEntities(Class)` (`world/World.java:2589`) | full `loadedEntityList` scan × 4 creature types, every spawn tick, per `WorldServer` | `SpawnCountBench`: 4000 entities → **0.016 ms per spawn tick** (0.3 ms/s) | Measurable but small; a per-type counter would need invalidation on every spawn/despawn/dimension change and `isNoDespawnRequired` is live state that changes at runtime. Documented rather than risked. |
 | `EntityAITasks` (`entity/ai/EntityAITasks.java`) | **fixed** — see FINDINGS #4; left here for the measured caveat | 1.00–1.05× at realistic 8–16 task mobs | Change kept for the asymptotic guarantee, but it is *not* a frame-time win at vanilla mob sizes. |
 
+## Correctness observations (found while reading hot paths, **not** fixed here)
+
+- `PBRTextureMapUtils.generateMipmapDataIgnoreAlpha:158` — `x = (j % len) << 1; y = (j / len) << 1;`
+  uses `len` (the level's texel count) where the row length `lvlW` is meant, so `y` is always 0 and
+  `x` runs up to `2*(lvlW*lvlW-1)`. Every PBR mip level above 0 is built from the wrong texels. Only
+  hit when the atlas does not already supply that level (`aint[i] == null`). Fixing it changes
+  rendered PBR output, so it does not belong in a performance PR.
+- `EntityFX` never sets `noClip = true`, which is why particles pay for collision at all (see item 0
+  below). Changing that *is* a gameplay change (particles would fall through blocks), so the fix
+  there must be allocation reuse, not clipping.
+
 ## Not measured, ranked by expected impact
 
+0. **Particle physics runs the full entity collision path** (`EntityFX.onUpdate:152` ->
+   `Entity.moveEntity` -> `World.getCollidingBoundingBoxes`) — `EntityFX` never sets `noClip`, so
+   every one of the up-to-4,000 live particles performs 1–3 collision sweeps per tick. Measured with
+   `perfbench.ParticleCollisionBench` (real classes, `WorldStub`):
+   **94.8 ns per call** for a particle-sized AABB (79–93 ns item-sized, 83–88 ns player-sized), with a
+   fresh `ArrayList` + `AxisAlignedBB` per call and a per-block world-border check. At 4,000
+   particles × 2 sweeps that is **~0.76 ms per tick (~15 ms/s) and ~8,000 short-lived allocations
+   per tick**, before counting the `getEntitiesWithinAABBExcludingEntity` pass inside. This is *not*
+   a lookup-table problem: the fixes are (a) reuse one scratch list/AABB per call site, (b) hoist the
+   world-border test out of the x/z loop, (c) merge `moveEntity`'s sequential y/x/z sweeps into one
+   padded sweep. Left for a follow-up PR because it touches collision code, which this sweep was
+   explicitly told not to alter.
 1. **`RenderGlobal.renderEntities`** (`client/renderer/RenderGlobal.java:539-560`) — per render-info
    entry it calls `theWorld.getChunkFromBlockCoords(position)` (hash lookup) and
    `getPosition().getY()/16` to index `getEntityLists()`; `RenderChunk` already stores its section
