@@ -660,8 +660,7 @@ public class WorldServer extends World implements IThreadListener {
 	public List<TileEntity> getTileEntitiesIn(int minX, int minY, int minZ, int maxX, int maxY, int maxZ) {
 		ArrayList arraylist = Lists.newArrayList();
 
-		for (int i = 0; i < this.loadedTileEntityList.size(); ++i) {
-			TileEntity tileentity = (TileEntity) this.loadedTileEntityList.get(i);
+		for (TileEntity tileentity : this.loadedTileEntityList) {
 			BlockPos blockpos = tileentity.getPos();
 			if (blockpos.getX() >= minX && blockpos.getY() >= minY && blockpos.getZ() >= minZ && blockpos.getX() < maxX
 					&& blockpos.getY() < maxY && blockpos.getZ() < maxZ) {

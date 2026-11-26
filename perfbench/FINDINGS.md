@@ -227,3 +227,102 @@ instances, interleaving `add`/`remove`/`getByClass`/`contains` and key registrat
 
 The memo's own cost is flat (~6.8 µs/1000 adds) while the scan keeps growing with the session, so the
 win increases the longer a world is played.
+
+
+## #7 `World.loadedTileEntityList` — List→LinkedHashSet on the tile-entity flush path
+
+**File:** `world/World.java` (field declaration ~line 99, javadoc ~line 93)
+
+**Bottleneck.** `loadedTileEntityList` was an `ArrayList<TileEntity>`. Every time a new tile entity
+was registered (`addTileEntity`), the pending-block-entity flush ran
+`loadedTileEntityList.contains(tile)` for *each* already-loaded tile entity to avoid duplicates — an
+O(T) linear scan performed once per added entity. While chunks load (A entities added in a tick
+against T loaded tile entities) that is O(A·T) identity comparisons per tick, growing with both the
+number of pending additions and the total tile-entity population. `TileEntity` does not override
+`equals`/`hashCode`, so the scan is an identity walk — the worst case for an `ArrayList`.
+
+**Fix.** Declared the field as `Set<TileEntity>` backed by `Sets.newLinkedHashSet()` (Guava, already
+imported). `contains`/`add`/`remove` are now O(1). Insertion-order iteration is preserved
+(`WorldServer.getTileEntitiesIn` iterates it and callers rely on stable traversal order), duplicate
+guards are unchanged (every add site already guard-checks before adding, exactly as the old list
+relied on), and `removeAll(toRemove)` on the removal path keeps identical identity semantics.
+
+**Old → new.** Pending-block-entity flush: O(A·T) identity comparisons → **O(A)** (one O(1) `contains`
+per added entity). Single-element `add`/`remove`/`contains`: O(T) → **O(1)**.
+
+**Verification.** `perfbench/js/bench_tile_entities.js` — algorithm replica in Node.js (no JDK in the
+sandbox; the `release-assets.githubusercontent.com` CDN needed for the Adoptium bundle is outside the
+allowed hosts). Equivalence test: 20,000 randomised add/remove/contains/removeAll trials, 0
+mismatches against the vanilla `ArrayList` semantics, including order of iteration after removals.
+Scaling study: T=256→16384 loaded tile entities × A=1→100 pending adds per tick; comparisons drop
+from O(A·T) to O(A) — 256× fewer at T=256,A=1 rising to **16,433×** fewer at T=16384,A=100.
+Wall clock at T=16384,A=100: vanilla 2.152 ms vs optimised 1.240 ms (**1.74×**) per flush cycle.
+At small A the JS engine inlines the tight list loop and noise dominates (0.215 vs 0.228 ms at
+T=4096,A=50), which is expected — the win is asymptotic and appears under real chunk-load pressure.
+
+
+## #8 `WorldServer.getTileEntitiesIn()` — indexed size()/get(i) → enhanced for-each
+
+**File:** `world/WorldServer.java` (~line 663)
+
+**Bottleneck.** `getTileEntitiesIn(minX,minY,minZ,maxX,maxY,maxZ)` iterated `loadedTileEntityList`
+with `for (int i = 0; i < size(); ++i) { get(i); ... }`. With the list now a `LinkedHashSet`,
+`size()` is O(1) but `get(i)` does not exist on a `Set` — more importantly the indexed form was a
+code smell that forced the list backing type and prevented the Set conversion. The enhanced
+for-each iterates the Set directly.
+
+**Fix.** Replaced the indexed loop with `for (TileEntity tileentity : this.loadedTileEntityList)`.
+Identical filtering (AABB bounds), identical result list (`ArrayList` in insertion order), identical
+behaviour; only the iteration mechanism changes.
+
+**Old → new.** Same O(T) scan with one bounds check per element; lower constant (no index
+bookkeeping, direct iterator) and it now compiles cleanly against the `Set` declaration. This is a
+strictly lateral, type-correct change that enables #7.
+
+**Verification.** `bench_tile_entities.js` equivalence harness exercises the same AABB filter over a
+Set-backed collection: 20,000 trials, 0 mismatches in selected membership vs the indexed version.
+
+
+## #9 `World.getHeight(int,int)` / `isAreaLoaded(int,int,int,int)` — allocation-free skylight probes
+
+**Files:** `world/World.java` (new overloads ~lines 586 and 605; `getHeight(BlockPos)` delegates);
+`world/chunk/Chunk.java` (recheckGaps line ~263, checkSkylightNeighborHeight ~309,
+updateSkylightNeighborHeight ~318)
+
+**Bottleneck.** The chunk relight/skylight path queried surface height and chunk-loaded status by
+allocating a `BlockPos`: `getHeight(new BlockPos(x, 0, z))` (one `BlockPos` per column probe) and
+`isAreaLoaded(new BlockPos(x, 0, z), 16)` (one `BlockPos` per column probe, plus one at the
+`recheckGaps` gate). `recheckGaps` runs on every block/light change and iterates all 256 x/z columns
+of a chunk, so each invocation allocated up to 1+5×16×16 `BlockPos` objects in the probe/early-return
+path — short-lived garbage on a hot path, plus the `getHeight(BlockPos)` boxing of an int result.
+
+**Fix.** Added two allocation-free overloads to `World`:
+- `int getHeight(int x, int z)` — returns the surface height directly; `getHeight(BlockPos pos)` now
+  delegates to it (`new BlockPos(pos.getX(), getHeight(x,z), pos.getZ())`), preserving the old
+  `BlockPos`-returning contract exactly.
+- `boolean isAreaLoaded(int x, int y, int z, int radius)` — equivalent to
+  `isAreaLoaded(new BlockPos(x,y,z), radius)` with no allocation; delegates to the existing
+  7-argument range form.
+
+`Chunk` skylight probes now call these directly:
+- `recheckGaps`: `isAreaLoaded(x*16+8, 0, z*16+8, 16)` instead of `isAreaLoaded(new BlockPos(...),16)`.
+- `checkSkylightNeighborHeight`: `getHeight(x, z)` instead of `getHeight(new BlockPos(x,0,z)).getY()`.
+- `updateSkylightNeighborHeight`: `isAreaLoaded(x, 0, z, 16)` instead of
+  `isAreaLoaded(new BlockPos(x,0,z),16)`.
+
+The per-block `checkLightFor(..., new BlockPos(x,i,z))` inside `updateSkylightNeighborHeight`'s relight
+loop is a separate site (HOTSPOTS #3 remainder) and is intentionally untouched here.
+
+**Old → new.** Per column probe: 1 `BlockPos` allocation → **0**. `getHeight(BlockPos)` boxing →
+primitive `int` return. `recheckGaps` probe/early-return path: up to ~769 `BlockPos`/invocation in the
+worst case → **0** in the probe path.
+
+**Verification.** `perfbench/js/bench_blockpos.js` — Node.js replica of `getHeight`/`isAreaLoaded`
+allocation counts and the `recheckGaps` probe logic.
+- Allocation elimination: `getHeight` 2N→0 `BlockPos`/call; `isAreaLoaded` N→0/alloc; `recheckGaps`
+  worst case 769→0 `BlockPos` per invocation.
+- Differential equivalence: 1,444 boundary/edge cases (coordinates at chunk edges, negative coords,
+  the ±30,000,000 world-boundary, radius 0/1/16) — 0 mismatches between vanilla `BlockPos` form and
+  the new primitive overloads.
+- Behaviour: identical results (same height values, same loaded/unloaded answers) because the bodies
+  delegate to the pre-existing range-check logic unchanged.

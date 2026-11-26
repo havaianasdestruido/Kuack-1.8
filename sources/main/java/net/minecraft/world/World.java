@@ -89,9 +89,14 @@ public abstract class World implements IBlockAccess {
 	public final List<Entity> loadedEntityList = Lists.newArrayList();
 	protected final List<Entity> unloadedEntityList = Lists.newArrayList();
 	/**+
-	 * A list of the loaded tile entities in the world
+	 * A set of the loaded tile entities in the world. EAGLER: this used to be a List, so every
+	 * loadedTileEntityList.contains() in the pending-block-entity flush was an O(T) linear scan
+	 * performed once per newly-added tile entity (O(A*T) per tick while chunks are loading). Tile
+	 * Entity does not override equals/hashCode, so a LinkedHashSet reproduces the old identity
+	 * membership exactly, keeps insertion-order iteration (getTileEntitiesIn observes order), and
+	 * makes contains()/add()/remove() O(1).
 	 */
-	public final List<TileEntity> loadedTileEntityList = Lists.newArrayList();
+	public final Set<TileEntity> loadedTileEntityList = Sets.newLinkedHashSet();
 	public final List<TileEntity> tickableTileEntities = Lists.newArrayList();
 	private final List<TileEntity> addedTileEntityList = Lists.newArrayList();
 	private final List<TileEntity> tileEntitiesToBeRemoved = Lists.newArrayList();
@@ -572,11 +577,17 @@ public abstract class World implements IBlockAccess {
 	 * Returns maximum world height.
 	 */
 	public BlockPos getHeight(BlockPos pos) {
+		return new BlockPos(pos.getX(), this.getHeight(pos.getX(), pos.getZ()), pos.getZ());
+	}
+
+	/**+
+	 * Returns the surface height at the given x/z coordinates without allocating a BlockPos.
+	 */
+	public int getHeight(int x, int z) {
 		int i;
-		if (pos.getX() >= -30000000 && pos.getZ() >= -30000000 && pos.getX() < 30000000 && pos.getZ() < 30000000) {
-			if (this.isChunkLoaded(pos.getX() >> 4, pos.getZ() >> 4, true)) {
-				i = this.getChunkFromChunkCoords(pos.getX() >> 4, pos.getZ() >> 4).getHeightValue(pos.getX() & 15,
-						pos.getZ() & 15);
+		if (x >= -30000000 && z >= -30000000 && x < 30000000 && z < 30000000) {
+			if (this.isChunkLoaded(x >> 4, z >> 4, true)) {
+				i = this.getChunkFromChunkCoords(x >> 4, z >> 4).getHeightValue(x & 15, z & 15);
 			} else {
 				i = 0;
 			}
@@ -584,7 +595,15 @@ public abstract class World implements IBlockAccess {
 			i = this.func_181545_F() + 1;
 		}
 
-		return new BlockPos(pos.getX(), i, pos.getZ());
+		return i;
+	}
+
+	/**+
+	 * True if the chunk area around (x, y, z) is loaded. Equivalent to
+	 * isAreaLoaded(new BlockPos(x, y, z), radius) but allocates no BlockPos.
+	 */
+	public boolean isAreaLoaded(int x, int y, int z, int radius) {
+		return this.isAreaLoaded(x - radius, y - radius, z - radius, x + radius, y + radius, z + radius, true);
 	}
 
 	/**+
