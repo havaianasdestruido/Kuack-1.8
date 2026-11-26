@@ -1,5 +1,6 @@
+# Kuack 1.8
 
-# EaglercraftX 1.8
+Pronunced as `KILL-ack`. <!-- a-ACK!! -->
 
 ### Play Minecraft 1.8 in your browser, supports singleplayer and multiplayer
 
@@ -49,7 +50,7 @@ The `Build client` workflow (`.github/workflows/build.yml`) compiles the client 
  - `eaglercraft-web` - the complete site: `index.html`, `classes.js`, `assets.epk`, `favicon.png`, and `lang/`
  - `eaglercraft-html` - every generated `.html` file, including the standalone `EaglercraftX_1.8_Offline_en_US.html` and `EaglercraftX_1.8_Offline_International.html` clients
 
-Pushing a `v*` tag also attaches the standalone HTML files to that GitHub Release. The optional `Publish web build to Pages` workflow deploys `eaglercraft-web` to GitHub Pages after a successful build on the default branch.
+After a successful branch push, the workflow publishes the standalone HTML files to a GitHub prerelease tagged `build-<commit SHA>` (one prerelease per commit). Pushing a `v*` tag attaches them to that GitHub Release instead. Pull requests and manual runs upload artifacts without publishing a release. Release publishing requires Actions to have permission to write repository contents. The optional `Publish web build to Pages` workflow deploys `eaglercraft-web` to GitHub Pages after a successful build on the default branch.
 
 ### Build inputs and optional CI configuration
 
@@ -87,18 +88,22 @@ If you would like to host your own relay, the JAR file and instructions can be d
 
 EaglercraftX 1.8 includes a deferred physically-based renderer modeled after the GTA V rendering engine with many new improvements and a novel raytracing technique for fast realistic reflections. It can be enabled in the "Shaders" menu in the game's options screen. Shader packs in EaglercraftX are just a component of resource packs, so any custom shaders you install will be in the form of a resource pack. EaglercraftX also comes with a very well optimized built-in PBR shader pack and also a built-in PBR material texture pack to give all blocks and items in the game realistic lighting and materials that looks better than most vanilla Minecraft shader packs. The default shader and texture packs were created from scratch by lax1dude, shaders packs made for vanilla Minecraft will not work in EaglercraftX and no shaders in EaglercraftX were taken from vanilla Minecraft shader packs.
 
-## Sodium Renderer
+## Terrain renderer and Sodium port
 
-EaglercraftX 1.8 includes a Sodium-style chunk renderer built into the client, it is always installed and there is nothing to download or add to the game. It replaces the vanilla 1.8 chunk graph walker, which used to allocate a chunk render info node, a facing set and a linked list entry for every visible chunk on every single frame, with the approach [SodiumMC](https://github.com/CaffeineMC/sodium) uses: a cached candidate set that only rebuilds when the player crosses a chunk boundary, a per-frame frustum test that allocates nothing, and an in-place insertion sort that keeps the chunk list in front to back order, which is also exactly the order the translucent pass needs after being walked backwards.
+Eaglercraft uses its own Minecraft 1.8 renderer for the browser's WebGL/TeaVM runtime, so Sodium's Fabric mod cannot be loaded as a dependency. The compatible port is implemented in the native renderer instead: chunk mesh rebuilds are scheduled nearest-to-camera first, duplicate queued work is tracked per section, and the 16x16x16 mesh scan reuses a mutable block position to avoid per-block allocations. Existing section visibility traversal and WebGL mesh upload stay native to this client.
 
-Chunk rebuilds are scheduled from the already sorted visible list, so the sections the player is actually looking at are always rebuilt first, and dirty chunks outside of the view can be left in the queue instead of consuming the whole frame budget, which stops a teleport or a fast flight from freezing the game on thousands of pointless rebuilds.
+This is an ongoing renderer port, not the upstream Sodium mod or a claim of feature-for-feature parity. No Sodium binaries or source files are bundled. See [Sodium](https://github.com/CaffeineMC/sodium) for the upstream project.
 
-It is toggled with the "Sodium Renderer" option at the bottom of the "Video Settings" screen and is set to `Balanced` on a fresh install. The setting is stored with the rest of the game settings and can also be edited directly in the saved options file:
+On top of that, the per-frame chunk list build no longer walks the vanilla 1.8 chunk visibility graph, which used to allocate a chunk render info node, a facing set and a linked list entry for every visible chunk on every single frame in which the camera moved or turned by any amount. A cached candidate set is kept instead and only rescanned when the player crosses a chunk boundary or the render distance changes, and it is maintained in front to back order, so the cull pass hands back a list that is already sorted, with no per-frame allocation at all. A camera which neither moved nor turned gets the previous list straight back.
+
+Chunk rebuilds are scheduled from that sorted visible list, so the sections the player is actually looking at are always rebuilt first, and dirty chunks outside of the view can be left in the queue instead of consuming the whole frame budget, which stops a teleport or a fast flight from freezing the game on thousands of pointless rebuilds.
+
+It is toggled with the "Sodium Renderer" option at the bottom of the "Video Settings" screen and defaults to `Balanced` on a fresh install. It is stored with the rest of the game settings and can also be edited directly in the saved options file:
 
 | Value | Level | Behavior |
 | --- | --- | --- |
 | `0` | OFF (Vanilla) | vanilla chunk renderer, no caching at all |
-| `1` | Fast | closest sort and upload budget, offscreen updates deferred |
+| `1` | Fast | smallest upload budget, offscreen updates deferred |
 | `2` | Balanced | default, offscreen updates deferred |
 | `3` | Fancy | highest chunk build throughput, nothing is ever deferred |
 

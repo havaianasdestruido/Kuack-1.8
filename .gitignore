@@ -9,3 +9,5 @@ MinecraftSrc.zip
 /rundir/*
 /##TEAVM.TMP##/*
 __pycache__/
+# perfbench: compiled output (class files, generated logs) is not source
+/perfbench/build/

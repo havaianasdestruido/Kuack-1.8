@@ -1,7 +1,6 @@
 package net.minecraft.entity.ai;
 
 import com.google.common.base.Predicate;
-import java.util.Collections;
 import java.util.List;
 import net.minecraft.entity.EntityCreature;
 import net.minecraft.entity.EntityLiving;
@@ -71,11 +70,11 @@ public class EntityAIFindEntityNearest extends EntityAIBase {
 		double d0 = this.func_179438_f();
 		List list = this.field_179442_b.worldObj.getEntitiesWithinAABB(this.field_179439_f,
 				this.field_179442_b.getEntityBoundingBox().expand(d0, 4.0D, d0), this.field_179443_c);
-		Collections.sort(list, this.field_179440_d);
 		if (list.isEmpty()) {
 			return false;
 		} else {
-			this.field_179441_e = (EntityLivingBase) list.get(0);
+			this.field_179441_e = (EntityLivingBase) EntityAINearestAttackableTarget.findNearest(list,
+					this.field_179442_b);
 			return true;
 		}
 	}
