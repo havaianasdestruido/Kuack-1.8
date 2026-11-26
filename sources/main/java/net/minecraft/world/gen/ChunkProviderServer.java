@@ -1,8 +1,10 @@
 package net.minecraft.world.gen;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -63,7 +65,15 @@ public class ChunkProviderServer implements IChunkProvider {
 	 * map of chunk Id's to Chunk instances
 	 */
 	private LongHashMap<Chunk> id2ChunkMap = new LongHashMap();
-	private List<Chunk> loadedChunks = Lists.newLinkedList();
+	/**+
+	 * EAGLER: insertion-ordered set of loaded chunks. This used to be a LinkedList, so
+	 * unloadQueuedChunks' up to 100 per-tick loadedChunks.remove(chunk) calls were each an O(n)
+	 * identity walk of the whole chunk list (O(n) per removal, ~O(100n) per tick, and the list holds
+	 * (2r+1)^2 chunks -- thousands on a busy server). Chunk does not override equals/hashCode, so a
+	 * LinkedHashSet reproduces the old identity semantics exactly while making add/remove O(1) and
+	 * preserving the insertion order the callers (unloadAllChunks, func_152380_a) observe.
+	 */
+	private Set<Chunk> loadedChunks = Sets.newLinkedHashSet();
 	private WorldServer worldObj;
 
 	public ChunkProviderServer(WorldServer parWorldServer, IChunkLoader parIChunkLoader,
@@ -81,7 +91,7 @@ public class ChunkProviderServer implements IChunkProvider {
 		return this.id2ChunkMap.containsItem(ChunkCoordIntPair.chunkXZ2Int(i, j));
 	}
 
-	public List<Chunk> func_152380_a() {
+	public Collection<Chunk> func_152380_a() {
 		return this.loadedChunks;
 	}
 

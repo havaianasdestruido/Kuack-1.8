@@ -1,8 +1,10 @@
 package net.minecraft.server.management;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.network.Packet;
 import net.minecraft.network.play.server.S21PacketChunkData;
@@ -167,7 +169,12 @@ public class PlayerManager {
 	 * that are not in viewing range of the player.
 	 */
 	public void filterChunkLoadQueue(EntityPlayerMP player) {
-		ArrayList arraylist = Lists.newArrayList(player.loadedChunks);
+		// EAGLER: the spiral walk below visits every chunk in the (2r)^2 view area and asks whether it
+		// was already queued. That question must be answered against a snapshot taken before the
+		// clear below. The snapshot used to be an ArrayList, which made every one of those queries an
+		// O(queue) scan and the whole walk O(r^3); a Set answers them in O(1) and the walk is O(r^2).
+		// The snapshot itself is still an O(queue) copy, exactly as before, so nothing else changes.
+		Set<ChunkCoordIntPair> loaded = Sets.newHashSet(player.loadedChunks);
 		int i = 0;
 		int j = this.playerViewRadius;
 		int k = (int) player.posX >> 4;
@@ -176,7 +183,7 @@ public class PlayerManager {
 		int j1 = 0;
 		ChunkCoordIntPair chunkcoordintpair = this.getPlayerInstance(k, l, true).chunkCoords;
 		player.loadedChunks.clear();
-		if (arraylist.contains(chunkcoordintpair)) {
+		if (loaded.contains(chunkcoordintpair)) {
 			player.loadedChunks.add(chunkcoordintpair);
 		}
 
@@ -188,7 +195,7 @@ public class PlayerManager {
 					i1 += aint[0];
 					j1 += aint[1];
 					chunkcoordintpair = this.getPlayerInstance(k + i1, l + j1, true).chunkCoords;
-					if (arraylist.contains(chunkcoordintpair)) {
+					if (loaded.contains(chunkcoordintpair)) {
 						player.loadedChunks.add(chunkcoordintpair);
 					}
 				}
@@ -201,7 +208,7 @@ public class PlayerManager {
 			i1 += this.xzDirectionsConst[i][0];
 			j1 += this.xzDirectionsConst[i][1];
 			chunkcoordintpair = this.getPlayerInstance(k + i1, l + j1, true).chunkCoords;
-			if (arraylist.contains(chunkcoordintpair)) {
+			if (loaded.contains(chunkcoordintpair)) {
 				player.loadedChunks.add(chunkcoordintpair);
 			}
 		}

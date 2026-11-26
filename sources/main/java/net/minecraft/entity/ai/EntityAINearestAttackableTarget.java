@@ -2,7 +2,6 @@ package net.minecraft.entity.ai;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import net.minecraft.entity.Entity;
@@ -97,11 +96,10 @@ public class EntityAINearestAttackableTarget<T extends EntityLivingBase> extends
 			List list = this.taskOwner.worldObj.getEntitiesWithinAABB(this.targetClass,
 					this.taskOwner.getEntityBoundingBox().expand(d0, 4.0D, d0),
 					Predicates.and(this.targetEntitySelector, EntitySelectors.NOT_SPECTATING));
-			Collections.sort(list, this.theNearestAttackableTargetSorter);
 			if (list.isEmpty()) {
 				return false;
 			} else {
-				this.targetEntity = (EntityLivingBase) list.get(0);
+				this.targetEntity = (EntityLivingBase) findNearest(list, this.taskOwner);
 				return true;
 			}
 		}
@@ -113,6 +111,32 @@ public class EntityAINearestAttackableTarget<T extends EntityLivingBase> extends
 	public void startExecuting() {
 		this.taskOwner.setAttackTarget(this.targetEntity);
 		super.startExecuting();
+	}
+
+	/**
+	 * Returns the candidate closest to the sorter's reference entity.
+	 *
+	 * <p>Equivalent to {@code Collections.sort(list, sorter); list.get(0)} but O(n) instead of
+	 * O(n log n). {@code List.sort} is stable, so when two candidates are at exactly the same
+	 * distance the one appearing earlier in the list wins; the strict {@code <} comparison below
+	 * preserves that tie-breaking rule exactly.</p>
+	 */
+	public static Entity findNearest(List<? extends Entity> candidates, Entity reference) {
+		int n = candidates.size();
+		if (n == 0) {
+			return null;
+		}
+		Entity best = candidates.get(0);
+		double bestDistSq = reference.getDistanceSqToEntity(best);
+		for (int i = 1; i < n; ++i) {
+			Entity candidate = candidates.get(i);
+			double distSq = reference.getDistanceSqToEntity(candidate);
+			if (distSq < bestDistSq) {
+				bestDistSq = distSq;
+				best = candidate;
+			}
+		}
+		return best;
 	}
 
 	public static class Sorter implements Comparator<Entity> {

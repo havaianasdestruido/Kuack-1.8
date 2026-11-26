@@ -1,5 +1,6 @@
+# Kuack 1.8
 
-# EaglercraftX 1.8
+Pronunced as `KILL-ack`. <!-- a-ACK!! -->
 
 ### Play Minecraft 1.8 in your browser, supports singleplayer and multiplayer
 
@@ -49,7 +50,7 @@ The `Build client` workflow (`.github/workflows/build.yml`) compiles the client 
  - `eaglercraft-web` - the complete site: `index.html`, `classes.js`, `assets.epk`, `favicon.png`, and `lang/`
  - `eaglercraft-html` - every generated `.html` file, including the standalone `EaglercraftX_1.8_Offline_en_US.html` and `EaglercraftX_1.8_Offline_International.html` clients
 
-Pushing a `v*` tag also attaches the standalone HTML files to that GitHub Release. The optional `Publish web build to Pages` workflow deploys `eaglercraft-web` to GitHub Pages after a successful build on the default branch.
+After a successful branch push, the workflow publishes the standalone HTML files to a GitHub prerelease tagged `build-<commit SHA>` (one prerelease per commit). Pushing a `v*` tag attaches them to that GitHub Release instead. Pull requests and manual runs upload artifacts without publishing a release. Release publishing requires Actions to have permission to write repository contents. The optional `Publish web build to Pages` workflow deploys `eaglercraft-web` to GitHub Pages after a successful build on the default branch.
 
 ### Build inputs and optional CI configuration
 
@@ -86,6 +87,12 @@ If you would like to host your own relay, the JAR file and instructions can be d
 ## PBR Shaders
 
 EaglercraftX 1.8 includes a deferred physically-based renderer modeled after the GTA V rendering engine with many new improvements and a novel raytracing technique for fast realistic reflections. It can be enabled in the "Shaders" menu in the game's options screen. Shader packs in EaglercraftX are just a component of resource packs, so any custom shaders you install will be in the form of a resource pack. EaglercraftX also comes with a very well optimized built-in PBR shader pack and also a built-in PBR material texture pack to give all blocks and items in the game realistic lighting and materials that looks better than most vanilla Minecraft shader packs. The default shader and texture packs were created from scratch by lax1dude, shaders packs made for vanilla Minecraft will not work in EaglercraftX and no shaders in EaglercraftX were taken from vanilla Minecraft shader packs.
+
+## Terrain renderer and Sodium port
+
+Eaglercraft uses its own Minecraft 1.8 renderer for the browser's WebGL/TeaVM runtime, so Sodium's Fabric mod cannot be loaded as a dependency. The compatible port is implemented in the native renderer instead: chunk mesh rebuilds are scheduled nearest-to-camera first, duplicate queued work is tracked per section, and the 16x16x16 mesh scan reuses a mutable block position to avoid per-block allocations. Existing section visibility traversal and WebGL mesh upload stay native to this client.
+
+This is an ongoing renderer port, not the upstream Sodium mod or a claim of feature-for-feature parity. No Sodium binaries or source files are bundled. See [Sodium](https://github.com/CaffeineMC/sodium) for the upstream project.
 
 ## Voice Chat
 

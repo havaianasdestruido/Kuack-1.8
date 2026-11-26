@@ -5,8 +5,8 @@ everything that is **bold** is a prority.
 
 - [x] **add [SodiumMC](https://github.com/CaffeineMC/sodium) baked-in with the game**
 - [ ] **add [Distant Horizons](https://gitlab.com/distant-horizons-team/distant-horizons) baked-in with the game**
-- [ ] **add new config "performance presets" where the user can change between presets made for ultra low-end devices up to high-end devices**
 - [ ] **add [in-game music](https://bafybeiayojww5jfyzvlmtuk7l5ufkt7nlfto7mhwmzf2vs4bvsjd5ouiuq.ipfs.nftstorage.link/?filename=Music_For_Eaglercraft.zip)**
+- [ ] **add new config "performance presets" where the user can change between presets made for ultra low-end devices up to high-end devices**
 - - [ ] Toaster preset mode
   - [ ] Arduino Uno R3 preset mode
   - [ ] Abacus preset mode
@@ -15,7 +15,7 @@ everything that is **bold** is a prority.
 - - [ ] Joysticks, better fullscreen support, etc.
 - [ ] performance optimizations
 - - [ ] fixing some hotloops and removed barely used code
-- [ ] toggle between reporting or not that the client is cracked
+- [ ] toggle between reporting or not that the client is cracked (for some servers that rejects cracked users, use at your own risk, dont abuse this or you may get banned from some servers, dont be an asshole)
 - - [ ] _oficial client spoofing_
 
 ## stuff i may add later

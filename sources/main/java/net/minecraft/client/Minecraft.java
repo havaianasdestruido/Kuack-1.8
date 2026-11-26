@@ -397,6 +397,7 @@ public class Minecraft implements IThreadListener {
 		this.createDisplay();
 		this.registerMetadataSerializers();
 		EaglerFolderResourcePack.deleteOldResourcePacks(EaglerFolderResourcePack.SERVER_RESOURCE_PACKS, 604800000L);
+		this.importBundledResourcePacks();
 		this.mcResourcePackRepository = new ResourcePackRepository(this.mcDefaultResourcePack, this.metadataSerializer_,
 				this.gameSettings);
 		this.mcResourceManager = new SimpleReloadableResourceManager(this.metadataSerializer_);
@@ -2325,5 +2326,40 @@ public class Minecraft implements IThreadListener {
 			ret &= this.thePlayer.sendQueue.currentFNAWSkinAllowedState;
 		}
 		return ret;
+	}
+
+	private void importBundledResourcePacks() {
+		if (!EaglerFolderResourcePack.isSupported()) {
+			return;
+		}
+		String[] bundledPacks = new String[] {
+			"Xray_Ultimate_26.X_v5.4.4.zip",
+			"1994 Retro 0.1.2.1V.zip"
+		};
+		List<EaglerFolderResourcePack> existing = EaglerFolderResourcePack
+				.getFolderResourcePacks(EaglerFolderResourcePack.RESOURCE_PACKS);
+		for (int i = 0; i < bundledPacks.length; ++i) {
+			String fileName = bundledPacks[i];
+			String baseName = fileName.substring(0, fileName.length() - 4);
+			boolean alreadyImported = false;
+			for (int j = 0, l = existing.size(); j < l; ++j) {
+				if (existing.get(j).getDisplayName().equalsIgnoreCase(baseName)) {
+					alreadyImported = true;
+					break;
+				}
+			}
+			if (!alreadyImported) {
+				byte[] data = EagRuntime.getResourceBytes("assets/eagler/resourcepacks/" + fileName);
+				if (data != null) {
+					try {
+						EaglerFolderResourcePack.importResourcePack(fileName,
+								EaglerFolderResourcePack.RESOURCE_PACKS, data);
+					} catch (IOException e) {
+						logger.error("Failed to import bundled resource pack: {}", fileName);
+						logger.error(e);
+					}
+				}
+			}
+		}
 	}
 }
