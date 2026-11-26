@@ -84,15 +84,8 @@ public class LoadResources {
 				try {
 					JSONObject json = (new JSONObject(FileUtils.readFileToString(assetsIndexIn, StandardCharsets.UTF_8))).getJSONObject("objects");
 					Iterator<String> itr = json.keys();
-
-					// This repository vendors the 1.8 asset objects in vendor/minecraft/assets so the
-					// client can be rebuilt without talking to Mojang. If the directory is not set,
-					// fall back to the original downloader for custom asset indexes.
-					String assetsDirectory = System.getProperty("eaglercraft.assetsDirectory", "");
-					File localAssets = assetsDirectory.length() == 0 ? null : new File(assetsDirectory);
-					System.out.println(localAssets == null
-							? "Downloading assets from 'https://resources.download.minecraft.net/'..."
-							: "Loading assets from '" + localAssets.getAbsolutePath() + "' (falling back to Mojang when an object is missing)...");
+		
+					System.out.println("Downloading assets from 'https://resources.download.minecraft.net/'...");
 					
 					while(itr.hasNext()) {
 						String name = itr.next();
@@ -108,51 +101,33 @@ public class LoadResources {
 						String hash = obj.getString("hash");
 						int len = obj.getInt("size");
 		
-						System.out.println("Loading '" + name + "' (" + formatByteLength(len) + ") ...");
-
-						byte[] downloadedFile = null;
-						File localObject = localAssets == null ? null : new File(new File(localAssets, hash.substring(0, 2)), hash);
-						if(localObject != null && localObject.isFile()) {
-							try {
-								byte[] localData = FileUtils.readFileToByteArray(localObject);
-								if(localData.length != len) {
-									throw new IOException("Local asset '" + localObject.getAbsolutePath() + "' was the wrong length! " + localData.length + " != " + len);
-								}
-								downloadedFile = localData;
-							}catch(IOException ex) {
-								System.err.println("Local asset '" + localObject.getAbsolutePath() + "' could not be read!");
-								ex.printStackTrace();
-								continue;
-							}
+						System.out.println("Downloading '" + name + "' (" + formatByteLength(len) + ") ...");
+						
+						URL url;
+						try {
+							url = new URL("https://resources.download.minecraft.net/" + hash.substring(0, 2) + "/" + hash);
+						}catch(MalformedURLException ex) {
+							System.err.println("Resource file '" + name + "' had an invalid URL!");
+							ex.printStackTrace();
+							continue;
 						}
-
-						if(downloadedFile == null) {
-							URL url;
-							try {
-								url = new URL("https://resources.download.minecraft.net/" + hash.substring(0, 2) + "/" + hash);
-							}catch(MalformedURLException ex) {
-								System.err.println("Resource file '" + name + "' had an invalid URL!");
-								ex.printStackTrace();
-								continue;
+						
+						byte[] downloadedFile = new byte[len];
+						
+						try(InputStream is = url.openStream()) {
+							int dl = 0;
+							int i = 0;
+							while(dl != len && (i = is.read(downloadedFile, dl, len - dl)) > 0) {
+								dl += i;
 							}
-
-							downloadedFile = new byte[len];
-
-							try(InputStream is = url.openStream()) {
-								int dl = 0;
-								int i = 0;
-								while(dl != len && (i = is.read(downloadedFile, dl, len - dl)) > 0) {
-									dl += i;
-								}
-								int a = is.available();
-								if(dl != len || a > 0) {
-									throw new IOException("File '" + url.toString() + "' was the wrong length! " + (a > 0 ? "" + a + " bytes remaining" : "" + (len - dl) + " bytes missing"));
-								}
-							}catch(IOException ex) {
-								System.err.println("Resource file '" + url.toString() + "' could not be downloaded!");
-								ex.printStackTrace();
-								continue;
+							int a = is.available();
+							if(dl != len || a > 0) {
+								throw new IOException("File '" + url.toString() + "' was the wrong length! " + (a > 0 ? "" + a + " bytes remaining" : "" + (len - dl) + " bytes missing"));
 							}
+						}catch(IOException ex) {
+							System.err.println("Resource file '" + url.toString() + "' could not be downloaded!");
+							ex.printStackTrace();
+							continue;
 						}
 						
 						if(r.action == ResourceRulesList.Action.ENCODE) {
