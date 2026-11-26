@@ -26,6 +26,20 @@ permissions:
   contents: read
 
 jobs:
+  test:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Python unit tests
+        run: python3 -m unittest discover -s tests -v
+
+      - name: Check shell script syntax
+        run: bash -n scripts/download-build-inputs.sh perfbench/run_bench.sh CompileLatestClient.sh
+
   build:
     name: Compile web client
     runs-on: ubuntu-latest
