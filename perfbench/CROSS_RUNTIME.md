@@ -164,8 +164,12 @@ Sandbox-only blockers to a complete local `dist/classes.js` build remain:
    mirror for the probe. CI has real JDK 17 `javac`, license-restricted inputs and the Maven TeaVM
    cache, so its `Compile web client` check is the authoritative full-client build result.
 
-The full `dist/classes.js` build and browser launch are therefore **unavailable in this sandbox**, not
-claimed as passing locally. No full-game FPS is claimed.
+After pushing the visibility fix as `5f6fab5`, PR #25 run `45884957261` completed successfully:
+`Run unit tests` passed in 6 s, `Compile web client` passed in 1 m 41 s, `Verify build output` and
+both artifact-upload steps passed, and `Publish HTML files to release` skipped as designed. The
+matching push run `45884951086` also succeeded. A full `dist/classes.js` client build is therefore
+**verified by CI**. Browser launch, a playable frame loop and full-game FPS remain **unavailable in
+this sandbox**, and no FPS is claimed.
 
 ---
 
