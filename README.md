@@ -50,7 +50,7 @@ The `Build client` workflow (`.github/workflows/build.yml`) compiles the client 
  - `eaglercraft-web` - the complete site: `index.html`, `classes.js`, `assets.epk`, `favicon.png`, and `lang/`
  - `eaglercraft-html` - every generated `.html` file, including the standalone `EaglercraftX_1.8_Offline_en_US.html` and `EaglercraftX_1.8_Offline_International.html` clients
 
-Pushing a `v*` tag also attaches the standalone HTML files to that GitHub Release. The optional `Publish web build to Pages` workflow deploys `eaglercraft-web` to GitHub Pages after a successful build on the default branch.
+After a successful branch push, the workflow publishes the standalone HTML files to a GitHub prerelease tagged `build-<commit SHA>` (one prerelease per commit). Pushing a `v*` tag attaches them to that GitHub Release instead. Pull requests and manual runs upload artifacts without publishing a release. Release publishing requires Actions to have permission to write repository contents. The optional `Publish web build to Pages` workflow deploys `eaglercraft-web` to GitHub Pages after a successful build on the default branch.
 
 ### Build inputs and optional CI configuration
 

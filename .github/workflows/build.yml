@@ -143,9 +143,14 @@ jobs:
 
   release:
     name: Publish HTML files to release
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Publish successful branch pushes as prereleases, and v* tags as releases.
+    # Pull requests and manual builds only upload Actions artifacts.
+    if: github.event_name == 'push'
     needs: build
     runs-on: ubuntu-latest
+    concurrency:
+      group: release-${{ github.ref_type == 'tag' && github.ref || github.sha }}
+      cancel-in-progress: false
     permissions:
       contents: write
 
@@ -159,9 +164,17 @@ jobs:
       - name: Attach standalone HTML clients to release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+          GH_REPO: ${{ github.repository }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
+          if [ "$REF_TYPE" = "tag" ]; then
+            TAG="$REF_NAME"
+          else
+            TAG="build-$COMMIT_SHA"
+          fi
           mapfile -t assets < <(find html -maxdepth 1 -type f -name '*.html' ! -name 'index.html' | sort)
           if [ "${#assets[@]}" -eq 0 ]; then
             echo "::error::No standalone HTML client was generated"
@@ -170,6 +183,9 @@ jobs:
           printf 'Publishing: %s\n' "${assets[@]}"
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "${assets[@]}" --clobber
-          else
+          elif [ "$REF_TYPE" = "tag" ]; then
             gh release create "$TAG" "${assets[@]}" --title "$TAG" --generate-notes
+          else
+            gh release create "$TAG" "${assets[@]}" --target "$COMMIT_SHA" --title "$TAG" \
+              --notes "Automated build for commit $COMMIT_SHA." --prerelease
           fi
