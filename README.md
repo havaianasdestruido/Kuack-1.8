@@ -87,6 +87,12 @@ If you would like to host your own relay, the JAR file and instructions can be d
 
 EaglercraftX 1.8 includes a deferred physically-based renderer modeled after the GTA V rendering engine with many new improvements and a novel raytracing technique for fast realistic reflections. It can be enabled in the "Shaders" menu in the game's options screen. Shader packs in EaglercraftX are just a component of resource packs, so any custom shaders you install will be in the form of a resource pack. EaglercraftX also comes with a very well optimized built-in PBR shader pack and also a built-in PBR material texture pack to give all blocks and items in the game realistic lighting and materials that looks better than most vanilla Minecraft shader packs. The default shader and texture packs were created from scratch by lax1dude, shaders packs made for vanilla Minecraft will not work in EaglercraftX and no shaders in EaglercraftX were taken from vanilla Minecraft shader packs.
 
+## Terrain renderer and Sodium port
+
+Eaglercraft uses its own Minecraft 1.8 renderer for the browser's WebGL/TeaVM runtime, so Sodium's Fabric mod cannot be loaded as a dependency. The compatible port is implemented in the native renderer instead: chunk mesh rebuilds are scheduled nearest-to-camera first, duplicate queued work is tracked per section, and the 16x16x16 mesh scan reuses a mutable block position to avoid per-block allocations. Existing section visibility traversal and WebGL mesh upload stay native to this client.
+
+This is an ongoing renderer port, not the upstream Sodium mod or a claim of feature-for-feature parity. No Sodium binaries or source files are bundled. See [Sodium](https://github.com/CaffeineMC/sodium) for the upstream project.
+
 ## Voice Chat
 
 EaglercraftX 1.8 includes an integrated voice-chat service that can be used in shared worlds and also on multiplayer servers when it is enabled by the server owner. This feature also uses WebRTC like shared worlds, so be careful that you don't leak your IP address accidentally by using it on a public server. If you own a website and don't want people to use voice chat on it, edit the `eaglercraftXOpts` variable in your index.html and add `allowVoiceClient: false`.
