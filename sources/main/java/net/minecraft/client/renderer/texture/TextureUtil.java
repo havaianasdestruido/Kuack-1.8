@@ -42,7 +42,6 @@ public class TextureUtil {
 	private static final IntBuffer dataBuffer = GLAllocation.createDirectIntBuffer(4194304);
 	public static final DynamicTexture missingTexture = new DynamicTexture(16, 16);
 	public static final int[] missingTextureData = missingTexture.getTextureData();
-	private static final int[] mipmapBuffer;
 
 	public static int glGenTextures() {
 		return GlStateManager.generateTexture();
@@ -101,54 +100,9 @@ public class TextureUtil {
 	}
 
 	private static int blendColors(int parInt1, int parInt2, int parInt3, int parInt4, boolean parFlag) {
-		if (!parFlag) {
-			int i1 = blendColorComponent(parInt1, parInt2, parInt3, parInt4, 24);
-			int j1 = blendColorComponent(parInt1, parInt2, parInt3, parInt4, 16);
-			int k1 = blendColorComponent(parInt1, parInt2, parInt3, parInt4, 8);
-			int l1 = blendColorComponent(parInt1, parInt2, parInt3, parInt4, 0);
-			return i1 << 24 | j1 << 16 | k1 << 8 | l1;
-		} else {
-			mipmapBuffer[0] = parInt1;
-			mipmapBuffer[1] = parInt2;
-			mipmapBuffer[2] = parInt3;
-			mipmapBuffer[3] = parInt4;
-			float f = 0.0F;
-			float f1 = 0.0F;
-			float f2 = 0.0F;
-			float f3 = 0.0F;
-
-			for (int i = 0; i < 4; ++i) {
-				if (mipmapBuffer[i] >> 24 != 0) {
-					f += (float) Math.pow((double) ((float) (mipmapBuffer[i] >> 24 & 255) / 255.0F), 2.2D);
-					f1 += (float) Math.pow((double) ((float) (mipmapBuffer[i] >> 16 & 255) / 255.0F), 2.2D);
-					f2 += (float) Math.pow((double) ((float) (mipmapBuffer[i] >> 8 & 255) / 255.0F), 2.2D);
-					f3 += (float) Math.pow((double) ((float) (mipmapBuffer[i] >> 0 & 255) / 255.0F), 2.2D);
-				}
-			}
-
-			f = f / 4.0F;
-			f1 = f1 / 4.0F;
-			f2 = f2 / 4.0F;
-			f3 = f3 / 4.0F;
-			int i2 = (int) (Math.pow((double) f, 0.45454545454545453D) * 255.0D);
-			int j = (int) (Math.pow((double) f1, 0.45454545454545453D) * 255.0D);
-			int k = (int) (Math.pow((double) f2, 0.45454545454545453D) * 255.0D);
-			int l = (int) (Math.pow((double) f3, 0.45454545454545453D) * 255.0D);
-			if (i2 < 96) {
-				i2 = 0;
-			}
-
-			return i2 << 24 | j << 16 | k << 8 | l;
-		}
-	}
-
-	private static int blendColorComponent(int parInt1, int parInt2, int parInt3, int parInt4, int parInt5) {
-		float f = (float) Math.pow((double) ((float) (parInt1 >> parInt5 & 255) / 255.0F), 2.2D);
-		float f1 = (float) Math.pow((double) ((float) (parInt2 >> parInt5 & 255) / 255.0F), 2.2D);
-		float f2 = (float) Math.pow((double) ((float) (parInt3 >> parInt5 & 255) / 255.0F), 2.2D);
-		float f3 = (float) Math.pow((double) ((float) (parInt4 >> parInt5 & 255) / 255.0F), 2.2D);
-		float f4 = (float) Math.pow((double) (f + f1 + f2 + f3) * 0.25D, 0.45454545454545453D);
-		return (int) ((double) f4 * 255.0D);
+		// mipmap box filter, extracted to MipmapGammaBlend so it can be benchmarked without GL;
+		// see perfbench/FINDINGS.md #11 for the gamma decode lookup table it uses.
+		return MipmapGammaBlend.blend(parInt1, parInt2, parInt3, parInt4, parFlag);
 	}
 
 	public static void uploadTextureMipmap(int[][] parArrayOfarray, int parInt1, int parInt2, int parInt3, int parInt4,
@@ -345,6 +299,5 @@ public class TextureUtil {
 		}
 
 		missingTexture.updateDynamicTexture();
-		mipmapBuffer = new int[4];
 	}
 }

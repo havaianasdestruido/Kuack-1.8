@@ -40,7 +40,8 @@ n=4 0.052 → 0.031 ms (1.68×) … n=128 4.367 → 0.191 ms (**22.86×**).
 **What was tried.** `BiomeColorHelper.func_180285_a` recomputes a 3×3 biome-average for every tinted
 quad, so a memo keyed by `(x,y,z)` inside the `RegionRenderCache` window was implemented (fixed
 `int[3][324]` + y-stamp arrays, ~7.6 KB/region, cannot grow) and verified byte-identical
-(`perfbench.VerifyBiomeColor`: 570,240 checks, 0 failures).
+(`perfbench.VerifyBiomeColor`: 570,240 checks, 0 failures; that source now lives in
+`perfbench/src-reverted/`, since the APIs it exercised were reverted with the change).
 
 **Why it was reverted.** Measured with real classes: `RegionRenderCache` lookups are ~26 ns,
 `colorMultiplier` ~17 ns, and the biome loop is already served by cached chunk lookups.
@@ -326,3 +327,230 @@ allocation counts and the `recheckGaps` probe logic.
   the new primitive overloads.
 - Behaviour: identical results (same height values, same loaded/unloaded answers) because the bodies
   delegate to the pre-existing range-check logic unchanged.
+
+---
+
+## Math hand-off: what the engine already tabulates
+
+Before adding anything, the existing lookup tables were inventoried, because Minecraft 1.8 is
+already full of them and a second copy of any of them would be pure overhead:
+
+| existing table | site | shape | verdict |
+|---|---|---|---|
+| `SIN_TABLE[65536]` (+ `cos` as a quarter-turn offset) | `util/MathHelper` | 16-bit-turn **step** table, built once in the static initializer, 256 KiB | already optimal for `MathHelper.sin/cos`; measured 2.08 ns/call in V8 (480 Mops/s) vs 9.17 ns for native `Math.sin` |
+| `multiplyDeBruijnBitPosition[32]` | `MathHelper.calculateLogBaseTwo` | De Bruijn log2 | optimal, untouched |
+| `field_181164_e[257]` / `field_181165_f[257]` | `MathHelper.func_181159_b` | asin/cos table + one Newton step | the engine's atan2 is already table-driven; untouched |
+| magic-constant reciprocal sqrt | `MathHelper.func_181161_i` | bit-twiddle + 1 Newton step | only used by `func_181159_b`; a table-free approximation, correct choice there |
+| `lightBrightnessTable[16]` | `WorldProvider` | light level → brightness | present, used by every light query |
+| `GRAD3` / permutation tables | `world/gen/NoiseGeneratorSimplex`, `NoiseGeneratorImproved` | value/gradient noise | present; worldgen noise is already table-driven |
+| `VisGraph` bit tables, `EnumNeighborInfo`/`VertexTranslations`/`EnumFace` | `renderer/chunk/VisGraph`, `renderer/BlockModelRenderer` | face/visibility constant tables | present; the AO path is built on them |
+| `Block.EnumOffsetType`, face/normal direction tables | `Block`, `EnumFacing` | constant lookups | present |
+
+Conclusion that shaped the rest of the sweep: **client-side transcendentals are already tabulated**,
+so the remaining wins are (a) the sites that bypass the engine's tables, and (b) functions with a
+small discrete domain that were never tabulated at all.
+
+## Trig call-site census
+
+Every `Math.sin`/`Math.cos`/`MathHelper.sin`/`MathHelper.cos` in the tree (281 `GlStateManager`
+rotate/translate/scale sites, 1,372 `MathHelper.*` sites, 169 direct `Math.sin/cos/sqrt/atan2`
+sites) was classified by *how often it can execute*:
+
+- **per model part per frame** (thousands/frame): `GlStateManager.rotate` → `Matrix4f.rotate`, which
+  was the *only* remaining consumer of native `Math.cos`/`Math.sin` on the render path (see #10).
+- **per entity per frame**: model animation (`ModelBiped`, `ModelQuadruped`, `ModelBlaze`,
+  `ModelSquid`, `ModelDragon`, `RenderHighProfiles`…) — all already `MathHelper`, i.e. already
+  table lookups; ~8–20 calls per entity.
+- **per frame**: sky/sun/moon/stars (`RenderGlobal.renderSky`), the 16-segment world-border ring,
+  the cloud grid, `updateLightmap` (256 entries), first-person hand animation.
+- **per particle per frame**: 5 `MathHelper` calls in `EffectRenderer`/`AcceleratedEffectRenderer`
+  (4 distinct angles, one duplicated `sin(pitch)`; a `once per particle per frame` CSE of ~1 ns was
+  not worth a diff).
+- **per tick**: entity physics (`Entity.moveFlying` uses `MathHelper.sin/cos`), look helpers,
+  boat/minecart steering — `MathHelper` again.
+- **per chunk / worldgen**: `MapGenCaves`, `MapGenRavine`, `WorldGenBigTree`, `WorldGenMinable`,
+  `ChunkProviderHell`, strongholds — `MathHelper`/`Math.*`, but bounded by chunk generation and
+  **bit-exactness matters here** (see the `Math.fround` rejection below).
+
+So the only *hot* raw-trig site in the whole client was `Matrix4f.rotate`, and the only hot raw
+`Math.pow` site was the mipmap gamma filter.
+
+---
+
+## #10 `Matrix4f.rotate` — native `Math.cos`/`Math.sin` → the engine's sine table
+
+**Files:** `net/lax1dude/eaglercraft/v1_8/vector/Matrix4f.java` (`rotate(float, Vector3f, Matrix4f,
+Matrix4f)`, the method behind `GlStateManager.rotate`, `FaceBakery`, `DeferredStateManager` static
+matrices and `EaglerDeferredPipeline`).
+
+**Bottleneck.** Every rotation in the renderer — each `ModelRenderer` part (ModelBiped issues 2–3
+rotations per part for 6 parts), armour layers, held items, tile entities, particle billboards, GUI
+items, the sky/moon matrices — ran `(float) Math.cos(angle)` **and** `(float) Math.sin(angle)`.
+That is two libm calls per rotation and the single largest concentration of native transcendentals
+left in the client: a scene with ~120 visible entities turns this into 2,000–3,000 rotations, i.e.
+4,000–6,000 libm calls, **every frame**. The rest of the engine already answers the same question
+with `MathHelper.sin/cos`; this site simply never switched over when the LWJGL vector class was
+ported.
+
+**Fix.** Use the existing 65536-entry `SIN_TABLE` through `MathHelper.cos/sin` (cos is the same
+table read 16384 indices later — no second table, **0 bytes** of new memory, nothing new to
+initialise). A guard keeps the original path for any input the table cannot represent:
+`|angle| >= 200,000 rad` (the point where `MathHelper`'s `(int)` index would saturate: 2048 turns),
+`NaN` and `Infinity` all fall through to `Math.cos`/`Math.sin`, so those inputs stay bit-identical.
+
+**Numerical contract.** The table quantises the angle to one index step, `2π/65536 = 9.587e-5 rad`.
+Measured over 200,000 random rotations with random axes and random source matrices: **max element
+delta 1.494e-4**, **max angular deviation of a rotated unit vector 9.589e-5 rad = 0.00549°**, i.e.
+exactly one table step, which is the same quantisation the engine already accepts wherever it needs
+a sine (`MathHelper.sin/cos` is the standard path for sky, clouds, particles, lightning and item
+frames, and most angles reaching this method are derived from those tables or are plain
+degree-to-radian conversions of entity yaw/pitch). At
+`FaceBakery` (block-model element rotation) this moves baked vertices by ≤1e-4 blocks (1.6 µm); on
+the render path it is ≤0.0055° of model rotation, far below one pixel. Nothing gameplay-side uses
+`Matrix4f.rotate`: the callers are rendering and model baking only, so there is no effect on
+collision, entity movement or world generation determinism.
+
+**Verification.** `perfbench.VerifyMatrixRotate` — 204,335 checks, 0 failures: error bound over
+200k random rotations, axis invariance (a rotation about X/Y/Z keeps that axis exact, worst
+deviation 5.96e-8), the fallback domain (`±200000`, `±1e6`, `±1e30`, `±Inf`, `NaN` → 0 of 10
+matrices differ from the original at all), `angle == 0` identity, and in-place
+`rotate(a, axis, m, m)` aliasing.
+
+**Benchmark** (`perfbench.MatrixRotateBench`, JVM, median of 60 trials):
+
+| measurement | before | after | speedup |
+|---|---|---|---|
+| one rotation (trig + 40 float ops) | 26.92–27.55 ns | 11.14–11.40 ns | **2.42×** |
+| the two trig evaluations alone | 14.05–14.77 ns | 0.93–1.25 ns | **11.8–15.0×** |
+| 2,400 rotations (busy frame) | 64.4–65.9 µs | 28.8–28.9 µs | saves **35.5–37.1 µs/frame** |
+| 7,200 rotations (crowded scene) | 194.4–204.5 µs | 97.2–102.3 µs | saves ~97–102 µs/frame |
+| 20,000 rotations (worst case) | 576.4–589.4 µs | 284.6–301.4 µs | saves ~275–305 µs/frame |
+
+(Ranges are the spread of medians across independent runs on this machine; the 2.42× on the whole
+rotation is stable to the second decimal.)
+
+Target-runtime measurement (`perfbench/js/bench_math_lut.js`, V8 12.4, modelling TeaVM's
+`Math.fround` float semantics): the trig pair goes **19.75 ns → 3.95 ns (5.0×)** in JavaScript, and
+a 2,400-rotation frame batch goes **35.0 µs → 11.7 µs, saving 23.3 µs/frame (0.14 % of a 60 Hz
+frame, 0.56 % of a 144 Hz frame)**. The JavaScript win is smaller than the JVM one because V8's
+`Math.fround` wrapping of the table index costs as much as the multiply (measured: 2.08 ns with the
+`fround`, 1.09 ns without).
+
+Honest read: this is a real, zero-memory, zero-risk reduction of renderer CPU time, but the absolute
+per-frame saving is tens of microseconds at realistic entity counts — it matters for frame-time
+*consistency* on weak hardware (where 35 µs is ~1 % of a 3 ms frame budget) more than for average
+FPS.
+
+---
+
+## #11 `MipmapGammaBlend` — 256-entry gamma decode table (was 20 `Math.pow` per mipmap texel)
+
+**Files:** new `net/minecraft/client/renderer/texture/MipmapGammaBlend.java`;
+`net/minecraft/client/renderer/texture/TextureUtil.java` (`blendColors` now delegates, the scratch
+array moved with the code).
+
+**Bottleneck.** `TextureUtil.generateMipmapData` builds every mipmap level of every texture with a
+2×2 box filter, and both filter variants decode each of the four channel bytes to linear light with
+`(float) Math.pow((float)(v & 255) / 255.0F, 2.2)` and re-encode with `Math.pow(avg, 1/2.2)`.
+That is **up to 20 `Math.pow` calls per output texel** (4 channels × 4 neighbours + 4 encode) —
+and `Math.pow` is the most expensive primitive measured anywhere in this sweep: **43.0 ns** in V8
+(23 Mops/s), ~7× `Math.exp`, ~28× `Math.sqrt`. A 16×16 sprite with 4 mip levels produces 85 texels
+(1,700 `pow` calls); the block atlas runs this for ~1,000 sprites *plus every animation frame of
+every animated texture*. It is the single biggest `Math.pow` concentration in the game, and it runs
+on world load, on resource-pack switch and on `F3+T` — a visible hitch, not just a startup cost.
+
+**Fix.** The **input** side of that expression has exactly **256 distinct values** (one per byte),
+so it is a textbook integer-indexed table: `GAMMA_2_2[256]` = 1 KiB, filled once in a static
+initializer (256 `Math.pow` calls, ~10 µs), read 16× per texel. The **output** side
+(`pow(avg, 1/2.2)`) is a continuous function of an average and is deliberately left as `Math.pow`:
+quantising it would cost several LSBs in dark texels, and the accuracy budget for "exact" changes
+here is zero.
+
+The arithmetic was also moved into its own class. `TextureUtil`'s static initialiser allocates a
+16 MiB direct int buffer and a `DynamicTexture` and calls GL, so nothing in it can be tested or
+benchmarked on a plain JVM; `MipmapGammaBlend` is a pure function with no GL dependency and one
+owner for its table.
+
+**Numerical contract.** Bit-exact, not approximate: every table entry is evaluated with the
+identical expression the call sites used (int→float conversion, `float` division by `255.0F`, the
+double root, the narrowing cast back to `float`), so a lookup cannot differ from the old
+computation by even one ULP and the generated mipmaps are byte-identical. Verified exhaustively for
+all 256 indices and differentially for the whole filter (see below).
+
+**Verification.** `perfbench.VerifyGammaLut` — **8,295,168 checks, 0 failures**: 256/256 decode
+entries bit-identical (`floatToRawIntBits`), an exhaustive one-channel sweep (4 channel positions ×
+256 values × 12 × 12 pinned neighbour texels, both filter branches), and 4,000,000 randomised ARGB
+texel quadruples (half of them with a transparent texel, i.e. the gamma-correct branch) compared
+against a verbatim copy of the vanilla `blendColors`/`blendColorComponent`.
+
+**Benchmark** (`perfbench.TextureGammaBench`, JVM, median of 40 trials, realistic 16×16 sprite
+data):
+
+| workload | before | after | speedup |
+|---|---|---|---|
+| one texel, linear filter (4 decode + 4 encode) | 281.6–282.1 ns | 58.9–61.7 ns | **4.57–4.78×** |
+| one texel, gamma filter (16 decode + 4 encode) | 248.6–252.5 ns | 49.8–51.1 ns | **4.94–4.99×** |
+| one 16×16 sprite chain, 4 mip levels (85 texels) | 22.4–25.2 µs | 4.9–5.6 µs | 4.50–4.56× |
+| 1,024-sprite block atlas | 26.4 ms | 5.7 ms | **4.6×** |
+| 1,024-sprite atlas, with transparency | 23.4–24.1 ms | 4.7–4.8 ms | **4.9–5.1×** |
+| one 256×256 atlas, 5 mip levels | 6.3–6.5 ms | 1.3–1.4 ms | 4.5–4.9× |
+
+Target-runtime measurement (V8/TeaVM shape): the decode step alone goes **43.46 ns → 0.53 ns
+(82×)** and a full gamma-branch texel goes **233.6 ns → 47.6 ns (4.9×)**; the remaining time is the
+`pow(avg, 1/2.2)` encode that was intentionally kept for exactness (it is now 90 % of the cost of
+the filter, which is why the end-to-end speedup is ~5×, not 20×).
+
+Cold start: the table costs 256 `Math.pow` calls (~10 µs) once, and the atlas pass is ~21 ms shorter
+per build. Memory: 1 KiB, statically bounded, never re-allocated, cannot go stale (pure mapping).
+
+---
+
+## LUT / approximation candidate sweep — measured rejections
+
+Everything below was analysed (function, domain, precision, frequency, memory) and **measured**
+before being rejected. Numbers in the "measured" column are from this session on the JVM (Temurin
+25, `-Xmx2g -XX:+UseParallelGC`) or from `perfbench/js/bench_math_lut.js` (V8 12.4, the actual
+TeaVM target); the JS numbers are quoted where the runtime behaviour differs materially.
+
+| candidate | why it looked attractive | measured | verdict |
+|---|---|---|---|
+| **sqrt LUT** (`MathHelper.sqrt_float/sqrt_double`, 132 direct sites, every distance/normalise/physics path) | huge call count, monotone, easily tabulated | `Math.sqrt` = **1.56 ns** (JS) / 1.6 ns (JVM) — a hardware instruction. Any table needs range reduction + scaling + interpolation, i.e. ≥4× the work, plus unbounded-accuracy loss over the double range | **rejected**: cannot beat one instruction |
+| **fast inverse sqrt** (Quake/magic + Newton) as a `sqrt` replacement | already used inside `MathHelper.func_181161_i` | `1/Math.sqrt` = 2.63 ns; a JS-side magic-constant rsqrt (typed-array bit punning, which is what TeaVM would emit) = **12.1 ns**, 7.8× *slower* than `Math.sqrt`. The engine's own `func_181161_i` stays where it is (only `func_181159_b` uses it, to normalise two doubles for the asin table) | **rejected** |
+| **`Vec3.normalize` via reciprocal multiply** (`sqrt` + 3 divides → `1/sqrt` + 3 multiplies) | 1.68× on the operation | `sqrt`+3 div = 4.73 ns vs `1/sqrt`+3 mul = 2.83 ns, but the two forms differ in the last ULP, and `Vec3.normalize` feeds `getLook` → ray tracing and `AxisAlignedBB.calculateIntercept` where exact ties are decided | **rejected**: 1 ULP of risk for ~2 ns on a path called O(10)–O(100) times per frame |
+| **smaller sin table** (4,096 entries + linear interpolation) to cut the 256 KiB table into L1 | 16× less memory, *better* accuracy | 4,096-entry **step** table 1.00 ns/err 1.5e-3; 4,096-entry **lerp** 2.34 ns/err 2.4e-6; current 65,536-entry step 1.09 ns/err 9.6e-5. The lerp table is *slower* than the current table (two loads + FMA) and 40× more accurate; the step table is faster but 16× less accurate | **rejected for speed**; recorded as an accuracy/memory option if anyone ever needs `sin` to be more precise than vanilla |
+| **dropping `Math.fround` from `MathHelper.sin/cos`** (the float round-trip is a third of the cost) | the single hottest math function in the game | 2.08 ns → 1.09 ns (**1.9×**), but the index then differs from Java's float semantics for ~0.4 % of calls (float ULP at the products involved is up to 0.004, and any product within that of an integer truncates differently), shifting `sin` by one table step | **rejected**: `MathHelper.sin` is used by `MapGenCaves`, `MapGenRavine`, `WorldGenBigTree`, `WorldGenMinable` and `ChunkProviderHell` — a 0.4 % lookup perturbation changes generated terrain, breaking seed determinism |
+| **degree-indexed trig** (`sinDeg`/`cosDeg` for the ~100 `MathHelper.sin(x * 0.017453292F)` sites) | removes a multiply, tables are smaller | the multiply is 0.62 ns (baseline ALU op in the same benchmark); the inputs are almost never integral degrees, so a degree table would still need interpolation | **rejected**: no measurable saving |
+| **`wrapAngleTo180_float/double`: replace `%` with truncation** | float modulo is surprisingly slow in JS | `x % 360` = **7.96 ns** vs `x - 360*trunc(x/360)` = 1.49 ns (**5.3×**), but the replacement is not bit-exact (double rounding on the quotient), and the call count is 2–6 per entity per tick | **rejected**: 5× of nothing |
+| **floor LUT / `Math.floor` rewrite** (`floor_double`, `floor_float`; enormous call count in block iteration) | looks like a classic LUT | `Math.floor` = 1.152 ns, `MathHelper.floor_double` = **1.146 ns** — already at parity with the hardware instruction after JIT/TeaVM lowering | **rejected**: nothing to win |
+| **`atan2` LUT** (`func_181159_b`) | native `Math.atan2` is 18.4 ns | the engine already implements atan2 with a 257-entry asin/cos table + one Newton step; the remaining native `atan2` sites are per-entity-per-frame at most (`RenderDragon`, `RenderGuardian`, compass) | **keep existing table** |
+| **block-property LUTs in the AO mesher** (`Block.getAmbientOcclusionLightValue()` is a virtual call executed up to ~70×/block during a section rebuild, and only two blocks deviate from the 0.2 default) | biggest single numeric consumer in chunk meshing | the only cheap key would be `Block.getIdFromBlock`, which is an identity-hash registry lookup — as expensive as the virtual dispatch it would replace; a per-state table needs `IBlockState.getStateId()`, another hash lookup. The surrounding `getBlockState(pos)` chunk lookup dominates anyway | **rejected**: not enough win for a new global table + invalidation contract |
+| **`Math.pow(2.718, -x)` → `Math.exp(-x)`** (`InstancedFontRenderer` per-vertex fog) | 43.0 ns → 5.6 ns | but it is once per text *batch*, not per vertex (the batch aggregates the whole string), and `2.718 != e` would change the fog curve | **rejected**: frequency is negligible |
+| **`Math.pow(x, 2.0)` → `x * x`** (`WorldGenBigTree` leaf mask, `SpawnerAnimals.MOB_COUNT_DIV`, `VisGraph` constants) | trivial, obvious | the `WorldGenBigTree` one runs per leaf, i.e. per tree, and world generation is the one place bit-exactness must not move; the others are one-time constants already | **rejected**: no measurable effect |
+| **caching `Math.sin/cos` per particle** (5 calls per particle per frame, one of them a duplicate `sin(pitch)`) | 4,000 particles → 20,000 calls | the duplicate `sin(pitch)` CSE saves 1 of 5 lookups ≈ 2 ns/particle ≈ 8 µs/frame at the 4,000-particle cap, but `rotationYaw/Pitch` are mutated by several particle types, so a cache needs invalidation | **rejected**: exact-CSE only worth ~8 µs/frame at the worst-case particle count, not worth a staleness contract |
+
+### Follow-up checked and closed: `PBRTextureMapUtils.generateMipmapDataIgnoreAlpha`
+
+The one other mipmap builder in the tree (`opengl/ext/deferred/texture/PBRTextureMapUtils:140`, used
+by `EaglerTextureAtlasSpritePBR` for legacy/deferred PBR materials) looked like a second candidate
+for the same treatment. It is not: its filter is a plain integer average
+(`((c1 >> 2) << 24) | ...`), **no `Math.pow` and no gamma decode at all**, so there is nothing to
+table. Left untouched (correctly: it deliberately ignores alpha).
+
+While reading it, an unrelated pre-existing indexing bug was noticed and deliberately **not**
+fixed (fixing it would change rendering output, which this PR must not do):
+`for (int j = 0; j < len; ++j) { x = (j % len) << 1; y = (j / len) << 1; ... }` uses `len` (the
+*level's* texel count, `lvlW * lvlW`) where the row length `lvlW` is meant, so `x` runs up to
+`2 * (lvlW*lvlW - 1)` and `y` is always 0 — every generated PBR mip level above 0 is sampled from
+the wrong texels. Only reached when `aint[i] == null` for `i > 0` (the atlas normally supplies all
+levels), which is presumably why it has gone unnoticed. Recorded in HOTSPOTS.md as a correctness
+observation.
+
+### Two measured "no" results that shaped the design
+
+- **The 256 KiB sin table is not a cache problem** on the machines measured: the "hot subset" run
+  (64 distinct angles) was 1.073 ns vs 1.092 ns for uniform random angles — the table is L2-resident
+  and the access pattern does not matter. That is why shrinking it was rejected rather than
+  optimised.
+- **A smaller table with interpolation is slower than a bigger step table.** Linear interpolation
+  costs two dependent loads plus a multiply-add, which dominates any L1 saving: 2.34 ns (4,096 lerp)
+  vs 1.09 ns (65,536 step). LUTs beat libm but they do not beat each other on size.

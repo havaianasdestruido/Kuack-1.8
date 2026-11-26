@@ -25,8 +25,14 @@ FILES=$(grep -oE "ERROR in [^ ]+" "$LOG" | sed 's|ERROR in ||' | sed "s|$ROOT/so
 echo "--- files with errors (expected set is the platform-stub list, e.g. Display.java/EagRuntime.java/teavm):"
 echo "$FILES" > "$HERE/build/errorfiles.txt"
 wc -l < "$HERE/build/errorfiles.txt"
-if [ -f "$HERE/build/errorfiles.baseline.txt" ]; then
-  NEW=$(comm -13 "$HERE/build/errorfiles.baseline.txt" "$HERE/build/errorfiles.txt")
+# The baseline is the pristine-HEAD error set, committed so the gate works in a fresh clone
+# (build/ is gitignored). Regenerate with: git archive HEAD sources/main/java | tar -x -C /tmp/...
+BASE="$HERE/build/errorfiles.baseline.txt"
+if [ ! -f "$BASE" ] && [ -f "$HERE/errorfiles.baseline.txt" ]; then
+  cp "$HERE/errorfiles.baseline.txt" "$BASE"
+fi
+if [ -f "$BASE" ]; then
+  NEW=$(comm -13 "$BASE" "$HERE/build/errorfiles.txt")
   if [ -n "$NEW" ]; then
     echo "!!! NEW files with compile errors (regression):"
     echo "$NEW"
