@@ -64,29 +64,33 @@ public class JavaC {
 		File argFile = new File(tmpDirectory, "sourceFiles.txt");
 		try(PrintWriter writer = new PrintWriter(new FileWriter(argFile))) {
 			
-			System.out.println("Extracting decompiled source...");
-			
-			byte[] copyBuffer = new byte[16384];
-			int copyBufferLen;
-			try(ZipInputStream zis = new ZipInputStream(new FileInputStream(mcSourceJar))) {
-				ZipEntry etr;
-				while((etr = zis.getNextEntry()) != null && !etr.isDirectory()) {
-					String n = etr.getName();
-					if(n.endsWith(".java")) {
-						File writeTo = new File(minecraftSrcTmp, n);
-						File parent = writeTo.getParentFile();
-						if(!parent.exists() && !parent.mkdirs()) {
-							throw new IOException("Could not create temporary directory: " + parent.getAbsolutePath());
-						}
-						try(OutputStream os = new FileOutputStream(writeTo)) {
-							while((copyBufferLen = zis.read(copyBuffer)) != -1) {
-								os.write(copyBuffer, 0, copyBufferLen);
+			if(mcSourceJar != null && mcSourceJar.isFile()) {
+				System.out.println("Extracting decompiled source...");
+				
+				byte[] copyBuffer = new byte[16384];
+				int copyBufferLen;
+				try(ZipInputStream zis = new ZipInputStream(new FileInputStream(mcSourceJar))) {
+					ZipEntry etr;
+					while((etr = zis.getNextEntry()) != null && !etr.isDirectory()) {
+						String n = etr.getName();
+						if(n.endsWith(".java")) {
+							File writeTo = new File(minecraftSrcTmp, n);
+							File parent = writeTo.getParentFile();
+							if(!parent.exists() && !parent.mkdirs()) {
+								throw new IOException("Could not create temporary directory: " + parent.getAbsolutePath());
 							}
+							try(OutputStream os = new FileOutputStream(writeTo)) {
+								while((copyBufferLen = zis.read(copyBuffer)) != -1) {
+									os.write(copyBuffer, 0, copyBufferLen);
+								}
+							}
+							writer.println("\"" + writeTo.getAbsolutePath().replace('\\', '/') + "\"");
+							++debugSourceFileCount;
 						}
-						writer.println("\"" + writeTo.getAbsolutePath().replace('\\', '/') + "\"");
-						++debugSourceFileCount;
 					}
 				}
+			}else {
+				System.out.println("Skipping decompiled source jar extraction (using in-repo source)...");
 			}
 			
 			System.out.println("Scanning source folder paths...");
@@ -115,10 +119,13 @@ public class JavaC {
 		commandBuilder.add("-sourcepath");
 		
 		StringBuilder sourcePathBuilder = new StringBuilder();
-		sourcePathBuilder.append(mcSourceJar.getAbsolutePath());
+		if(mcSourceJar != null && mcSourceJar.isFile()) {
+			sourcePathBuilder.append(mcSourceJar.getAbsolutePath());
+		}
 		
 		for(int i = 0; i < eaglerSourceDirs.length; ++i) {
-			sourcePathBuilder.append(pathSeparator).append(eaglerSourceDirs[i].getAbsolutePath());
+			if(sourcePathBuilder.length() > 0) sourcePathBuilder.append(pathSeparator);
+			sourcePathBuilder.append(eaglerSourceDirs[i].getAbsolutePath());
 		}
 
 		commandBuilder.add(sourcePathBuilder.toString());
