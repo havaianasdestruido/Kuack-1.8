@@ -1,0 +1,9 @@
+{
+  "name": "kuack-perfbench-shader",
+  "private": true,
+  "description": "Mode: glslang front-end compile check for the built-in deferred/PBR shaders",
+  "type": "module",
+  "dependencies": {
+    "@webgpu/glslang": "0.0.13"
+  }
+}

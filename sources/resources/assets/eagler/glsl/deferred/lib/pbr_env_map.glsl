@@ -25,7 +25,10 @@ vec3 eaglercraftIBL_NoBlur(in vec3 albedo, in vec3 irradiance, in vec3 envMapSam
 	}else {
 		float roughness = 1.0 - materials.r * 0.85;
 		float NdotV = dot(normalVec, -viewDir);
-		float fresnel = pow(max(1.0 - NdotV, 0.0), 5.0);
+		// pow(x, 5.0) -> x2 * x2 * x (see pbr_lighting.glsl): 3 ALU ops, no log2/exp2
+		float nvf = max(1.0 - NdotV, 0.0);
+		float nvf2 = nvf * nvf;
+		float fresnel = nvf2 * nvf2 * nvf;
 		vec3 kD = vec3(0.05);
 		vec3 F;
 		if(materials.g < 0.9) {
@@ -78,7 +81,10 @@ vec3 eaglercraftIBL_Specular(in vec3 albedo, in vec3 envMapSample, in vec3 viewD
 #endif
 	float NdotV = dot(normalVec, -viewDir);
 	float roughness = 1.0 - materials.r * 0.85;
-	float fresnel = pow(max(1.0 - NdotV, 0.0), 5.0);
+	// pow(x, 5.0) -> x2 * x2 * x (see pbr_lighting.glsl): 3 ALU ops, no log2/exp2
+	float nvf = max(1.0 - NdotV, 0.0);
+	float nvf2 = nvf * nvf;
+	float fresnel = nvf2 * nvf2 * nvf;
 	vec3 F;
 	if(materials.g < 0.9) {
 		F = vec3(materials.g + (max(1.0 - roughness, materials.g) - materials.g) * fresnel);

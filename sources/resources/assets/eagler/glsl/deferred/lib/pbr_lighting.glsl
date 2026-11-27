@@ -46,7 +46,13 @@ vec3 eaglercraftLighting(in vec3 albedo, in vec3 radiance, in vec3 viewDir, in v
 	vec2 Ndot = NdotHVL.yz;
 	Ndot /= Ndot * (1.0 - gs) + gs;
 	NDF *= Ndot.x * Ndot.y;
-	float fresnel = pow(max(1.0 - NdotHVL.x, 0.0), 5.0);
+	// Fresnel-Schlick pow(x, 5.0) -> x2 * x2 * x: three ALU multiplies instead of the
+	// log2 + exp2 pair every GLES3 driver emits for a non-constant pow(). Same value to
+	// within 1 ULP, and it removes the only pow() from the per-light body (normalize()
+	// below is the remaining SFU op).
+	float nvf = max(1.0 - NdotHVL.x, 0.0);
+	float nvf2 = nvf * nvf;
+	float fresnel = nvf2 * nvf2 * nvf;
 	vec3 kD = vec3(0.03);
 	vec3 F;
 	if(materials.g < 0.9) {
