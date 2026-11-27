@@ -579,6 +579,77 @@ updates/s this is a few microseconds of CPU per second, not an FPS claim.
 
 ---
 
+## #14 `BlockModelRenderer` — allocation-free mesher scratch (AO + standard paths)
+
+**File:** `client/renderer/BlockModelRenderer.java`
+
+**Bottleneck.** Both mesh paths allocated per *rendered block*: the AO path allocated a
+`float[12]` quad-bounds buffer, a `BitSet(3)` and an `AmbientOcclusionFace` (which itself owns
+2 arrays + 6 `BlockPos`), and a fresh `BlockPos` per face with quads; the standard path allocated
+a `BitSet(3)` plus a `BlockPos.MutableBlockPos` per block, a `float[12]` per block in the deferred
+pipeline and an `int[4]` per quad. A chunk-section rebuild renders up to 4,096 blocks, so one
+rebuild produced roughly **2.4 MB** of short-lived scratch garbage before any vertex data is
+counted (measured: 582 B/block AO, 300 B/block standard+deferred, 117 B/block standard).
+
+**Fix.** Per-instance scratch fields (`aoQuadBoundsScratch`, `standardQuadBoundsScratch`,
+`quadBoundsFlagsScratch`, `deferredBrightnessScratch`, `aoFacingOffsetScratch`,
+`standardOffsetPointerScratch`, `aoFaceScratch`) plus the standard path's existing
+`offsetEvenFaster` pattern applied to the AO path. Safety rests on three provable invariants, all
+verified by reading the code:
+
+- `fillQuadBounds` writes **all 12** `quadBounds` entries and sets boundsFlags bits 0 and 1
+  explicitly with `set(index, value)` before any read (bit 2 is never used anywhere);
+- `AmbientOcclusionFace.updateVertexBrightness` writes all 4 `vertexColorMultiplier` and all 4
+  `vertexBrightness` entries in **both** branches — `VertexTranslations` is a bijection of 0..3
+  for every facing (DOWN(0,1,2,3), UP(2,3,0,1), NORTH(3,0,1,2), SOUTH(0,1,2,3), WEST(3,0,1,2),
+  EAST(1,2,3,0));
+- the deferred `int[4]` is fully written before `putBrightness4` in both branches.
+
+Threading: `BlockModelRenderer` has exactly one instance (`BlockRendererDispatcher`), chunk
+meshing is queued and drained on the render thread by Eaglercraft's `ChunkUpdateManager` (no
+`Thread` anywhere in the chunk-render package; TeaVM has none), so instance scratch is safe and
+TeaVM-compatible — no `ThreadLocal`. The class already used instance-scratch `BlockPos` fields
+(`blockpos0..5`) for the standard path; this extends the same pattern.
+
+**Verification.** `perfbench.VerifyBlockMesh` — 1,600 randomized (model, block, position,
+checkSides) cases over the complete mode grid (AO on/off × anaglyph × deferred pipeline ×
+dynamic-lights × random synthetic models with flush/inset/general quads × 12 real blocks), each
+case rendered through BOTH the pre-change implementation (kept as
+`perfbench.BlockModelRendererVanilla`, fresh scratch per call) and the production implementation
+(one instance reused across **all** cases, which is the staleness detector), comparing the
+complete recorded `WorldRenderer` call sequences: **0 mismatches**. Negative test: deleting a
+single `quadBounds` write in the production file produces 413 mismatches immediately — the
+harness detects exactly the stale-scratch bug class this change could have introduced.
+
+**Benchmark.** `perfbench.BlockMeshBench` (JDK 25 Temurin, `-Xmx2g -XX:+UseParallelGC`, 2,048
+blocks/pass, **interleaved arms** — the arms allocate very differently, so sequential trials
+attribute GC timing to whichever arm runs second; medians of 15 interleaved trials, three runs):
+
+| workload | vanilla ns/block | prod ns/block | speedup | vanilla B/block | prod B/block |
+|---|---|---|---|---|---|
+| AO mesh (default) | 4,860–5,276 | 4,642–5,016 | **1.05–1.07×** | 582 | **87** (−85%) |
+| AO mesh + dynamic lights | 3,807–4,406 | 3,764–4,212 | 1.01–1.05× | 540–565 | **44–80** (−85%) |
+| standard mesh, deferred | 3,553–3,901 | 3,597–3,897 | 0.99–1.02× | 300 | **44** (−85%) |
+| standard mesh, non-deferred | 1,795–2,190 | 1,828–2,420 | 0.91–1.04× | 117 | **45** (−70%) |
+
+Isolation experiment (`perfbench.BlockMeshDiagBench`, bench-only variants generated from the
+vanilla reference, interleaved): one run gave vanilla 4,647 / shared 4,490 / shared+offsetEvenFaster
+4,440 / production 4,425 ns/block; across runs the per-variant ordering flips within ±10–15% while
+the allocation deltas stay exact — i.e. the scratch reuse is what moves allocation, the
+`offsetEvenFaster` swap is neutral on its own, and run-level CPU medians on HotSpot are
+noise-dominated at this kernel size.
+
+**Honest read.** On HotSpot the CPU effect is small: interleaved medians favour the change
+(1.05–1.07× on the dominant AO path) because the vanilla arm carries 7× the allocation and eats
+the young-gen collections, but min-of-trials sometimes favours vanilla (4.2–4.6 vs 4.4–4.8 µs in
+GC-free trials — fresh scratch gives the JIT marginally better escape-analysis options). The
+allocation reduction is unambiguous and stable (−85% on every mode) and it is the mechanism that
+matters for the actual deployment target: the browser (TeaVM→JS→V8), where mesh allocations
+become JS garbage collected by the engine's GC. No JS/V8 measurement was made (the TeaVM probe
+would need the whole World/Block closure), so there is no browser number and no FPS claim.
+
+---
+
 ## LUT / approximation candidate sweep — measured rejections
 
 Everything below was analysed (function, domain, precision, frequency, memory) and **measured**
