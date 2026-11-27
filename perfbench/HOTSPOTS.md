@@ -4,6 +4,32 @@ Ranked by estimated impact on frame time / tick time. Each entry records the sit
 cost, and why it was left alone. Sites marked **measured** had a benchmark written; the number is the
 cost at a realistic input size.
 
+## Cross-runtime hotspot inventory (deliverable B)
+
+Source census over `sources/main/java` (481,929 Java lines, 2,488 files): `Math.pow` 30, `Math.sqrt`
+62, `MathHelper.sqrt_*` 103, `MathHelper.sin/cos` 398, native `Math.sin/cos/atan2/...` 122,
+`MathHelper.floor_*` 496, `Math.floor/ceil/rint` 15, `MathHelper.clamp*` 164, `getDistanceSq*` 96,
+`normalize()` 24, `.rotate(` 305, `Math.abs/min/max` 527. **These are source-level counts, not
+profiles.** Frequency per frame/tick/entity/chunk below is marked `M` (measured benchmark workload)
+or `E` (source-estimated from call-site/loop structure); no full-game trace was available.
+
+| Candidate / call sites | Math shape | Frequency | Measured vs suspected | Decision / evidence |
+|---|---|---|---|---|
+| `TextureUtil.generateMipmapData` → `MipmapGammaBlend.blend`; `EaglerTextureAtlasSprite:267`, `EaglerTextureAtlasSpritePBR:176` | `pow(byte/255,2.2)` decode; `pow(avg,1/2.2)` encode | `M`: 1,024 sprites × 85 texels × 4/16 decode per texel. `E`: atlas load/reload/F3+T, **not** per frame/tick | **Measured hotspot** | Exact dual LUT shipped; V8 decode 42.894→2.038 ns, JVM atlas 4.4–7.6×. Encode left exact |
+| `EntityRenderer.renderWorld` → `updateLightmap`; `updateRenderer`/`updateTorchFlicker` sets `lightmapUpdateNeeded` | 256-iteration float lightmap curve | `E`: once per client tick (~20 Hz), 256 iterations/update; guarded, not every render frame | **Measured isolated kernel, source-estimated frequency** | Bit-exact CSE shipped; 1.03–1.07× |
+| `GlStateManager.rotate` → `Matrix4f.rotate` → `MathHelper.sin/cos`; 305 `.rotate(` refs, top `ItemRenderer` 39, `EntityRenderer` 31, `RenderHighPoly` 30 | trig, matrix multiply, camera/model/particle/GUI rotations | `E`: 2,400 rotations/frame used as representative batch; no game profile | **Measured existing optimization** (already in HEAD) | Keep existing 65,536 `SIN_TABLE`; 2.36× JDK17, 2.75× JDK25, 5.56× V8 trig pair |
+| `MathHelper.sin/cos` 398 refs (`ModelBiped` 20, `ItemRenderer` 18, `EntityRenderer` 17) | periodic trig, 16-bit-turn quantization | `E`: per model part / particle / camera per frame; worldgen uses same table deterministically | **Measured existing table** | Reuse, do not source-embed; huge embedded sine table rejected (+2.9 MB JS) |
+| `Math.sqrt` 62 (`LongMath` 9, `EntityMinecart` 7, `BetterFrustum` 6), `MathHelper.sqrt_*` 103 (`ItemRenderer` 9, `Entity` 8, `EntityArrow` 8) | sqrt / distance / normalization / physics | `E`: per entity × tick, per ray/visibility calculation, per collision sweep | **Measured primitive, rejected LUT** | V8 `Math.sqrt` 1.611 ns; HotSpot intrinsic. Range reduction + interpolation costs more |
+| `MathHelper.floor_*` 496 (`World` 82, `RenderGlobal` 33, `EntityTrackerEntry` 24), `Math.clamp*` 164 | interpolation, clamp, floor/ceil, block/chunk coordinate conversion | `E`: per block/vertex/chunk/entity per rebuild or tick | **Suspected by count; measured primitive** | `floor` parity 1.146 ns; no LUT |
+| `getDistanceSq*` 96 (`EntityAINearestAttackableTarget` 4, `World` 4, `EntityAIAvoidEntity` 3), `Vec3.normalize` 24 | squared distance, dot/cross, vector lengths | `E`: per entity × target × tick; per camera/ray per frame | **Suspected by count; rejected reciprocal-sqrt rewrite** | Squared distance already avoids sqrt; reciprocal multiply changes last ULP in collision/ray ties |
+| `World.getCollidingBoundingBoxes`, `Entity.moveEntity`, `EntityFX.onUpdate` | entity physics, gravity, friction, AABB collision | `E`: 1–3 sweeps/particle/tick, up to 4,000 particles; prior measured 79–95 ns/call | **Measured prior session, not re-profiled here** | Allocation/data-structure problem, not a math LUT; deliberately out of scope |
+| `Math.pow` 30 refs outside mipmap (`HFormatter` 5, `VisGraph` 3), fog `pow(2.718,-x)` | lighting/fog/color exponentiation | `E`: one-time constants or once per text batch | **Measured isolated op, negligible frequency** | Rejected `pow→exp` because `2.718 != e` and frequency is negligible |
+| `BlockModelRenderer`, `Chunk.getBlockState`, chunk meshing / vertex transforms | nested loops, repeated transforms, AO, block/chunk conversions | `E`: up to ~16k blocks per section rebuild, ~70 AO virtual calls/block | **Suspected by structure; prior profile** | AO memo rejected; prior biome-tint memo measured 0.98–0.99× and reverted |
+| `RenderGlobal.renderEntities`, `PlayerManager`, `EntityTracker`, `EntityItem` merge, `Explosion` | O(n²)/O(n³)-shaped scans, repeated transforms | `E`: per visible chunk/frame, per entity×player/tick | **Suspected / prior measurements** | Not LUT-shaped; see ranked list below |
+
+Game-input distributions were **not** captured. Benchmarks use deterministic sequential, fixed-LCG
+random and adversarial negative/out-of-range inputs; full-game FPS/frame-time remains unavailable.
+
 ## The maths/LUT sweep (this session)
 
 Full detail in `FINDINGS.md` (existing-table inventory, trig call-site census, #10, #11, and the
@@ -13,9 +39,14 @@ Full detail in `FINDINGS.md` (existing-table inventory, trig call-site census, #
   `Math.cos`/`Math.sin` for every model-part/particle/GUI rotation; it now uses the engine's
   existing sine table (2.42× per rotation on the JVM, 5.0× on the trig pair in V8, ~35 µs/frame at
   2,400 rotations, 0 bytes of new memory, ≤9.6e-5 rad deviation).
-- **Implemented #11** — the mipmap box filter decoded channel bytes with `Math.pow(x, 2.2)`, 20
-  libm calls per mipmap texel, although the input has only 256 possible values; a 256-entry table
-  makes it 4.6–5.1× faster (≈21 ms per 1,024-sprite atlas) and is bit-identical.
+- **Implemented #11 / #12** — the mipmap box filter decoded channel bytes with `Math.pow(x, 2.2)`,
+  up to 20 libm calls per mipmap texel, although the input has only 256 possible values. The current
+  PR replaces the old runtime-generated table with two committed source-embedded 256-entry tables,
+  one per runtime's float semantics; measured 3.7–7.6× faster on the 1,024-sprite / atlas workloads
+  and exact on both HotSpot and TeaVM/V8. See FINDINGS #12 and `CROSS_RUNTIME.md`.
+- **Implemented #13** — `EntityRenderer.updateLightmap` invariant hoisting / CSE is bit-exact and
+  saves 2.8–6.5% of one 256-texel lightmap update. It is a small algorithmic simplification, not a
+  frame-time result.
 - **Rejected with measurements** — sqrt LUT, magic-number rsqrt in JavaScript, smaller/lerped sin
   tables, dropping `Math.fround` from `MathHelper.sin/cos` (breaks worldgen determinism), degree
   tables, `%`-removal in `wrapAngleTo180_*`, floor LUT, `atan2` tables, block-property tables in the
