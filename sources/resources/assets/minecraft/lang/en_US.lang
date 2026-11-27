@@ -887,6 +887,14 @@ options.touchscreen=Touchscreen Mode
 options.blockAlternatives=Alternate Blocks
 options.reducedDebugInfo=Reduced Debug Info
 options.entityShadows=Entity Shadows
+options.gamepad.enable=Gamepad
+options.gamepad.preset.legacy=Legacy Console Preset
+options.gamepad.preset.xbox=Xbox Preset
+options.gamepad.preset.playstation=PlayStation Preset
+options.gamepad.preset.switch=Nintendo Switch Preset
+options.gamepad.look=Gamepad Look
+options.gamepad.lookInvert=Invert Gamepad Look
+options.gamepad.deadzone=Gamepad Deadzone
 
 options.mipmapLevels=Mipmap Levels
 options.forceUnicodeFont=Force Unicode Font

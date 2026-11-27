@@ -353,6 +353,45 @@ public class PlatformInput {
 		return i;
 	}
 
+	public static void keyboardQueueSyntheticEvent(int key, boolean pressed) {
+		keyboardEventList.add(new KeyboardEvent(key, pressed, false));
+		if(keyboardEventList.size() > 64) {
+			keyboardEventList.remove(0);
+		}
+	}
+
+	public static void mouseQueueSyntheticEvent(int button, boolean pressed) {
+		mouseEventList.add(new MouseEvent(button, pressed, cursorX, cursorY, 0.0f));
+		if(mouseEventList.size() > 64) {
+			mouseEventList.remove(0);
+		}
+	}
+
+	public static void mouseAddVirtualDelta(int dx, int dy) {
+		cursorDX += dx;
+		cursorDY += dy;
+	}
+
+	/**
+	 * The desktop debug runtime does not bridge any gamepad API, so controller
+	 * support is reported as unavailable here.
+	 */
+	public static boolean gamepadIsSupported() {
+		return false;
+	}
+
+	public static boolean gamepadIsConnected(int index) {
+		return false;
+	}
+
+	public static boolean gamepadGetButton(int index, int button) {
+		return false;
+	}
+
+	public static float gamepadGetAxis(int index, int axis) {
+		return 0.0F;
+	}
+
 	public static void mouseSetGrabbed(boolean grab) {
 		if(grab != windowMouseGrabbed) {
 			cursorX = windowWidth / 2;

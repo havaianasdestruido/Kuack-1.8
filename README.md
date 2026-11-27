@@ -100,6 +100,26 @@ This is an ongoing renderer port, not the upstream Sodium mod or a claim of feat
 
 EaglercraftX 1.8 includes an integrated voice-chat service that can be used in shared worlds and also on multiplayer servers when it is enabled by the server owner. This feature also uses WebRTC like shared worlds, so be careful that you don't leak your IP address accidentally by using it on a public server. If you own a website and don't want people to use voice chat on it, edit the `eaglercraftXOpts` variable in your index.html and add `allowVoiceClient: false`.
 
+## Gamepad Support
+
+EaglercraftX 1.8 has full gamepad (controller) support on the browser client, built on the browser's standard Gamepad API. Any controller that the browser exposes through that API works, and the left analog stick moves the player while the right analog stick drives the camera. Buttons are mapped to the game's normal actions (move, jump, sneak, sprint, attack, use item, pick block, open inventory, drop, chat, hotbar and pause), and because the gamepad drives the same virtual key/mouse input the keyboard and mouse use, the actions respect whatever key bindings you have configured in the controls screen.
+
+Four control presets are included, each inspired by a different console layout, and each can be toggled on independently from the **Video Settings** screen:
+
+- **Legacy Console** — the button layout of the old Minecraft console edition.
+- **Xbox** — the standard Xbox face-button layout.
+- **PlayStation** — the standard PlayStation face-button layout, with drop and chat on the L2/R2 triggers.
+- **Nintendo Switch** — the standard Switch button layout.
+
+Alongside the presets, the following toggles are available:
+
+- **Gamepad** — master switch that enables controller input.
+- **Gamepad Look** — whether the right analog stick rotates the camera.
+- **Invert Gamepad Look** — flips the vertical look axis.
+- **Gamepad Deadzone** — how far a stick must be moved before it registers, as a percentage.
+
+Gamepad settings are saved with your other options and persist between sessions. The desktop debug runtime does not read gamepads, so the option has no effect there.
+
 ## Resource Packs
 
 EaglercraftX 1.8 allows you to use any vanilla Minecraft 1.8 resource pack in your browser by importing it as a zip file, resource packs are saved to your browser's local storage and are saved between page refreshes. This can be used to add the original C418 soundtrack back into the game, download and import [this pack](https://bafybeiayojww5jfyzvlmtuk7l5ufkt7nlfto7mhwmzf2vs4bvsjd5ouiuq.ipfs.nftstorage.link/?filename=Music_For_Eaglercraft.zip) to add music back to Eaglercraft. A known bug with the debug desktop runtime is that sound files in resource packs do not play, this may be fixed in the future but is not a high priority issue.
