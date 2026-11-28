@@ -761,6 +761,14 @@ options.framerateLimit=Dalbogh naQ rate
 options.framerateLimit.max= 	  	
 joq ja'meH DataHvIS
 options.fullscreen=jIH naQ
+options.gamepad.deadzone=QIDwI' mI'Q
+options.gamepad.enable=QIDwI'
+options.gamepad.look=QIDwI' tal
+options.gamepad.lookInvert=QIDwI' tal pe'Q
+options.gamepad.preset.legacy=QIDwI' retlh preset
+options.gamepad.preset.playstation=PlayStation preset
+options.gamepad.preset.switch=Nintendo Switch preset
+options.gamepad.preset.xbox=Xbox preset
 options.gamma=DuH wov
 options.gamma.max=wovqu'
 options.gamma.min=Hurgh
