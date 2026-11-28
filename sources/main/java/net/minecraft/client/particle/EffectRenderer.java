@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import net.lax1dude.eaglercraft.v1_8.EaglercraftRandom;
+import net.lax1dude.eaglercraft.v1_8.PerformancePresets;
 import net.lax1dude.eaglercraft.v1_8.minecraft.AcceleratedEffectRenderer;
 import net.lax1dude.eaglercraft.v1_8.minecraft.IAcceleratedParticleEngine;
 
@@ -21,6 +22,7 @@ import net.lax1dude.eaglercraft.v1_8.opengl.ext.deferred.GBufferAcceleratedEffec
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -143,6 +145,11 @@ public class EffectRenderer {
 	}
 
 	public void emitParticleAtEntity(Entity entityIn, EnumParticleTypes particleTypes) {
+		Minecraft mc = Minecraft.getMinecraft();
+		if (mc != null && mc.gameSettings != null
+				&& PerformancePresets.getMaxParticles(mc.gameSettings.performancePreset) <= 0) {
+			return;
+		}
 		this.particleEmitters.add(new EntityParticleEmitter(this.worldObj, entityIn, particleTypes));
 	}
 
@@ -165,9 +172,16 @@ public class EffectRenderer {
 	}
 
 	public void addEffect(EntityFX effect) {
+		Minecraft mc = Minecraft.getMinecraft();
+		int maxParticles = (mc != null && mc.gameSettings != null)
+				? PerformancePresets.getMaxParticles(mc.gameSettings.performancePreset)
+				: 4000;
+		if (maxParticles <= 0) {
+			return;
+		}
 		int i = effect.getFXLayer();
 		int j = effect.getAlpha() != 1.0F ? 0 : 1;
-		if (this.fxLayers[i][j].size() >= 4000) {
+		while (this.fxLayers[i][j].size() >= maxParticles) {
 			this.fxLayers[i][j].remove(0);
 		}
 

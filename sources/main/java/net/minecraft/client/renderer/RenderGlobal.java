@@ -11,6 +11,7 @@ import java.util.Map;
 import net.lax1dude.eaglercraft.v1_8.EaglercraftRandom;
 import net.lax1dude.eaglercraft.v1_8.HString;
 import net.lax1dude.eaglercraft.v1_8.Keyboard;
+import net.lax1dude.eaglercraft.v1_8.PerformancePresets;
 
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -1318,6 +1319,13 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			GlStateManager.color(f, f1, f2);
 			GlStateManager.callList(this.glSkyList);
 
+			if (!PerformancePresets.shouldRenderSkyExtras(this.mc.gameSettings.performancePreset)) {
+				GlStateManager.disableFog();
+				GlStateManager.enableTexture2D();
+				GlStateManager.depthMask(true);
+				return;
+			}
+
 			GlStateManager.disableFog();
 			GlStateManager.disableAlpha();
 			GlStateManager.enableBlend();
@@ -1396,7 +1404,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			tessellator.draw();
 			GlStateManager.disableTexture2D();
 			float f15 = this.theWorld.getStarBrightness(partialTicks) * f16;
-			if (f15 > 0.0F) {
+			if (f15 > 0.0F && PerformancePresets.shouldRenderStars(this.mc.gameSettings.performancePreset)) {
 				GlStateManager.color(f15, f15, f15, f15);
 				GlStateManager.callList(this.starGLCallList);
 			}

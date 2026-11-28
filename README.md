@@ -124,6 +124,20 @@ Alongside the presets, the following toggles are available:
 
 Gamepad settings are saved with your other options and persist between sessions. The desktop debug runtime does not read gamepads, so the option has no effect there.
 
+## Performance Presets
+
+Under **Options -> Video Settings -> Performance Presets...**, you can switch between seven built-in profiles spanning ultra low-end devices up to high-end systems:
+
+- **Bacteria** — ultra-extreme low-end mode: 1-chunk render distance, Fast graphics, no particles, no weather rendering, no sky extras (sun/moon/stars), static textures, no shadows/fog/blur/AO, throttled HUD overlay updates, and 1 chunk update per frame.
+- **Abacus** — extreme low-end mode: 2-chunk render distance, Fast graphics, minimal particles (capped at 100), no weather or sky extras, static textures, and 1 chunk update per frame.
+- **Arduino Uno R3** — very low-end mode: 2-chunk render distance, Fast graphics, minimal particles (capped at 250), no stars, static textures, no shadows/fog/blur, and 2 chunk updates per frame.
+- **Toaster** — low-end mode: 3-chunk render distance, Fast graphics, decreased particles (capped at 750), no clouds/shadows/fog/blur/mipmaps, and 4 chunk updates per frame.
+- **Balanced** — mid-range profile: 6-chunk render distance, Fast graphics, Minimum Smooth Lighting, Fast clouds, mipmaps 2, fog, and entity shadows.
+- **High** — high-end profile: 10-chunk render distance, Fancy graphics, Max Smooth Lighting, Fancy clouds, all particles, FXAA, mipmaps 4, and dynamic lights.
+- **Ultra** — maximum profile: 16-chunk render distance with full visual settings.
+
+Manually changing a preset-managed video setting transitions the active preset to **Custom** while preserving your individual tweaks. The selected preset persists in your saved options.
+
 ## Resource Packs
 
 EaglercraftX 1.8 allows you to use any vanilla Minecraft 1.8 resource pack in your browser by importing it as a zip file, resource packs are saved to your browser's local storage and are saved between page refreshes. This can be used to add the original C418 soundtrack back into the game, download and import [this pack](https://bafybeiayojww5jfyzvlmtuk7l5ufkt7nlfto7mhwmzf2vs4bvsjd5ouiuq.ipfs.nftstorage.link/?filename=Music_For_Eaglercraft.zip) to add music back to Eaglercraft. A known bug with the debug desktop runtime is that sound files in resource packs do not play, this may be fixed in the future but is not a high priority issue.

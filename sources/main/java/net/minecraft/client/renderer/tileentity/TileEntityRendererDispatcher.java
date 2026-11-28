@@ -4,9 +4,11 @@ import java.util.Map;
 
 import com.google.common.collect.Maps;
 
+import net.lax1dude.eaglercraft.v1_8.PerformancePresets;
 import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
 import net.lax1dude.eaglercraft.v1_8.opengl.OpenGlHelper;
 import net.lax1dude.eaglercraft.v1_8.opengl.ext.dynamiclights.DynamicLightsStateManager;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.crash.CrashReport;
@@ -117,8 +119,12 @@ public class TileEntityRendererDispatcher {
 	}
 
 	public void renderTileEntity(TileEntity tileentityIn, float partialTicks, int destroyStage) {
-		if (tileentityIn.getDistanceSq(this.entityX, this.entityY, this.entityZ) < tileentityIn
-				.getMaxRenderDistanceSquared()) {
+		Minecraft mc = Minecraft.getMinecraft();
+		float distScale = (mc != null && mc.gameSettings != null)
+				? PerformancePresets.getTileEntityDistanceScale(mc.gameSettings.performancePreset)
+				: 1.0F;
+		double maxDistSq = tileentityIn.getMaxRenderDistanceSquared() * (double) (distScale * distScale);
+		if (tileentityIn.getDistanceSq(this.entityX, this.entityY, this.entityZ) < maxDistSq) {
 			int i = this.worldObj.getCombinedLight(tileentityIn.getPos(), 0);
 			int j = i % 65536;
 			int k = i / 65536;

@@ -26,6 +26,7 @@ import net.lax1dude.eaglercraft.v1_8.EaglerZLIB;
 import net.lax1dude.eaglercraft.v1_8.HString;
 import net.lax1dude.eaglercraft.v1_8.Keyboard;
 import net.lax1dude.eaglercraft.v1_8.Mouse;
+import net.lax1dude.eaglercraft.v1_8.PerformancePresets;
 import net.lax1dude.eaglercraft.v1_8.internal.EnumPlatformType;
 import net.lax1dude.eaglercraft.v1_8.internal.KeyboardConstants;
 import net.lax1dude.eaglercraft.v1_8.log4j.LogManager;
@@ -204,6 +205,10 @@ public class GameSettings {
 	public boolean enableUpdateSvc = true;
 	public boolean enableFNAWSkins = true;
 	public boolean enableDynamicLights = false;
+	/**+
+	 * Selected performance preset, one of PerformancePresets.PRESET_*.
+	 */
+	public int performancePreset = PerformancePresets.PRESET_CUSTOM;
 
 	/**+
 	 * Whether gamepad (controller) input is enabled.
@@ -335,6 +340,7 @@ public class GameSettings {
 			int i = this.mipmapLevels;
 			this.mipmapLevels = (int) parFloat1;
 			if ((float) i != parFloat1) {
+				this.performancePreset = PerformancePresets.PRESET_CUSTOM;
 				this.mc.getTextureMapBlocks().setMipmapLevels(this.mipmapLevels);
 				this.mc.getTextureManager().bindTexture(TextureMap.locationBlocksTexture);
 				this.mc.getTextureMapBlocks().setBlurMipmapDirect(false, this.mipmapLevels > 0);
@@ -344,12 +350,91 @@ public class GameSettings {
 
 		if (parOptions == GameSettings.Options.BLOCK_ALTERNATIVES) {
 			this.allowBlockAlternatives = !this.allowBlockAlternatives;
+			this.performancePreset = PerformancePresets.PRESET_CUSTOM;
 			this.mc.renderGlobal.loadRenderers();
 		}
 
 		if (parOptions == GameSettings.Options.RENDER_DISTANCE) {
+			int prevDist = this.renderDistanceChunks;
 			this.renderDistanceChunks = (int) parFloat1;
+			if (this.renderDistanceChunks != prevDist) {
+				this.performancePreset = PerformancePresets.PRESET_CUSTOM;
+			}
 			this.mc.renderGlobal.setDisplayListEntitiesDirty();
+		}
+	}
+
+	/**+
+	 * Applies a performance preset from {@link PerformancePresets} and refreshes any
+	 * affected renderers or resources.
+	 */
+	public void applyPerformancePreset(int presetId) {
+		if (!PerformancePresets.isValidPreset(presetId)) {
+			return;
+		}
+		int oldMipmap = this.mipmapLevels;
+		boolean oldShaders = this.shaders;
+		boolean oldFancy = this.fancyGraphics;
+		int oldAo = this.ambientOcclusion;
+		boolean oldBlockAlts = this.allowBlockAlternatives;
+		int oldRenderDist = this.renderDistanceChunks;
+		boolean oldDynLights = this.enableDynamicLights;
+		boolean oldFnaw = this.enableFNAWSkins;
+
+		PerformancePresets.applyToSettings(presetId, this);
+
+		if (this.enableFNAWSkins != oldFnaw && this.mc != null && this.mc.getRenderManager() != null) {
+			this.mc.getRenderManager().setEnableFNAWSkins(this.mc.getEnableFNAWSkins());
+		}
+
+		if (PerformancePresets.getMaxParticles(presetId) <= 0 && this.mc != null && this.mc.effectRenderer != null) {
+			this.mc.effectRenderer.clearEffects(this.mc.theWorld);
+		}
+
+		if (this.mipmapLevels != oldMipmap && this.mc != null && this.mc.getTextureMapBlocks() != null) {
+			this.mc.getTextureMapBlocks().setMipmapLevels(this.mipmapLevels);
+			this.mc.getTextureManager().bindTexture(TextureMap.locationBlocksTexture);
+			this.mc.getTextureMapBlocks().setBlurMipmapDirect(false, this.mipmapLevels > 0);
+		}
+
+		if ((this.shaders != oldShaders || this.mipmapLevels != oldMipmap) && this.mc != null) {
+			if (this.shaders != oldShaders) {
+				this.mc.loadingScreen.eaglerShowRefreshResources();
+				this.mc.refreshResources();
+			} else {
+				this.mc.scheduleResourcesRefresh();
+			}
+		} else if ((this.fancyGraphics != oldFancy || this.ambientOcclusion != oldAo
+				|| this.allowBlockAlternatives != oldBlockAlts || this.enableDynamicLights != oldDynLights)
+				&& this.mc != null && this.mc.renderGlobal != null) {
+			this.mc.renderGlobal.loadRenderers();
+		} else if (this.renderDistanceChunks != oldRenderDist && this.mc != null && this.mc.renderGlobal != null) {
+			this.mc.renderGlobal.setDisplayListEntitiesDirty();
+		}
+
+		this.saveOptions();
+	}
+
+	private static boolean isPresetManagedOption(GameSettings.Options option) {
+		switch (option) {
+		case RENDER_DISTANCE:
+		case GRAPHICS:
+		case AMBIENT_OCCLUSION:
+		case RENDER_CLOUDS:
+		case PARTICLES:
+		case FXAA:
+		case MIPMAP_LEVELS:
+		case BLOCK_ALTERNATIVES:
+		case ENTITY_SHADOWS:
+		case FOG:
+		case EAGLER_DYNAMIC_LIGHTS:
+		case DISABLE_BLUR:
+		case VIEW_BOBBING:
+		case FNAW_SKINS:
+		case CHUNK_FIX:
+			return true;
+		default:
+			return false;
 		}
 	}
 
@@ -527,6 +612,20 @@ public class GameSettings {
 
 		if (parOptions == GameSettings.Options.GAMEPAD_LOOK_INVERT) {
 			this.gamepadLookInvert = !this.gamepadLookInvert;
+		}
+
+		if (parOptions == GameSettings.Options.PERFORMANCE_PRESET) {
+			int nextPreset = this.performancePreset < 0 ? 0
+					: (this.performancePreset + parInt1) % PerformancePresets.PRESET_COUNT;
+			if (nextPreset < 0) {
+				nextPreset += PerformancePresets.PRESET_COUNT;
+			}
+			this.applyPerformancePreset(nextPreset);
+			return;
+		}
+
+		if (isPresetManagedOption(parOptions)) {
+			this.performancePreset = PerformancePresets.PRESET_CUSTOM;
 		}
 
 		this.saveOptions();
@@ -739,6 +838,8 @@ public class GameSettings {
 			} else {
 				return s + I18n.format("options.off");
 			}
+		} else if (parOptions == GameSettings.Options.PERFORMANCE_PRESET) {
+			return s + PerformancePresets.getDisplayName(this.performancePreset);
 		} else {
 			return s;
 		}
@@ -1102,6 +1203,10 @@ public class GameSettings {
 						this.gamepadDeadzone = this.parseFloat(astring[1]);
 					}
 
+					if (astring[0].equals("performancePreset") && astring.length >= 2) {
+						this.performancePreset = PerformancePresets.fromKey(astring[1]);
+					}
+
 					deferredShaderConf.readOption(astring[0], astring[1]);
 				} catch (Exception var8) {
 					logger.warn("Skipping bad option: " + s);
@@ -1227,6 +1332,7 @@ public class GameSettings {
 			printwriter.println("gamepadLookEnabled:" + this.gamepadLookEnabled);
 			printwriter.println("gamepadLookInvert:" + this.gamepadLookInvert);
 			printwriter.println("gamepadDeadzone:" + this.gamepadDeadzone);
+			printwriter.println("performancePreset:" + PerformancePresets.getKey(this.performancePreset));
 
 			for (KeyBinding keybinding : this.keyBindings) {
 				printwriter.println("key_" + keybinding.getKeyDescription() + ":" + keybinding.getKeyCode());
@@ -1370,7 +1476,8 @@ public class GameSettings {
 		GAMEPAD_PRESET_SWITCH("options.gamepad.preset.switch", false, true),
 		GAMEPAD_LOOK("options.gamepad.look", false, true),
 		GAMEPAD_LOOK_INVERT("options.gamepad.lookInvert", false, true),
-		GAMEPAD_DEADZONE("options.gamepad.deadzone", true, false, 0.0F, 0.5F, 0.05F);
+		GAMEPAD_DEADZONE("options.gamepad.deadzone", true, false, 0.0F, 0.5F, 0.05F),
+		PERFORMANCE_PRESET("options.performancePreset", false, false);
 
 		private final boolean enumFloat;
 		private final boolean enumBoolean;

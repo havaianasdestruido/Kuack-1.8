@@ -15,6 +15,7 @@ import com.google.common.base.Predicates;
 
 import net.lax1dude.eaglercraft.v1_8.Display;
 import net.lax1dude.eaglercraft.v1_8.Mouse;
+import net.lax1dude.eaglercraft.v1_8.PerformancePresets;
 import net.lax1dude.eaglercraft.v1_8.log4j.LogManager;
 import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
 import net.lax1dude.eaglercraft.v1_8.opengl.EaglercraftGPU;
@@ -945,7 +946,12 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 				if (!this.mc.gameSettings.hideGUI || this.mc.currentScreen != null) {
 					GlStateManager.alphaFunc(GL_GREATER, 0.1F);
 					long framebufferAge = this.overlayFramebuffer.getAge();
-					if (framebufferAge == -1l || framebufferAge > (Minecraft.getDebugFPS() < 25 ? 125l : 75l)) {
+					long refreshInterval = PerformancePresets
+							.getOverlayRefreshIntervalMs(this.mc.gameSettings.performancePreset);
+					if (refreshInterval < 0L) {
+						refreshInterval = Minecraft.getDebugFPS() < 25 ? 125l : 75l;
+					}
+					if (framebufferAge == -1l || framebufferAge > refreshInterval) {
 						this.overlayFramebuffer.beginRender(mc.displayWidth, mc.displayHeight);
 						GlStateManager.colorMask(true, true, true, true);
 						GlStateManager.clearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -1383,6 +1389,9 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 	}
 
 	private void addRainParticles() {
+		if (!PerformancePresets.shouldRenderWeather(this.mc.gameSettings.performancePreset)) {
+			return;
+		}
 		float f = this.mc.theWorld.getRainStrength(1.0F);
 		if (!this.mc.gameSettings.fancyGraphics) {
 			f /= 2.0F;
@@ -1456,6 +1465,9 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 	 * Render rain and snow
 	 */
 	protected void renderRainSnow(float partialTicks) {
+		if (!PerformancePresets.shouldRenderWeather(this.mc.gameSettings.performancePreset)) {
+			return;
+		}
 		float f = this.mc.theWorld.getRainStrength(partialTicks);
 		if (f > 0.0F) {
 			boolean df = DeferredStateManager.isInDeferredPass();
