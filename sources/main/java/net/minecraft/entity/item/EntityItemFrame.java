@@ -175,10 +175,10 @@ public class EntityItemFrame extends EntityHanging {
 	}
 
 	public void setItemRotation(int parInt1) {
-		this.func_174865_a(parInt1, true);
+		this.setRotation(parInt1, true);
 	}
 
-	private void func_174865_a(int parInt1, boolean parFlag) {
+	private void setRotation(int parInt1, boolean parFlag) {
 		this.getDataWatcher().updateObject(9, Byte.valueOf((byte) (parInt1 % 8)));
 		if (parFlag && this.hangingPosition != null) {
 			this.worldObj.updateComparatorOutputLevel(this.hangingPosition, Blocks.air);
@@ -208,13 +208,13 @@ public class EntityItemFrame extends EntityHanging {
 		NBTTagCompound nbttagcompound1 = nbttagcompound.getCompoundTag("Item");
 		if (nbttagcompound1 != null && !nbttagcompound1.hasNoTags()) {
 			this.setDisplayedItemWithUpdate(ItemStack.loadItemStackFromNBT(nbttagcompound1), false);
-			this.func_174865_a(nbttagcompound.getByte("ItemRotation"), false);
+			this.setRotation(nbttagcompound.getByte("ItemRotation"), false);
 			if (nbttagcompound.hasKey("ItemDropChance", 99)) {
 				this.itemDropChance = nbttagcompound.getFloat("ItemDropChance");
 			}
 
 			if (nbttagcompound.hasKey("Direction")) {
-				this.func_174865_a(this.getRotation() * 2, false);
+				this.setRotation(this.getRotation() * 2, false);
 			}
 		}
 
@@ -241,7 +241,7 @@ public class EntityItemFrame extends EntityHanging {
 		return true;
 	}
 
-	public int func_174866_q() {
+	public int getAnalogOutput() {
 		return this.getDisplayedItem() == null ? 0 : this.getRotation() % 8 + 1;
 	}
 

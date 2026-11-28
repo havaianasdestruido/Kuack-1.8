@@ -89,7 +89,7 @@ public enum EnumFaceDirection {
 		this.vertexInfos = vertexInfosIn;
 	}
 
-	public EnumFaceDirection.VertexInformation func_179025_a(int parInt1) {
+	public EnumFaceDirection.VertexInformation getVertexInformation(int parInt1) {
 		return this.vertexInfos[parInt1];
 	}
 
@@ -112,14 +112,14 @@ public enum EnumFaceDirection {
 	}
 
 	public static class VertexInformation {
-		public final int field_179184_a;
-		public final int field_179182_b;
-		public final int field_179183_c;
+		public final int xIndex;
+		public final int yIndex;
+		public final int zIndex;
 
 		private VertexInformation(int parInt1, int parInt2, int parInt3) {
-			this.field_179184_a = parInt1;
-			this.field_179182_b = parInt2;
-			this.field_179183_c = parInt3;
+			this.xIndex = parInt1;
+			this.yIndex = parInt2;
+			this.zIndex = parInt3;
 		}
 	}
 }

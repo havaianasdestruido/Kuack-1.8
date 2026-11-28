@@ -363,7 +363,7 @@ public class AxisAlignedBB {
 				+ this.maxZ + "]";
 	}
 
-	public boolean func_181656_b() {
+	public boolean hasNaN() {
 		return Double.isNaN(this.minX) || Double.isNaN(this.minY) || Double.isNaN(this.minZ) || Double.isNaN(this.maxX)
 				|| Double.isNaN(this.maxY) || Double.isNaN(this.maxZ);
 	}

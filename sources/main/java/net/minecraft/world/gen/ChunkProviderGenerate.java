@@ -60,7 +60,7 @@ public class ChunkProviderGenerate implements IChunkProvider {
 	private final double[] field_147434_q;
 	private final float[] parabolicField;
 	private ChunkProviderSettings settings;
-	private Block field_177476_s = Blocks.water;
+	private Block oceanBlockTmpl = Blocks.water;
 	private double[] stoneNoise = new double[256];
 	private MapGenBase caveGenerator;
 	private MapGenStronghold strongholdGenerator;
@@ -70,10 +70,10 @@ public class ChunkProviderGenerate implements IChunkProvider {
 	private MapGenBase ravineGenerator;
 	private StructureOceanMonument oceanMonumentGenerator;
 	private BiomeGenBase[] biomesForGeneration;
-	double[] field_147427_d;
-	double[] field_147428_e;
-	double[] field_147425_f;
-	double[] field_147426_g;
+	double[] mainNoiseArray;
+	double[] lowerLimitNoiseArray;
+	double[] upperLimitNoiseArray;
+	double[] depthNoiseArray;
 
 	public ChunkProviderGenerate(World worldIn, long parLong1, boolean parFlag, String parString1) {
 		this.worldObj = worldIn;
@@ -106,9 +106,9 @@ public class ChunkProviderGenerate implements IChunkProvider {
 		}
 
 		if (parString1 != null) {
-			this.settings = ChunkProviderSettings.Factory.jsonToFactory(parString1).func_177864_b();
-			this.field_177476_s = this.settings.useLavaOceans ? Blocks.lava : Blocks.water;
-			worldIn.func_181544_b(this.settings.seaLevel);
+			this.settings = ChunkProviderSettings.Factory.jsonToFactory(parString1).build();
+			this.oceanBlockTmpl = this.settings.useLavaOceans ? Blocks.lava : Blocks.water;
+			worldIn.setSeaLevel(this.settings.seaLevel);
 		}
 
 	}
@@ -157,7 +157,7 @@ public class ChunkProviderGenerate implements IChunkProvider {
 											Blocks.stone.getDefaultState());
 								} else if (i2 * 8 + j2 < this.settings.seaLevel) {
 									parChunkPrimer.setBlockState(i * 4 + k2, i2 * 8 + j2, l * 4 + l2,
-											this.field_177476_s.getDefaultState());
+											this.oceanBlockTmpl.getDefaultState());
 								}
 							}
 
@@ -179,7 +179,7 @@ public class ChunkProviderGenerate implements IChunkProvider {
 	public void replaceBlocksForBiome(int parInt1, int parInt2, ChunkPrimer parChunkPrimer,
 			BiomeGenBase[] parArrayOfBiomeGenBase) {
 		double d0 = 0.03125D;
-		this.stoneNoise = this.field_147430_m.func_151599_a(this.stoneNoise, (double) (parInt1 * 16),
+		this.stoneNoise = this.field_147430_m.getRegion(this.stoneNoise, (double) (parInt1 * 16),
 				(double) (parInt2 * 16), 16, 16, d0 * 2.0D, d0 * 2.0D, 1.0D);
 
 		for (int i = 0; i < 16; ++i) {
@@ -244,17 +244,17 @@ public class ChunkProviderGenerate implements IChunkProvider {
 	}
 
 	private void func_147423_a(int parInt1, int parInt2, int parInt3) {
-		this.field_147426_g = this.noiseGen6.generateNoiseOctaves(this.field_147426_g, parInt1, parInt3, 5, 5,
+		this.depthNoiseArray = this.noiseGen6.generateNoiseOctaves(this.depthNoiseArray, parInt1, parInt3, 5, 5,
 				(double) this.settings.depthNoiseScaleX, (double) this.settings.depthNoiseScaleZ,
 				(double) this.settings.depthNoiseScaleExponent);
 		float f = this.settings.coordinateScale;
 		float f1 = this.settings.heightScale;
-		this.field_147427_d = this.field_147429_l.generateNoiseOctaves(this.field_147427_d, parInt1, parInt2, parInt3,
+		this.mainNoiseArray = this.field_147429_l.generateNoiseOctaves(this.mainNoiseArray, parInt1, parInt2, parInt3,
 				5, 33, 5, (double) (f / this.settings.mainNoiseScaleX), (double) (f1 / this.settings.mainNoiseScaleY),
 				(double) (f / this.settings.mainNoiseScaleZ));
-		this.field_147428_e = this.field_147431_j.generateNoiseOctaves(this.field_147428_e, parInt1, parInt2, parInt3,
+		this.lowerLimitNoiseArray = this.field_147431_j.generateNoiseOctaves(this.lowerLimitNoiseArray, parInt1, parInt2, parInt3,
 				5, 33, 5, (double) f, (double) f1, (double) f);
-		this.field_147425_f = this.field_147432_k.generateNoiseOctaves(this.field_147425_f, parInt1, parInt2, parInt3,
+		this.upperLimitNoiseArray = this.field_147432_k.generateNoiseOctaves(this.upperLimitNoiseArray, parInt1, parInt2, parInt3,
 				5, 33, 5, (double) f, (double) f1, (double) f);
 		parInt3 = 0;
 		parInt1 = 0;
@@ -296,7 +296,7 @@ public class ChunkProviderGenerate implements IChunkProvider {
 				f3 = f3 / f4;
 				f2 = f2 * 0.9F + 0.1F;
 				f3 = (f3 * 4.0F - 1.0F) / 8.0F;
-				double d7 = this.field_147426_g[j] / 8000.0D;
+				double d7 = this.depthNoiseArray[j] / 8000.0D;
 				if (d7 < 0.0D) {
 					d7 = -d7 * 0.3D;
 				}
@@ -331,9 +331,9 @@ public class ChunkProviderGenerate implements IChunkProvider {
 						d1 *= 4.0D;
 					}
 
-					double d2 = this.field_147428_e[i] / (double) this.settings.lowerLimitScale;
-					double d3 = this.field_147425_f[i] / (double) this.settings.upperLimitScale;
-					double d4 = (this.field_147427_d[i] / 10.0D + 1.0D) / 2.0D;
+					double d2 = this.lowerLimitNoiseArray[i] / (double) this.settings.lowerLimitScale;
+					double d3 = this.upperLimitNoiseArray[i] / (double) this.settings.upperLimitScale;
+					double d4 = (this.mainNoiseArray[i] / 10.0D + 1.0D) / 2.0D;
 					double d5 = MathHelper.denormalizeClamp(d2, d3, d4) - d1;
 					if (k1 > 29) {
 						double d6 = (double) ((float) (k1 - 29) / 3.0F);
@@ -402,7 +402,7 @@ public class ChunkProviderGenerate implements IChunkProvider {
 			int k2 = this.rand.nextInt(16) + 8;
 			int j3 = this.rand.nextInt(this.rand.nextInt(248) + 8);
 			int i4 = this.rand.nextInt(16) + 8;
-			if (j3 < this.worldObj.func_181545_F() || this.rand.nextInt(this.settings.lavaLakeChance / 8) == 0) {
+			if (j3 < this.worldObj.getSeaLevel() || this.rand.nextInt(this.settings.lavaLakeChance / 8) == 0) {
 				(new WorldGenLakes(Blocks.lava)).generate(this.worldObj, this.rand, blockpos.add(k2, j3, i4));
 			}
 		}
@@ -437,7 +437,7 @@ public class ChunkProviderGenerate implements IChunkProvider {
 		BlockFalling.fallInstantly = false;
 	}
 
-	public boolean func_177460_a(IChunkProvider var1, Chunk chunk, int i, int j) {
+	public boolean populateChunk(IChunkProvider var1, Chunk chunk, int i, int j) {
 		boolean flag = false;
 		if (this.settings.useMonuments && this.mapFeaturesEnabled && chunk.getInhabitedTime() < 3600L) {
 			flag |= this.oceanMonumentGenerator.generateStructure(this.worldObj, this.rand,
@@ -491,13 +491,13 @@ public class ChunkProviderGenerate implements IChunkProvider {
 		BiomeGenBase biomegenbase = this.worldObj.getBiomeGenForCoords(blockpos);
 		if (this.mapFeaturesEnabled) {
 			if (enumcreaturetype == EnumCreatureType.MONSTER
-					&& this.scatteredFeatureGenerator.func_175798_a(blockpos)) {
+					&& this.scatteredFeatureGenerator.isSwampHut(blockpos)) {
 				return this.scatteredFeatureGenerator.getScatteredFeatureSpawnList();
 			}
 
 			if (enumcreaturetype == EnumCreatureType.MONSTER && this.settings.useMonuments
-					&& this.oceanMonumentGenerator.func_175796_a(this.worldObj, blockpos)) {
-				return this.oceanMonumentGenerator.func_175799_b();
+					&& this.oceanMonumentGenerator.isPositionInStructure(this.worldObj, blockpos)) {
+				return this.oceanMonumentGenerator.getScatteredFeatureSpawnList();
 			}
 		}
 

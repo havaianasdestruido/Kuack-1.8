@@ -29,8 +29,8 @@ public class GuiOptionSlider extends GuiButton {
 	private float sliderValue;
 	public boolean dragging;
 	private GameSettings.Options options;
-	private final float field_146132_r;
-	private final float field_146131_s;
+	private final float minValue;
+	private final float maxValue;
 
 	public GuiOptionSlider(int parInt1, int parInt2, int parInt3, GameSettings.Options parOptions) {
 		this(parInt1, parInt2, parInt3, parOptions, 0.0F, 1.0F);
@@ -41,8 +41,8 @@ public class GuiOptionSlider extends GuiButton {
 		super(parInt1, parInt2, parInt3, 150, 20, "");
 		this.sliderValue = 1.0F;
 		this.options = parOptions;
-		this.field_146132_r = parFloat1;
-		this.field_146131_s = parFloat2;
+		this.minValue = parFloat1;
+		this.maxValue = parFloat2;
 		Minecraft minecraft = Minecraft.getMinecraft();
 		this.sliderValue = parOptions.normalizeValue(minecraft.gameSettings.getOptionFloatValue(parOptions));
 		this.displayString = minecraft.gameSettings.getKeyBinding(parOptions);

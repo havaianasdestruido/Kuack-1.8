@@ -65,12 +65,12 @@ public class RenderMinecart<T extends EntityMinecart> extends Render<T> {
 		double d4 = entityminecart.lastTickPosY + (entityminecart.posY - entityminecart.lastTickPosY) * (double) f1;
 		double d5 = entityminecart.lastTickPosZ + (entityminecart.posZ - entityminecart.lastTickPosZ) * (double) f1;
 		double d6 = 0.30000001192092896D;
-		Vec3 vec3 = entityminecart.func_70489_a(d3, d4, d5);
+		Vec3 vec3 = entityminecart.getPos(d3, d4, d5);
 		float f5 = entityminecart.prevRotationPitch
 				+ (entityminecart.rotationPitch - entityminecart.prevRotationPitch) * f1;
 		if (vec3 != null) {
-			Vec3 vec31 = entityminecart.func_70495_a(d3, d4, d5, d6);
-			Vec3 vec32 = entityminecart.func_70495_a(d3, d4, d5, -d6);
+			Vec3 vec31 = entityminecart.getPosOffset(d3, d4, d5, d6);
+			Vec3 vec32 = entityminecart.getPosOffset(d3, d4, d5, -d6);
 			if (vec31 == null) {
 				vec31 = vec3;
 			}

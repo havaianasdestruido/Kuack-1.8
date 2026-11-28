@@ -123,7 +123,7 @@ public class BlockTripWireHook extends Block {
 	 */
 	public void onBlockPlacedBy(World world, BlockPos blockpos, IBlockState iblockstate, EntityLivingBase var4,
 			ItemStack var5) {
-		this.func_176260_a(world, blockpos, iblockstate, false, false, -1, (IBlockState) null);
+		this.calculateState(world, blockpos, iblockstate, false, false, -1, (IBlockState) null);
 	}
 
 	/**+
@@ -142,7 +142,7 @@ public class BlockTripWireHook extends Block {
 		}
 	}
 
-	public void func_176260_a(World worldIn, BlockPos pos, IBlockState hookState, boolean parFlag, boolean parFlag2,
+	public void calculateState(World worldIn, BlockPos pos, IBlockState hookState, boolean parFlag, boolean parFlag2,
 			int parInt1, IBlockState parIBlockState2) {
 		EnumFacing enumfacing = (EnumFacing) hookState.getValue(FACING);
 		boolean flag = ((Boolean) hookState.getValue(ATTACHED)).booleanValue();
@@ -192,15 +192,15 @@ public class BlockTripWireHook extends Block {
 			BlockPos blockpos1 = pos.offset(enumfacing, i);
 			EnumFacing enumfacing1 = enumfacing.getOpposite();
 			worldIn.setBlockState(blockpos1, iblockstate1.withProperty(FACING, enumfacing1), 3);
-			this.func_176262_b(worldIn, blockpos1, enumfacing1);
-			this.func_180694_a(worldIn, blockpos1, flag3, flag4, flag, flag1);
+			this.notifyNeighbors(worldIn, blockpos1, enumfacing1);
+			this.playSound(worldIn, blockpos1, flag3, flag4, flag, flag1);
 		}
 
-		this.func_180694_a(worldIn, pos, flag3, flag4, flag, flag1);
+		this.playSound(worldIn, pos, flag3, flag4, flag, flag1);
 		if (!parFlag) {
 			worldIn.setBlockState(pos, iblockstate1.withProperty(FACING, enumfacing), 3);
 			if (parFlag2) {
-				this.func_176262_b(worldIn, pos, enumfacing);
+				this.notifyNeighbors(worldIn, pos, enumfacing);
 			}
 		}
 
@@ -224,10 +224,10 @@ public class BlockTripWireHook extends Block {
 	}
 
 	public void updateTick(World world, BlockPos blockpos, IBlockState iblockstate, EaglercraftRandom var4) {
-		this.func_176260_a(world, blockpos, iblockstate, false, true, -1, (IBlockState) null);
+		this.calculateState(world, blockpos, iblockstate, false, true, -1, (IBlockState) null);
 	}
 
-	private void func_180694_a(World worldIn, BlockPos pos, boolean parFlag, boolean parFlag2, boolean parFlag3,
+	private void playSound(World worldIn, BlockPos pos, boolean parFlag, boolean parFlag2, boolean parFlag3,
 			boolean parFlag4) {
 		if (parFlag2 && !parFlag4) {
 			worldIn.playSoundEffect((double) pos.getX() + 0.5D, (double) pos.getY() + 0.1D, (double) pos.getZ() + 0.5D,
@@ -245,7 +245,7 @@ public class BlockTripWireHook extends Block {
 
 	}
 
-	private void func_176262_b(World worldIn, BlockPos parBlockPos, EnumFacing parEnumFacing) {
+	private void notifyNeighbors(World worldIn, BlockPos parBlockPos, EnumFacing parEnumFacing) {
 		worldIn.notifyNeighborsOfStateChange(parBlockPos, this);
 		worldIn.notifyNeighborsOfStateChange(parBlockPos.offset(parEnumFacing.getOpposite()), this);
 	}
@@ -282,7 +282,7 @@ public class BlockTripWireHook extends Block {
 		boolean flag = ((Boolean) iblockstate.getValue(ATTACHED)).booleanValue();
 		boolean flag1 = ((Boolean) iblockstate.getValue(POWERED)).booleanValue();
 		if (flag || flag1) {
-			this.func_176260_a(world, blockpos, iblockstate, true, false, -1, (IBlockState) null);
+			this.calculateState(world, blockpos, iblockstate, true, false, -1, (IBlockState) null);
 		}
 
 		if (flag1) {

@@ -44,7 +44,7 @@ public class EntityMinecartHopper extends EntityMinecartContainer implements IHo
 	 */
 	private boolean isBlocked = true;
 	private int transferTicker = -1;
-	private BlockPos field_174900_c = BlockPos.ORIGIN;
+	private BlockPos lastPosition = BlockPos.ORIGIN;
 
 	public EntityMinecartHopper(World worldIn) {
 		super(worldIn);
@@ -147,7 +147,7 @@ public class EntityMinecartHopper extends EntityMinecartContainer implements IHo
 		super.onUpdate();
 		if (!this.worldObj.isRemote && this.isEntityAlive() && this.getBlocked()) {
 			BlockPos blockpos = new BlockPos(this);
-			if (blockpos.equals(this.field_174900_c)) {
+			if (blockpos.equals(this.lastPosition)) {
 				--this.transferTicker;
 			} else {
 				this.setTransferTicker(0);
@@ -155,7 +155,7 @@ public class EntityMinecartHopper extends EntityMinecartContainer implements IHo
 
 			if (!this.canTransfer()) {
 				this.setTransferTicker(0);
-				if (this.func_96112_aD()) {
+				if (this.captureDroppedItems()) {
 					this.setTransferTicker(4);
 					this.markDirty();
 				}
@@ -164,7 +164,7 @@ public class EntityMinecartHopper extends EntityMinecartContainer implements IHo
 
 	}
 
-	public boolean func_96112_aD() {
+	public boolean captureDroppedItems() {
 		if (TileEntityHopper.captureDroppedItems(this)) {
 			return true;
 		} else {

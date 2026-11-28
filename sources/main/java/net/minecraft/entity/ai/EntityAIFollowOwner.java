@@ -38,10 +38,10 @@ public class EntityAIFollowOwner extends EntityAIBase {
 	World theWorld;
 	private double followSpeed;
 	private PathNavigate petPathfinder;
-	private int field_75343_h;
+	private int timeToRecalcPath;
 	float maxDist;
 	float minDist;
-	private boolean field_75344_i;
+	private boolean oldWaterCost;
 
 	public EntityAIFollowOwner(EntityTameable thePetIn, double followSpeedIn, float minDistIn, float maxDistIn) {
 		this.thePet = thePetIn;
@@ -89,8 +89,8 @@ public class EntityAIFollowOwner extends EntityAIBase {
 	 * Execute a one shot task or start executing a continuous task
 	 */
 	public void startExecuting() {
-		this.field_75343_h = 0;
-		this.field_75344_i = ((PathNavigateGround) this.thePet.getNavigator()).getAvoidsWater();
+		this.timeToRecalcPath = 0;
+		this.oldWaterCost = ((PathNavigateGround) this.thePet.getNavigator()).getAvoidsWater();
 		((PathNavigateGround) this.thePet.getNavigator()).setAvoidsWater(false);
 	}
 
@@ -103,7 +103,7 @@ public class EntityAIFollowOwner extends EntityAIBase {
 		((PathNavigateGround) this.thePet.getNavigator()).setAvoidsWater(true);
 	}
 
-	private boolean func_181065_a(BlockPos parBlockPos) {
+	private boolean isEmptyBlock(BlockPos parBlockPos) {
 		IBlockState iblockstate = this.theWorld.getBlockState(parBlockPos);
 		Block block = iblockstate.getBlock();
 		return block == Blocks.air ? true : !block.isFullCube();
@@ -116,8 +116,8 @@ public class EntityAIFollowOwner extends EntityAIBase {
 		this.thePet.getLookHelper().setLookPositionWithEntity(this.theOwner, 10.0F,
 				(float) this.thePet.getVerticalFaceSpeed());
 		if (!this.thePet.isSitting()) {
-			if (--this.field_75343_h <= 0) {
-				this.field_75343_h = 10;
+			if (--this.timeToRecalcPath <= 0) {
+				this.timeToRecalcPath = 10;
 				if (!this.petPathfinder.tryMoveToEntityLiving(this.theOwner, this.followSpeed)) {
 					if (!this.thePet.getLeashed()) {
 						if (this.thePet.getDistanceSqToEntity(this.theOwner) >= 144.0D) {
@@ -130,8 +130,8 @@ public class EntityAIFollowOwner extends EntityAIBase {
 									if ((l < 1 || i1 < 1 || l > 3 || i1 > 3)
 											&& World.doesBlockHaveSolidTopSurface(this.theWorld,
 													new BlockPos(i + l, k - 1, j + i1))
-											&& this.func_181065_a(new BlockPos(i + l, k, j + i1))
-											&& this.func_181065_a(new BlockPos(i + l, k + 1, j + i1))) {
+											&& this.isEmptyBlock(new BlockPos(i + l, k, j + i1))
+											&& this.isEmptyBlock(new BlockPos(i + l, k + 1, j + i1))) {
 										this.thePet.setLocationAndAngles((double) ((float) (i + l) + 0.5F), (double) k,
 												(double) ((float) (j + i1) + 0.5F), this.thePet.rotationYaw,
 												this.thePet.rotationPitch);

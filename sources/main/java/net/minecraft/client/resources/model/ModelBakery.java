@@ -468,7 +468,7 @@ public class ModelBakery {
 			ModelBlock modelblock1 = (ModelBlock) this.models.get(resourcelocation);
 			if (modelblock1 != null && modelblock1.isResolved()) {
 				if (this.isCustomRenderer(modelblock1)) {
-					this.bakedRegistry.putObject(modelresourcelocation1, new BuiltInModel(modelblock1.func_181682_g()));
+					this.bakedRegistry.putObject(modelresourcelocation1, new BuiltInModel(modelblock1.getAllTransforms()));
 				} else {
 					this.bakedRegistry.putObject(modelresourcelocation1,
 							this.bakeModel(modelblock1, ModelRotation.X0_Y0, false));

@@ -23,12 +23,12 @@ import net.minecraft.client.resources.I18n;
  * 
  */
 public class GuiErrorScreen extends GuiScreen {
-	private String field_146313_a;
-	private String field_146312_f;
+	private String title;
+	private String message;
 
 	public GuiErrorScreen(String parString1, String parString2) {
-		this.field_146313_a = parString1;
-		this.field_146312_f = parString2;
+		this.title = parString1;
+		this.message = parString2;
 	}
 
 	/**+
@@ -47,8 +47,8 @@ public class GuiErrorScreen extends GuiScreen {
 	 */
 	public void drawScreen(int i, int j, float f) {
 		this.drawGradientRect(0, 0, this.width, this.height, -12574688, -11530224);
-		this.drawCenteredString(this.fontRendererObj, this.field_146313_a, this.width / 2, 90, 16777215);
-		this.drawCenteredString(this.fontRendererObj, this.field_146312_f, this.width / 2, 110, 16777215);
+		this.drawCenteredString(this.fontRendererObj, this.title, this.width / 2, 90, 16777215);
+		this.drawCenteredString(this.fontRendererObj, this.message, this.width / 2, 110, 16777215);
 		super.drawScreen(i, j, f);
 	}
 

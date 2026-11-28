@@ -152,7 +152,7 @@ public abstract class Enchantment {
 		return (Enchantment) locationEnchantments.get(new ResourceLocation(location));
 	}
 
-	public static Set<ResourceLocation> func_181077_c() {
+	public static Set<ResourceLocation> getEffects() {
 		return locationEnchantments.keySet();
 	}
 

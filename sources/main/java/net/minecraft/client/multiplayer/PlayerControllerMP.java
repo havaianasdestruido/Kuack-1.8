@@ -416,7 +416,7 @@ public class PlayerControllerMP {
 		}
 	}
 
-	public EntityPlayerSP func_178892_a(World worldIn, StatFileWriter statWriter) {
+	public EntityPlayerSP createClientPlayer(World worldIn, StatFileWriter statWriter) {
 		return new EntityPlayerSP(this.mc, worldIn, this.netClientHandler, statWriter);
 	}
 
@@ -442,7 +442,7 @@ public class PlayerControllerMP {
 		return this.currentGameType != WorldSettings.GameType.SPECTATOR && playerIn.interactWith(targetEntity);
 	}
 
-	public boolean func_178894_a(EntityPlayer parEntityPlayer, Entity parEntity,
+	public boolean isPlayerRightClickingOnEntity(EntityPlayer parEntityPlayer, Entity parEntity,
 			MovingObjectPosition parMovingObjectPosition) {
 		this.syncCurrentPlayItem();
 		Vec3 vec3 = new Vec3(parMovingObjectPosition.hitVec.xCoord - parEntity.posX,
@@ -543,7 +543,7 @@ public class PlayerControllerMP {
 		return this.currentGameType;
 	}
 
-	public boolean func_181040_m() {
+	public boolean getIsHittingBlock() {
 		return this.isHittingBlock;
 	}
 }

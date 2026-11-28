@@ -38,7 +38,7 @@ import net.minecraft.network.play.server.S35PacketUpdateTileEntity;
 public class TileEntityBanner extends TileEntity {
 	private int baseColor;
 	private NBTTagList patterns;
-	private boolean field_175119_g;
+	private boolean patternDataSet;
 	private List<TileEntityBanner.EnumBannerPattern> patternList;
 	private List<EnumDyeColor> colorList;
 	private String patternResourceLocation;
@@ -63,15 +63,15 @@ public class TileEntityBanner extends TileEntity {
 		this.patternList = null;
 		this.colorList = null;
 		this.patternResourceLocation = "";
-		this.field_175119_g = true;
+		this.patternDataSet = true;
 	}
 
 	public void writeToNBT(NBTTagCompound nbttagcompound) {
 		super.writeToNBT(nbttagcompound);
-		func_181020_a(nbttagcompound, this.baseColor, this.patterns);
+		setBaseColorAndPatterns(nbttagcompound, this.baseColor, this.patterns);
 	}
 
-	public static void func_181020_a(NBTTagCompound parNBTTagCompound, int parInt1, NBTTagList parNBTTagList) {
+	public static void setBaseColorAndPatterns(NBTTagCompound parNBTTagCompound, int parInt1, NBTTagList parNBTTagList) {
 		parNBTTagCompound.setInteger("Base", parInt1);
 		if (parNBTTagList != null) {
 			parNBTTagCompound.setTag("Patterns", parNBTTagList);
@@ -86,7 +86,7 @@ public class TileEntityBanner extends TileEntity {
 		this.patternList = null;
 		this.colorList = null;
 		this.patternResourceLocation = null;
-		this.field_175119_g = true;
+		this.patternDataSet = true;
 	}
 
 	/**+
@@ -132,7 +132,7 @@ public class TileEntityBanner extends TileEntity {
 		return this.patternList;
 	}
 
-	public NBTTagList func_181021_d() {
+	public NBTTagList TileEntityBannerGetPatterns() {
 		return this.patterns;
 	}
 
@@ -145,7 +145,7 @@ public class TileEntityBanner extends TileEntity {
 		return this.colorList;
 	}
 
-	public String func_175116_e() {
+	public String getPatternResourceLocation() {
 		this.initializeBannerData();
 		return this.patternResourceLocation;
 	}
@@ -157,7 +157,7 @@ public class TileEntityBanner extends TileEntity {
 	 */
 	private void initializeBannerData() {
 		if (this.patternList == null || this.colorList == null || this.patternResourceLocation == null) {
-			if (!this.field_175119_g) {
+			if (!this.patternDataSet) {
 				this.patternResourceLocation = "";
 			} else {
 				this.patternList = Lists.newArrayList();

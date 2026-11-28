@@ -65,7 +65,7 @@ public class CommandCompare extends CommandBase {
 			BlockPos blockpos2 = parseBlockPos(parICommandSender, parArrayOfString, 6, false);
 			StructureBoundingBox structureboundingbox = new StructureBoundingBox(blockpos, blockpos1);
 			StructureBoundingBox structureboundingbox1 = new StructureBoundingBox(blockpos2,
-					blockpos2.add(structureboundingbox.func_175896_b()));
+					blockpos2.add(structureboundingbox.getLength()));
 			int i = structureboundingbox.getXSize() * structureboundingbox.getYSize() * structureboundingbox.getZSize();
 			if (i > 524288) {
 				throw new CommandException("commands.compare.tooManyBlocks",
@@ -89,8 +89,8 @@ public class CommandCompare extends CommandBase {
 					for (int j = structureboundingbox.minZ; j <= structureboundingbox.maxZ; ++j) {
 						for (int k = structureboundingbox.minY; k <= structureboundingbox.maxY; ++k) {
 							for (int l = structureboundingbox.minX; l <= structureboundingbox.maxX; ++l) {
-								blockpos$mutableblockpos.func_181079_c(l, k, j);
-								blockpos$mutableblockpos1.func_181079_c(l + blockpos3.getX(), k + blockpos3.getY(),
+								blockpos$mutableblockpos.setPos(l, k, j);
+								blockpos$mutableblockpos1.setPos(l + blockpos3.getX(), k + blockpos3.getY(),
 										j + blockpos3.getZ());
 								boolean flag1 = false;
 								IBlockState iblockstate = world.getBlockState(blockpos$mutableblockpos);
@@ -144,9 +144,9 @@ public class CommandCompare extends CommandBase {
 	 * Return a list of options when the user types TAB
 	 */
 	public List<String> addTabCompletionOptions(ICommandSender var1, String[] astring, BlockPos blockpos) {
-		return astring.length > 0 && astring.length <= 3 ? func_175771_a(astring, 0, blockpos)
-				: (astring.length > 3 && astring.length <= 6 ? func_175771_a(astring, 3, blockpos)
-						: (astring.length > 6 && astring.length <= 9 ? func_175771_a(astring, 6, blockpos)
+		return astring.length > 0 && astring.length <= 3 ? getTabCompletionCoordinate(astring, 0, blockpos)
+				: (astring.length > 3 && astring.length <= 6 ? getTabCompletionCoordinate(astring, 3, blockpos)
+						: (astring.length > 6 && astring.length <= 9 ? getTabCompletionCoordinate(astring, 6, blockpos)
 								: (astring.length == 10
 										? getListOfStringsMatchingLastWord(astring, new String[] { "masked", "all" })
 										: null)));

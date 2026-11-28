@@ -68,15 +68,15 @@ public class ChunkProviderHell implements IChunkProvider {
 	private final NoiseGeneratorOctaves netherrackExculsivityNoiseGen;
 	public final NoiseGeneratorOctaves netherNoiseGen6;
 	public final NoiseGeneratorOctaves netherNoiseGen7;
-	private final WorldGenFire field_177470_t = new WorldGenFire();
-	private final WorldGenGlowStone1 field_177469_u = new WorldGenGlowStone1();
-	private final WorldGenGlowStone2 field_177468_v = new WorldGenGlowStone2();
-	private final WorldGenerator field_177467_w = new WorldGenMinable(Blocks.quartz_ore.getDefaultState(), 14,
+	private final WorldGenFire fireFeature = new WorldGenFire();
+	private final WorldGenGlowStone1 lightGemGen = new WorldGenGlowStone1();
+	private final WorldGenGlowStone2 hellPortalGen = new WorldGenGlowStone2();
+	private final WorldGenerator quartzGen = new WorldGenMinable(Blocks.quartz_ore.getDefaultState(), 14,
 			BlockHelper.forBlock(Blocks.netherrack));
-	private final WorldGenHellLava field_177473_x = new WorldGenHellLava(Blocks.flowing_lava, true);
-	private final WorldGenHellLava field_177472_y = new WorldGenHellLava(Blocks.flowing_lava, false);
-	private final GeneratorBushFeature field_177471_z = new GeneratorBushFeature(Blocks.brown_mushroom);
-	private final GeneratorBushFeature field_177465_A = new GeneratorBushFeature(Blocks.red_mushroom);
+	private final WorldGenHellLava lavaTrapGen = new WorldGenHellLava(Blocks.flowing_lava, true);
+	private final WorldGenHellLava hellSpringGen = new WorldGenHellLava(Blocks.flowing_lava, false);
+	private final GeneratorBushFeature brownMushroomFeature = new GeneratorBushFeature(Blocks.brown_mushroom);
+	private final GeneratorBushFeature redMushroomFeature = new GeneratorBushFeature(Blocks.red_mushroom);
 	private final MapGenNetherBridge genNetherBridge;
 	private final MapGenBase netherCaveGenerator;
 	double[] noiseData1;
@@ -99,12 +99,12 @@ public class ChunkProviderHell implements IChunkProvider {
 		this.netherrackExculsivityNoiseGen = new NoiseGeneratorOctaves(this.hellRNG, 4);
 		this.netherNoiseGen6 = new NoiseGeneratorOctaves(this.hellRNG, 10);
 		this.netherNoiseGen7 = new NoiseGeneratorOctaves(this.hellRNG, 16);
-		worldIn.func_181544_b(63);
+		worldIn.setSeaLevel(63);
 	}
 
 	public void func_180515_a(int parInt1, int parInt2, ChunkPrimer parChunkPrimer) {
 		byte b0 = 4;
-		int i = this.worldObj.func_181545_F() / 2 + 1;
+		int i = this.worldObj.getSeaLevel() / 2 + 1;
 		int j = b0 + 1;
 		byte b1 = 17;
 		int k = b0 + 1;
@@ -168,7 +168,7 @@ public class ChunkProviderHell implements IChunkProvider {
 	}
 
 	public void func_180516_b(int parInt1, int parInt2, ChunkPrimer parChunkPrimer) {
-		int i = this.worldObj.func_181545_F() + 1;
+		int i = this.worldObj.getSeaLevel() + 1;
 		double d0 = 0.03125D;
 		this.slowsandNoise = this.slowsandGravelNoiseGen.generateNoiseOctaves(this.slowsandNoise, parInt1 * 16,
 				parInt2 * 16, 0, 16, 16, 1, d0, d0, 1.0D);
@@ -362,49 +362,49 @@ public class ChunkProviderHell implements IChunkProvider {
 		this.genNetherBridge.generateStructure(this.worldObj, this.hellRNG, chunkcoordintpair);
 
 		for (int k = 0; k < 8; ++k) {
-			this.field_177472_y.generate(this.worldObj, this.hellRNG, blockpos.add(this.hellRNG.nextInt(16) + 8,
+			this.hellSpringGen.generate(this.worldObj, this.hellRNG, blockpos.add(this.hellRNG.nextInt(16) + 8,
 					this.hellRNG.nextInt(120) + 4, this.hellRNG.nextInt(16) + 8));
 		}
 
 		for (int l = 0; l < this.hellRNG.nextInt(this.hellRNG.nextInt(10) + 1) + 1; ++l) {
-			this.field_177470_t.generate(this.worldObj, this.hellRNG, blockpos.add(this.hellRNG.nextInt(16) + 8,
+			this.fireFeature.generate(this.worldObj, this.hellRNG, blockpos.add(this.hellRNG.nextInt(16) + 8,
 					this.hellRNG.nextInt(120) + 4, this.hellRNG.nextInt(16) + 8));
 		}
 
 		for (int i1 = 0; i1 < this.hellRNG.nextInt(this.hellRNG.nextInt(10) + 1); ++i1) {
-			this.field_177469_u.generate(this.worldObj, this.hellRNG, blockpos.add(this.hellRNG.nextInt(16) + 8,
+			this.lightGemGen.generate(this.worldObj, this.hellRNG, blockpos.add(this.hellRNG.nextInt(16) + 8,
 					this.hellRNG.nextInt(120) + 4, this.hellRNG.nextInt(16) + 8));
 		}
 
 		for (int j1 = 0; j1 < 10; ++j1) {
-			this.field_177468_v.generate(this.worldObj, this.hellRNG, blockpos.add(this.hellRNG.nextInt(16) + 8,
+			this.hellPortalGen.generate(this.worldObj, this.hellRNG, blockpos.add(this.hellRNG.nextInt(16) + 8,
 					this.hellRNG.nextInt(128), this.hellRNG.nextInt(16) + 8));
 		}
 
 		if (this.hellRNG.nextBoolean()) {
-			this.field_177471_z.generate(this.worldObj, this.hellRNG, blockpos.add(this.hellRNG.nextInt(16) + 8,
+			this.brownMushroomFeature.generate(this.worldObj, this.hellRNG, blockpos.add(this.hellRNG.nextInt(16) + 8,
 					this.hellRNG.nextInt(128), this.hellRNG.nextInt(16) + 8));
 		}
 
 		if (this.hellRNG.nextBoolean()) {
-			this.field_177465_A.generate(this.worldObj, this.hellRNG, blockpos.add(this.hellRNG.nextInt(16) + 8,
+			this.redMushroomFeature.generate(this.worldObj, this.hellRNG, blockpos.add(this.hellRNG.nextInt(16) + 8,
 					this.hellRNG.nextInt(128), this.hellRNG.nextInt(16) + 8));
 		}
 
 		for (int k1 = 0; k1 < 16; ++k1) {
-			this.field_177467_w.generate(this.worldObj, this.hellRNG,
+			this.quartzGen.generate(this.worldObj, this.hellRNG,
 					blockpos.add(this.hellRNG.nextInt(16), this.hellRNG.nextInt(108) + 10, this.hellRNG.nextInt(16)));
 		}
 
 		for (int l1 = 0; l1 < 16; ++l1) {
-			this.field_177473_x.generate(this.worldObj, this.hellRNG,
+			this.lavaTrapGen.generate(this.worldObj, this.hellRNG,
 					blockpos.add(this.hellRNG.nextInt(16), this.hellRNG.nextInt(108) + 10, this.hellRNG.nextInt(16)));
 		}
 
 		BlockFalling.fallInstantly = false;
 	}
 
-	public boolean func_177460_a(IChunkProvider var1, Chunk var2, int var3, int var4) {
+	public boolean populateChunk(IChunkProvider var1, Chunk var2, int var3, int var4) {
 		return false;
 	}
 
@@ -450,11 +450,11 @@ public class ChunkProviderHell implements IChunkProvider {
 	public List<BiomeGenBase.SpawnListEntry> getPossibleCreatures(EnumCreatureType enumcreaturetype,
 			BlockPos blockpos) {
 		if (enumcreaturetype == EnumCreatureType.MONSTER) {
-			if (this.genNetherBridge.func_175795_b(blockpos)) {
+			if (this.genNetherBridge.isInsideStructure(blockpos)) {
 				return this.genNetherBridge.getSpawnList();
 			}
 
-			if (this.genNetherBridge.func_175796_a(this.worldObj, blockpos)
+			if (this.genNetherBridge.isPositionInStructure(this.worldObj, blockpos)
 					&& this.worldObj.getBlockState(blockpos.down()).getBlock() == Blocks.nether_brick) {
 				return this.genNetherBridge.getSpawnList();
 			}

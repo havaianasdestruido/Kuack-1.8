@@ -32,7 +32,7 @@ public class S3BPacketScoreboardObjective implements Packet<INetHandlerPlayClien
 	private String objectiveName;
 	private String objectiveValue;
 	private IScoreObjectiveCriteria.EnumRenderType type;
-	private int field_149342_c;
+	private int action;
 
 	public S3BPacketScoreboardObjective() {
 	}
@@ -41,7 +41,7 @@ public class S3BPacketScoreboardObjective implements Packet<INetHandlerPlayClien
 		this.objectiveName = parScoreObjective.getName();
 		this.objectiveValue = parScoreObjective.getDisplayName();
 		this.type = parScoreObjective.getCriteria().getRenderType();
-		this.field_149342_c = parInt1;
+		this.action = parInt1;
 	}
 
 	/**+
@@ -49,10 +49,10 @@ public class S3BPacketScoreboardObjective implements Packet<INetHandlerPlayClien
 	 */
 	public void readPacketData(PacketBuffer parPacketBuffer) throws IOException {
 		this.objectiveName = parPacketBuffer.readStringFromBuffer(16);
-		this.field_149342_c = parPacketBuffer.readByte();
-		if (this.field_149342_c == 0 || this.field_149342_c == 2) {
+		this.action = parPacketBuffer.readByte();
+		if (this.action == 0 || this.action == 2) {
 			this.objectiveValue = parPacketBuffer.readStringFromBuffer(32);
-			this.type = IScoreObjectiveCriteria.EnumRenderType.func_178795_a(parPacketBuffer.readStringFromBuffer(16));
+			this.type = IScoreObjectiveCriteria.EnumRenderType.getByName(parPacketBuffer.readStringFromBuffer(16));
 		}
 
 	}
@@ -62,10 +62,10 @@ public class S3BPacketScoreboardObjective implements Packet<INetHandlerPlayClien
 	 */
 	public void writePacketData(PacketBuffer parPacketBuffer) throws IOException {
 		parPacketBuffer.writeString(this.objectiveName);
-		parPacketBuffer.writeByte(this.field_149342_c);
-		if (this.field_149342_c == 0 || this.field_149342_c == 2) {
+		parPacketBuffer.writeByte(this.action);
+		if (this.action == 0 || this.action == 2) {
 			parPacketBuffer.writeString(this.objectiveValue);
-			parPacketBuffer.writeString(this.type.func_178796_a());
+			parPacketBuffer.writeString(this.type.IScoreObjectiveCriteriaGetRenderType());
 		}
 
 	}
@@ -77,19 +77,19 @@ public class S3BPacketScoreboardObjective implements Packet<INetHandlerPlayClien
 		inethandlerplayclient.handleScoreboardObjective(this);
 	}
 
-	public String func_149339_c() {
+	public String getObjectiveName() {
 		return this.objectiveName;
 	}
 
-	public String func_149337_d() {
+	public String getObjectiveValue() {
 		return this.objectiveValue;
 	}
 
-	public int func_149338_e() {
-		return this.field_149342_c;
+	public int getAction() {
+		return this.action;
 	}
 
-	public IScoreObjectiveCriteria.EnumRenderType func_179817_d() {
+	public IScoreObjectiveCriteria.EnumRenderType getRenderType() {
 		return this.type;
 	}
 }

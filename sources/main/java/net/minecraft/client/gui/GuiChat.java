@@ -206,13 +206,13 @@ public class GuiChat extends GuiScreen {
 	public void autocompletePlayerNames() {
 		if (this.playerNamesFound) {
 			this.inputField
-					.deleteFromCursor(this.inputField.func_146197_a(-1, this.inputField.getCursorPosition(), false)
+					.deleteFromCursor(this.inputField.getNthWordFromPosWS(-1, this.inputField.getCursorPosition(), false)
 							- this.inputField.getCursorPosition());
 			if (this.autocompleteIndex >= this.foundPlayerNames.size()) {
 				this.autocompleteIndex = 0;
 			}
 		} else {
-			int i = this.inputField.func_146197_a(-1, this.inputField.getCursorPosition(), false);
+			int i = this.inputField.getNthWordFromPosWS(-1, this.inputField.getCursorPosition(), false);
 			this.foundPlayerNames.clear();
 			this.autocompleteIndex = 0;
 			String s = this.inputField.getText().substring(i).toLowerCase();
@@ -315,11 +315,11 @@ public class GuiChat extends GuiScreen {
 			}
 
 			String s1 = this.inputField.getText()
-					.substring(this.inputField.func_146197_a(-1, this.inputField.getCursorPosition(), false));
+					.substring(this.inputField.getNthWordFromPosWS(-1, this.inputField.getCursorPosition(), false));
 			String s2 = StringUtils.getCommonPrefix(parArrayOfString);
 			if (s2.length() > 0 && !s1.equalsIgnoreCase(s2)) {
 				this.inputField
-						.deleteFromCursor(this.inputField.func_146197_a(-1, this.inputField.getCursorPosition(), false)
+						.deleteFromCursor(this.inputField.getNthWordFromPosWS(-1, this.inputField.getCursorPosition(), false)
 								- this.inputField.getCursorPosition());
 				this.inputField.writeText(s2);
 			} else if (this.foundPlayerNames.size() > 0) {

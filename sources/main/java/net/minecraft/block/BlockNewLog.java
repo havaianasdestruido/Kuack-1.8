@@ -64,10 +64,10 @@ public class BlockNewLog extends BlockLog {
 			default:
 				return MapColor.stoneColor;
 			case DARK_OAK:
-				return BlockPlanks.EnumType.DARK_OAK.func_181070_c();
+				return BlockPlanks.EnumType.DARK_OAK.BlockPlanksGetMapColor();
 			}
 		case Y:
-			return blockplanks$enumtype.func_181070_c();
+			return blockplanks$enumtype.BlockPlanksGetMapColor();
 		}
 	}
 

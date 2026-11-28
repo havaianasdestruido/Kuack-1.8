@@ -49,7 +49,7 @@ public abstract class GuiListExtended extends GuiSlot {
 				parInt6, this.getSlotIndexFromScreenCoords(parInt5, parInt6) == entryID);
 	}
 
-	protected void func_178040_a(int parInt1, int parInt2, int parInt3) {
+	protected void updateItemPos(int parInt1, int parInt2, int parInt3) {
 		this.getListEntry(parInt1).setSelected(parInt1, parInt2, parInt3);
 	}
 

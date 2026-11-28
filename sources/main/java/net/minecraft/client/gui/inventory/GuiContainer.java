@@ -516,14 +516,14 @@ public abstract class GuiContainer extends GuiScreen {
 					this.clickedSlot = null;
 				}
 			} else if (this.dragSplitting && !this.dragSplittingSlots.isEmpty()) {
-				this.handleMouseClick((Slot) null, -999, Container.func_94534_d(0, this.dragSplittingLimit), 5);
+				this.handleMouseClick((Slot) null, -999, Container.getQuickcraftMask(0, this.dragSplittingLimit), 5);
 
 				for (Slot slot1 : this.dragSplittingSlots) {
-					this.handleMouseClick(slot1, slot1.slotNumber, Container.func_94534_d(1, this.dragSplittingLimit),
+					this.handleMouseClick(slot1, slot1.slotNumber, Container.getQuickcraftMask(1, this.dragSplittingLimit),
 							5);
 				}
 
-				this.handleMouseClick((Slot) null, -999, Container.func_94534_d(2, this.dragSplittingLimit), 5);
+				this.handleMouseClick((Slot) null, -999, Container.getQuickcraftMask(2, this.dragSplittingLimit), 5);
 			} else if (this.mc.thePlayer.inventory.getItemStack() != null) {
 				if (k == this.mc.gameSettings.keyBindPickBlock.getKeyCode() + 100) {
 					this.handleMouseClick(slot, j1, k, 3);

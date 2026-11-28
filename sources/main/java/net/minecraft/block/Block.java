@@ -133,7 +133,7 @@ public class Block {
 	public Block.SoundType stepSound;
 	public float blockParticleGravity;
 	protected final Material blockMaterial;
-	protected final MapColor field_181083_K;
+	protected final MapColor blockMapColor;
 	public float slipperiness;
 	protected final BlockState blockState;
 	private IBlockState defaultBlockState;
@@ -220,7 +220,7 @@ public class Block {
 	 * Get the MapColor for this Block and the given BlockState
 	 */
 	public MapColor getMapColor(IBlockState state) {
-		return this.field_181083_K;
+		return this.blockMapColor;
 	}
 
 	/**+
@@ -256,7 +256,7 @@ public class Block {
 		this.blockParticleGravity = 1.0F;
 		this.slipperiness = 0.6F;
 		this.blockMaterial = parMaterial;
-		this.field_181083_K = parMapColor;
+		this.blockMapColor = parMapColor;
 		this.setBlockBounds(0.0F, 0.0F, 0.0F, 1.0F, 1.0F, 1.0F);
 		this.fullBlock = this.isOpaqueCube();
 		this.lightOpacity = this.isOpaqueCube() ? 255 : 0;
@@ -923,7 +923,7 @@ public class Block {
 	public void onBlockPlacedBy(World var1, BlockPos var2, IBlockState var3, EntityLivingBase var4, ItemStack var5) {
 	}
 
-	public boolean func_181623_g() {
+	public boolean canSpawnInBlock() {
 		return !this.blockMaterial.isSolid() && !this.blockMaterial.isLiquid();
 	}
 
@@ -1287,7 +1287,7 @@ public class Block {
 				.setUnlocalizedName("reeds").disableStats());
 		registerBlock(84, (String) "jukebox", (new BlockJukebox()).setHardness(2.0F).setResistance(10.0F)
 				.setStepSound(soundTypePiston).setUnlocalizedName("jukebox"));
-		registerBlock(85, (String) "fence", (new BlockFence(Material.wood, BlockPlanks.EnumType.OAK.func_181070_c()))
+		registerBlock(85, (String) "fence", (new BlockFence(Material.wood, BlockPlanks.EnumType.OAK.BlockPlanksGetMapColor()))
 				.setHardness(2.0F).setResistance(5.0F).setStepSound(soundTypeWood).setUnlocalizedName("fence"));
 		Block block7 = (new BlockPumpkin()).setHardness(1.0F).setStepSound(soundTypeWood).setUnlocalizedName("pumpkin");
 		registerBlock(86, (String) "pumpkin", block7);
@@ -1520,19 +1520,19 @@ public class Block {
 				(new BlockFenceGate(BlockPlanks.EnumType.ACACIA)).setHardness(2.0F).setResistance(5.0F)
 						.setStepSound(soundTypeWood).setUnlocalizedName("acaciaFenceGate"));
 		registerBlock(188, (String) "spruce_fence",
-				(new BlockFence(Material.wood, BlockPlanks.EnumType.SPRUCE.func_181070_c())).setHardness(2.0F)
+				(new BlockFence(Material.wood, BlockPlanks.EnumType.SPRUCE.BlockPlanksGetMapColor())).setHardness(2.0F)
 						.setResistance(5.0F).setStepSound(soundTypeWood).setUnlocalizedName("spruceFence"));
 		registerBlock(189, (String) "birch_fence",
-				(new BlockFence(Material.wood, BlockPlanks.EnumType.BIRCH.func_181070_c())).setHardness(2.0F)
+				(new BlockFence(Material.wood, BlockPlanks.EnumType.BIRCH.BlockPlanksGetMapColor())).setHardness(2.0F)
 						.setResistance(5.0F).setStepSound(soundTypeWood).setUnlocalizedName("birchFence"));
 		registerBlock(190, (String) "jungle_fence",
-				(new BlockFence(Material.wood, BlockPlanks.EnumType.JUNGLE.func_181070_c())).setHardness(2.0F)
+				(new BlockFence(Material.wood, BlockPlanks.EnumType.JUNGLE.BlockPlanksGetMapColor())).setHardness(2.0F)
 						.setResistance(5.0F).setStepSound(soundTypeWood).setUnlocalizedName("jungleFence"));
 		registerBlock(191, (String) "dark_oak_fence",
-				(new BlockFence(Material.wood, BlockPlanks.EnumType.DARK_OAK.func_181070_c())).setHardness(2.0F)
+				(new BlockFence(Material.wood, BlockPlanks.EnumType.DARK_OAK.BlockPlanksGetMapColor())).setHardness(2.0F)
 						.setResistance(5.0F).setStepSound(soundTypeWood).setUnlocalizedName("darkOakFence"));
 		registerBlock(192, (String) "acacia_fence",
-				(new BlockFence(Material.wood, BlockPlanks.EnumType.ACACIA.func_181070_c())).setHardness(2.0F)
+				(new BlockFence(Material.wood, BlockPlanks.EnumType.ACACIA.BlockPlanksGetMapColor())).setHardness(2.0F)
 						.setResistance(5.0F).setStepSound(soundTypeWood).setUnlocalizedName("acaciaFence"));
 		registerBlock(193, (String) "spruce_door", (new BlockDoor(Material.wood)).setHardness(3.0F)
 				.setStepSound(soundTypeWood).setUnlocalizedName("doorSpruce").disableStats());

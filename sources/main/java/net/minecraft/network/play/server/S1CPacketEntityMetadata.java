@@ -30,7 +30,7 @@ import net.minecraft.network.play.INetHandlerPlayClient;
  */
 public class S1CPacketEntityMetadata implements Packet<INetHandlerPlayClient> {
 	private int entityId;
-	private List<DataWatcher.WatchableObject> field_149378_b;
+	private List<DataWatcher.WatchableObject> dataManagerEntries;
 
 	public S1CPacketEntityMetadata() {
 	}
@@ -38,9 +38,9 @@ public class S1CPacketEntityMetadata implements Packet<INetHandlerPlayClient> {
 	public S1CPacketEntityMetadata(int entityIdIn, DataWatcher parDataWatcher, boolean parFlag) {
 		this.entityId = entityIdIn;
 		if (parFlag) {
-			this.field_149378_b = parDataWatcher.getAllWatched();
+			this.dataManagerEntries = parDataWatcher.getAllWatched();
 		} else {
-			this.field_149378_b = parDataWatcher.getChanged();
+			this.dataManagerEntries = parDataWatcher.getChanged();
 		}
 
 	}
@@ -50,7 +50,7 @@ public class S1CPacketEntityMetadata implements Packet<INetHandlerPlayClient> {
 	 */
 	public void readPacketData(PacketBuffer parPacketBuffer) throws IOException {
 		this.entityId = parPacketBuffer.readVarIntFromBuffer();
-		this.field_149378_b = DataWatcher.readWatchedListFromPacketBuffer(parPacketBuffer);
+		this.dataManagerEntries = DataWatcher.readWatchedListFromPacketBuffer(parPacketBuffer);
 	}
 
 	/**+
@@ -58,7 +58,7 @@ public class S1CPacketEntityMetadata implements Packet<INetHandlerPlayClient> {
 	 */
 	public void writePacketData(PacketBuffer parPacketBuffer) throws IOException {
 		parPacketBuffer.writeVarIntToBuffer(this.entityId);
-		DataWatcher.writeWatchedListToPacketBuffer(this.field_149378_b, parPacketBuffer);
+		DataWatcher.writeWatchedListToPacketBuffer(this.dataManagerEntries, parPacketBuffer);
 	}
 
 	/**+
@@ -68,8 +68,8 @@ public class S1CPacketEntityMetadata implements Packet<INetHandlerPlayClient> {
 		inethandlerplayclient.handleEntityMetadata(this);
 	}
 
-	public List<DataWatcher.WatchableObject> func_149376_c() {
-		return this.field_149378_b;
+	public List<DataWatcher.WatchableObject> getDataManagerEntries() {
+		return this.dataManagerEntries;
 	}
 
 	public int getEntityId() {

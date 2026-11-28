@@ -82,7 +82,7 @@ public class GameSettings {
 			"options.stream.chat.userFilter.subs", "options.stream.chat.userFilter.mods" };
 	private static final String[] STREAM_MIC_MODES = new String[] { "options.stream.mic_toggle.mute",
 			"options.stream.mic_toggle.talk" };
-	private static final String[] field_181149_aW = new String[] { "options.off", "options.graphics.fast",
+	private static final String[] CLOUDS_TYPES = new String[] { "options.off", "options.graphics.fast",
 			"options.graphics.fancy" };
 	public float mouseSensitivity = 0.5F;
 	public boolean invertMouse;
@@ -101,7 +101,7 @@ public class GameSettings {
 	 */
 	public int ambientOcclusion = 0;
 	public List<String> resourcePacks = Lists.newArrayList();
-	public List<String> field_183018_l = Lists.newArrayList();
+	public List<String> incompatibleResourcePacks = Lists.newArrayList();
 	public EntityPlayer.EnumChatVisibility chatVisibility = EntityPlayer.EnumChatVisibility.FULL;
 	public boolean chatColours = true;
 	public boolean chatLinks = true;
@@ -129,8 +129,8 @@ public class GameSettings {
 	public boolean showInventoryAchievementHint = true;
 	public int mipmapLevels = 4;
 	private Map<SoundCategory, Float> mapSoundLevels = Maps.newEnumMap(SoundCategory.class);
-	public boolean field_181150_U = true;
-	public boolean field_181151_V = true;
+	public boolean useNativeTransport = true;
+	public boolean entityShadows = true;
 	public KeyBinding keyBindForward = new KeyBinding("key.forward", 17, "key.categories.movement");
 	public KeyBinding keyBindLeft = new KeyBinding("key.left", 30, "key.categories.movement");
 	public KeyBinding keyBindBack = new KeyBinding("key.back", 31, "key.categories.movement");
@@ -174,7 +174,7 @@ public class GameSettings {
 	public int thirdPersonView;
 	public boolean showDebugInfo;
 	public boolean showDebugProfilerChart;
-	public boolean field_181657_aC;
+	public boolean showLagometer;
 	public String lastServer;
 	public boolean smoothCamera;
 	public boolean debugCamEnable;
@@ -414,7 +414,7 @@ public class GameSettings {
 		}
 
 		if (parOptions == GameSettings.Options.ENTITY_SHADOWS) {
-			this.field_181151_V = !this.field_181151_V;
+			this.entityShadows = !this.entityShadows;
 		}
 
 		if (parOptions == GameSettings.Options.HUD_FPS) {
@@ -524,7 +524,7 @@ public class GameSettings {
 		case REDUCED_DEBUG_INFO:
 			return this.reducedDebugInfo;
 		case ENTITY_SHADOWS:
-			return this.field_181151_V;
+			return this.entityShadows;
 		case HUD_COORDS:
 			return this.hudCoords;
 		case HUD_FPS:
@@ -643,7 +643,7 @@ public class GameSettings {
 		} else if (parOptions == GameSettings.Options.AMBIENT_OCCLUSION) {
 			return s + getTranslation(AMBIENT_OCCLUSIONS, this.ambientOcclusion);
 		} else if (parOptions == GameSettings.Options.RENDER_CLOUDS) {
-			return s + getTranslation(field_181149_aW, this.clouds);
+			return s + getTranslation(CLOUDS_TYPES, this.clouds);
 		} else if (parOptions == GameSettings.Options.GRAPHICS) {
 			if (this.fancyGraphics) {
 				return s + I18n.format("options.graphics.fancy", new Object[0]);
@@ -791,14 +791,14 @@ public class GameSettings {
 					}
 
 					if (astring[0].equals("incompatibleResourcePacks")) {
-						this.field_183018_l.clear();
+						this.incompatibleResourcePacks.clear();
 						for (Object o : (new JSONArray(s.substring(s.indexOf(58) + 1))).toList()) {
 							if (o instanceof String) {
-								this.field_183018_l.add((String) o);
+								this.incompatibleResourcePacks.add((String) o);
 							}
 						}
-						if (this.field_183018_l == null) {
-							this.field_183018_l = Lists.newArrayList();
+						if (this.incompatibleResourcePacks == null) {
+							this.incompatibleResourcePacks = Lists.newArrayList();
 						}
 					}
 
@@ -904,11 +904,11 @@ public class GameSettings {
 					}
 
 					if (astring[0].equals("useNativeTransport")) {
-						this.field_181150_U = astring[1].equals("true");
+						this.useNativeTransport = astring[1].equals("true");
 					}
 
 					if (astring[0].equals("entityShadows")) {
-						this.field_181151_V = astring[1].equals("true");
+						this.entityShadows = astring[1].equals("true");
 					}
 
 					if (astring[0].equals("hudFps")) {
@@ -1072,7 +1072,7 @@ public class GameSettings {
 			}
 
 			printwriter.println("resourcePacks:" + toJSONArray(this.resourcePacks));
-			printwriter.println("incompatibleResourcePacks:" + toJSONArray(this.field_183018_l));
+			printwriter.println("incompatibleResourcePacks:" + toJSONArray(this.incompatibleResourcePacks));
 			printwriter.println("lastServer:" + this.lastServer);
 			printwriter.println("lang:" + this.language);
 			printwriter.println("chatVisibility:" + this.chatVisibility.getChatVisibility());
@@ -1098,8 +1098,8 @@ public class GameSettings {
 			printwriter.println("forceUnicodeFont:" + this.forceUnicodeFont);
 			printwriter.println("allowBlockAlternatives:" + this.allowBlockAlternatives);
 			printwriter.println("reducedDebugInfo:" + this.reducedDebugInfo);
-			printwriter.println("useNativeTransport:" + this.field_181150_U);
-			printwriter.println("entityShadows:" + this.field_181151_V);
+			printwriter.println("useNativeTransport:" + this.useNativeTransport);
+			printwriter.println("entityShadows:" + this.entityShadows);
 			printwriter.println("hudFps:" + this.hudFps);
 			printwriter.println("hudWorld:" + this.hudWorld);
 			printwriter.println("hudCoords:" + this.hudCoords);
@@ -1199,12 +1199,12 @@ public class GameSettings {
 		this.sendSettingsToServer();
 	}
 
-	public int func_181147_e() {
+	public int shouldRenderClouds() {
 		return this.renderDistanceChunks >= 4 ? this.clouds : 0;
 	}
 
-	public boolean func_181148_f() {
-		return this.field_181150_U;
+	public boolean isUsingNativeTransport() {
+		return this.useNativeTransport;
 	}
 
 	private String toJSONArray(List<String> e) {

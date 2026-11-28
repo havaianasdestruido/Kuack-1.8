@@ -285,10 +285,10 @@ public class ChunkProviderSettings {
 		}
 
 		public Factory() {
-			this.func_177863_a();
+			this.setDefaults();
 		}
 
-		public void func_177863_a() {
+		public void setDefaults() {
 			this.coordinateScale = 684.412F;
 			this.heightScale = 684.412F;
 			this.upperLimitScale = 512.0F;
@@ -642,7 +642,7 @@ public class ChunkProviderSettings {
 			return i;
 		}
 
-		public ChunkProviderSettings func_177864_b() {
+		public ChunkProviderSettings build() {
 			return new ChunkProviderSettings(this);
 		}
 	}

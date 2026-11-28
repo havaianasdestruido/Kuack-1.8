@@ -59,7 +59,7 @@ public abstract class MapGenStructure extends MapGenBase {
 	 */
 	protected final void recursiveGenerate(World world, final int i, final int j, int var4, int var5,
 			ChunkPrimer var6) {
-		this.func_143027_a(world);
+		this.initializeStructureData(world);
 		if (!this.structureMap.containsKey(Long.valueOf(ChunkCoordIntPair.chunkXZ2Int(i, j)))) {
 			this.rand.nextInt();
 
@@ -67,7 +67,7 @@ public abstract class MapGenStructure extends MapGenBase {
 				if (this.canSpawnStructureAtCoords(i, j)) {
 					StructureStart structurestart = this.getStructureStart(i, j);
 					this.structureMap.put(Long.valueOf(ChunkCoordIntPair.chunkXZ2Int(i, j)), structurestart);
-					this.func_143026_a(i, j, structurestart);
+					this.setStructureStart(i, j, structurestart);
 				}
 
 			} catch (Throwable throwable) {
@@ -97,30 +97,30 @@ public abstract class MapGenStructure extends MapGenBase {
 	}
 
 	public boolean generateStructure(World worldIn, EaglercraftRandom randomIn, ChunkCoordIntPair chunkCoord) {
-		this.func_143027_a(worldIn);
+		this.initializeStructureData(worldIn);
 		int i = (chunkCoord.chunkXPos << 4) + 8;
 		int j = (chunkCoord.chunkZPos << 4) + 8;
 		boolean flag = false;
 
 		for (StructureStart structurestart : this.structureMap.values()) {
-			if (structurestart.isSizeableStructure() && structurestart.func_175788_a(chunkCoord)
+			if (structurestart.isSizeableStructure() && structurestart.isValidForPostProcess(chunkCoord)
 					&& structurestart.getBoundingBox().intersectsWith(i, j, i + 15, j + 15)) {
 				structurestart.generateStructure(worldIn, randomIn, new StructureBoundingBox(i, j, i + 15, j + 15));
-				structurestart.func_175787_b(chunkCoord);
+				structurestart.notifyPostProcessAt(chunkCoord);
 				flag = true;
-				this.func_143026_a(structurestart.getChunkPosX(), structurestart.getChunkPosZ(), structurestart);
+				this.setStructureStart(structurestart.getChunkPosX(), structurestart.getChunkPosZ(), structurestart);
 			}
 		}
 
 		return flag;
 	}
 
-	public boolean func_175795_b(BlockPos pos) {
-		this.func_143027_a(this.worldObj);
-		return this.func_175797_c(pos) != null;
+	public boolean isInsideStructure(BlockPos pos) {
+		this.initializeStructureData(this.worldObj);
+		return this.getStructureAt(pos) != null;
 	}
 
-	protected StructureStart func_175797_c(BlockPos pos) {
+	protected StructureStart getStructureAt(BlockPos pos) {
 		label24: for (StructureStart structurestart : this.structureMap.values()) {
 			if (structurestart.isSizeableStructure() && structurestart.getBoundingBox().isVecInside(pos)) {
 				Iterator iterator = structurestart.getComponents().iterator();
@@ -143,8 +143,8 @@ public abstract class MapGenStructure extends MapGenBase {
 		return null;
 	}
 
-	public boolean func_175796_a(World worldIn, BlockPos pos) {
-		this.func_143027_a(worldIn);
+	public boolean isPositionInStructure(World worldIn, BlockPos pos) {
+		this.initializeStructureData(worldIn);
 
 		for (StructureStart structurestart : this.structureMap.values()) {
 			if (structurestart.isSizeableStructure() && structurestart.getBoundingBox().isVecInside(pos)) {
@@ -157,7 +157,7 @@ public abstract class MapGenStructure extends MapGenBase {
 
 	public BlockPos getClosestStrongholdPos(World worldIn, BlockPos pos) {
 		this.worldObj = worldIn;
-		this.func_143027_a(worldIn);
+		this.initializeStructureData(worldIn);
 		this.rand.setSeed(worldIn.getSeed());
 		long i = this.rand.nextLong();
 		long j = this.rand.nextLong();
@@ -212,7 +212,7 @@ public abstract class MapGenStructure extends MapGenBase {
 		return null;
 	}
 
-	private void func_143027_a(World worldIn) {
+	private void initializeStructureData(World worldIn) {
 		if (this.structureData == null) {
 			this.structureData = (MapGenStructureData) worldIn.loadItemData(MapGenStructureData.class,
 					this.getStructureName());
@@ -243,7 +243,7 @@ public abstract class MapGenStructure extends MapGenBase {
 
 	}
 
-	private void func_143026_a(int start, int parInt2, StructureStart parStructureStart) {
+	private void setStructureStart(int start, int parInt2, StructureStart parStructureStart) {
 		this.structureData.writeInstance(parStructureStart.writeStructureComponentsToNBT(start, parInt2), start,
 				parInt2);
 		this.structureData.markDirty();

@@ -131,7 +131,7 @@ public abstract class EntityCreature extends EntityLiving {
 				this.isMovementAITaskSet = true;
 			}
 
-			this.func_142017_o(f);
+			this.onLeashDistance(f);
 			if (f > 4.0F) {
 				this.getNavigator().tryMoveToEntityLiving(entity, 1.0D);
 			}
@@ -160,6 +160,6 @@ public abstract class EntityCreature extends EntityLiving {
 
 	}
 
-	protected void func_142017_o(float parFloat1) {
+	protected void onLeashDistance(float parFloat1) {
 	}
 }

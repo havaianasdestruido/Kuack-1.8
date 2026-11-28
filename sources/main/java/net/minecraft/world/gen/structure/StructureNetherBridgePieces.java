@@ -69,49 +69,49 @@ public class StructureNetherBridgePieces {
 		MapGenStructureIO.registerStructureComponent(StructureNetherBridgePieces.Start.class, "NeStart");
 	}
 
-	private static StructureNetherBridgePieces.Piece func_175887_b(
+	private static StructureNetherBridgePieces.Piece findAndCreateBridgePieceFactory(
 			StructureNetherBridgePieces.PieceWeight parPieceWeight, List<StructureComponent> parList,
 			EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, EnumFacing parEnumFacing, int parInt4) {
 		Class oclass = parPieceWeight.weightClass;
 		Object object = null;
 		if (oclass == StructureNetherBridgePieces.Straight.class) {
-			object = StructureNetherBridgePieces.Straight.func_175882_a(parList, parRandom, parInt1, parInt2, parInt3,
+			object = StructureNetherBridgePieces.Straight.createStraight(parList, parRandom, parInt1, parInt2, parInt3,
 					parEnumFacing, parInt4);
 		} else if (oclass == StructureNetherBridgePieces.Crossing3.class) {
-			object = StructureNetherBridgePieces.Crossing3.func_175885_a(parList, parRandom, parInt1, parInt2, parInt3,
+			object = StructureNetherBridgePieces.Crossing3.createCrossing3(parList, parRandom, parInt1, parInt2, parInt3,
 					parEnumFacing, parInt4);
 		} else if (oclass == StructureNetherBridgePieces.Crossing.class) {
-			object = StructureNetherBridgePieces.Crossing.func_175873_a(parList, parRandom, parInt1, parInt2, parInt3,
+			object = StructureNetherBridgePieces.Crossing.createCrossing(parList, parRandom, parInt1, parInt2, parInt3,
 					parEnumFacing, parInt4);
 		} else if (oclass == StructureNetherBridgePieces.Stairs.class) {
-			object = StructureNetherBridgePieces.Stairs.func_175872_a(parList, parRandom, parInt1, parInt2, parInt3,
+			object = StructureNetherBridgePieces.Stairs.createStairs(parList, parRandom, parInt1, parInt2, parInt3,
 					parInt4, parEnumFacing);
 		} else if (oclass == StructureNetherBridgePieces.Throne.class) {
-			object = StructureNetherBridgePieces.Throne.func_175874_a(parList, parRandom, parInt1, parInt2, parInt3,
+			object = StructureNetherBridgePieces.Throne.createThrone(parList, parRandom, parInt1, parInt2, parInt3,
 					parInt4, parEnumFacing);
 		} else if (oclass == StructureNetherBridgePieces.Entrance.class) {
-			object = StructureNetherBridgePieces.Entrance.func_175881_a(parList, parRandom, parInt1, parInt2, parInt3,
+			object = StructureNetherBridgePieces.Entrance.createEntrance(parList, parRandom, parInt1, parInt2, parInt3,
 					parEnumFacing, parInt4);
 		} else if (oclass == StructureNetherBridgePieces.Corridor5.class) {
-			object = StructureNetherBridgePieces.Corridor5.func_175877_a(parList, parRandom, parInt1, parInt2, parInt3,
+			object = StructureNetherBridgePieces.Corridor5.createCorridor5(parList, parRandom, parInt1, parInt2, parInt3,
 					parEnumFacing, parInt4);
 		} else if (oclass == StructureNetherBridgePieces.Corridor2.class) {
-			object = StructureNetherBridgePieces.Corridor2.func_175876_a(parList, parRandom, parInt1, parInt2, parInt3,
+			object = StructureNetherBridgePieces.Corridor2.createCorridor2(parList, parRandom, parInt1, parInt2, parInt3,
 					parEnumFacing, parInt4);
 		} else if (oclass == StructureNetherBridgePieces.Corridor.class) {
-			object = StructureNetherBridgePieces.Corridor.func_175879_a(parList, parRandom, parInt1, parInt2, parInt3,
+			object = StructureNetherBridgePieces.Corridor.createCorridor(parList, parRandom, parInt1, parInt2, parInt3,
 					parEnumFacing, parInt4);
 		} else if (oclass == StructureNetherBridgePieces.Corridor3.class) {
-			object = StructureNetherBridgePieces.Corridor3.func_175883_a(parList, parRandom, parInt1, parInt2, parInt3,
+			object = StructureNetherBridgePieces.Corridor3.createCorridor3(parList, parRandom, parInt1, parInt2, parInt3,
 					parEnumFacing, parInt4);
 		} else if (oclass == StructureNetherBridgePieces.Corridor4.class) {
-			object = StructureNetherBridgePieces.Corridor4.func_175880_a(parList, parRandom, parInt1, parInt2, parInt3,
+			object = StructureNetherBridgePieces.Corridor4.createCorridor4(parList, parRandom, parInt1, parInt2, parInt3,
 					parEnumFacing, parInt4);
 		} else if (oclass == StructureNetherBridgePieces.Crossing2.class) {
-			object = StructureNetherBridgePieces.Crossing2.func_175878_a(parList, parRandom, parInt1, parInt2, parInt3,
+			object = StructureNetherBridgePieces.Crossing2.createCrossing2(parList, parRandom, parInt1, parInt2, parInt3,
 					parEnumFacing, parInt4);
 		} else if (oclass == StructureNetherBridgePieces.NetherStalkRoom.class) {
-			object = StructureNetherBridgePieces.NetherStalkRoom.func_175875_a(parList, parRandom, parInt1, parInt2,
+			object = StructureNetherBridgePieces.NetherStalkRoom.createNetherStalkRoom(parList, parRandom, parInt1, parInt2,
 					parInt3, parEnumFacing, parInt4);
 		}
 
@@ -119,7 +119,7 @@ public class StructureNetherBridgePieces {
 	}
 
 	public static class Corridor extends StructureNetherBridgePieces.Piece {
-		private boolean field_111021_b;
+		private boolean chest;
 
 		public Corridor() {
 		}
@@ -129,17 +129,17 @@ public class StructureNetherBridgePieces {
 			super(parInt1);
 			this.coordBaseMode = parEnumFacing;
 			this.boundingBox = parStructureBoundingBox;
-			this.field_111021_b = parRandom.nextInt(3) == 0;
+			this.chest = parRandom.nextInt(3) == 0;
 		}
 
 		protected void readStructureFromNBT(NBTTagCompound nbttagcompound) {
 			super.readStructureFromNBT(nbttagcompound);
-			this.field_111021_b = nbttagcompound.getBoolean("Chest");
+			this.chest = nbttagcompound.getBoolean("Chest");
 		}
 
 		protected void writeStructureToNBT(NBTTagCompound nbttagcompound) {
 			super.writeStructureToNBT(nbttagcompound);
-			nbttagcompound.setBoolean("Chest", this.field_111021_b);
+			nbttagcompound.setBoolean("Chest", this.chest);
 		}
 
 		public void buildComponent(StructureComponent structurecomponent, List<StructureComponent> list,
@@ -147,7 +147,7 @@ public class StructureNetherBridgePieces {
 			this.getNextComponentX((StructureNetherBridgePieces.Start) structurecomponent, list, random, 0, 1, true);
 		}
 
-		public static StructureNetherBridgePieces.Corridor func_175879_a(List<StructureComponent> parList,
+		public static StructureNetherBridgePieces.Corridor createCorridor(List<StructureComponent> parList,
 				EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, EnumFacing parEnumFacing,
 				int parInt4) {
 			StructureBoundingBox structureboundingbox = StructureBoundingBox.getComponentToAddBoundingBox(parInt1,
@@ -179,10 +179,10 @@ public class StructureNetherBridgePieces {
 					Blocks.nether_brick_fence.getDefaultState(), Blocks.nether_brick.getDefaultState(), false);
 			this.fillWithBlocks(world, structureboundingbox, 3, 3, 4, 3, 4, 4,
 					Blocks.nether_brick_fence.getDefaultState(), Blocks.nether_brick.getDefaultState(), false);
-			if (this.field_111021_b && structureboundingbox.isVecInside(
+			if (this.chest && structureboundingbox.isVecInside(
 					new BlockPos(this.getXWithOffset(3, 3), this.getYWithOffset(2), this.getZWithOffset(3, 3)))) {
-				this.field_111021_b = false;
-				this.generateChestContents(world, structureboundingbox, random, 3, 2, 3, field_111019_a,
+				this.chest = false;
+				this.generateChestContents(world, structureboundingbox, random, 3, 2, 3, chestContents,
 						2 + random.nextInt(4));
 			}
 
@@ -201,7 +201,7 @@ public class StructureNetherBridgePieces {
 	}
 
 	public static class Corridor2 extends StructureNetherBridgePieces.Piece {
-		private boolean field_111020_b;
+		private boolean StructureNetherBridgePiecesChest;
 
 		public Corridor2() {
 		}
@@ -211,17 +211,17 @@ public class StructureNetherBridgePieces {
 			super(parInt1);
 			this.coordBaseMode = parEnumFacing;
 			this.boundingBox = parStructureBoundingBox;
-			this.field_111020_b = parRandom.nextInt(3) == 0;
+			this.StructureNetherBridgePiecesChest = parRandom.nextInt(3) == 0;
 		}
 
 		protected void readStructureFromNBT(NBTTagCompound nbttagcompound) {
 			super.readStructureFromNBT(nbttagcompound);
-			this.field_111020_b = nbttagcompound.getBoolean("Chest");
+			this.StructureNetherBridgePiecesChest = nbttagcompound.getBoolean("Chest");
 		}
 
 		protected void writeStructureToNBT(NBTTagCompound nbttagcompound) {
 			super.writeStructureToNBT(nbttagcompound);
-			nbttagcompound.setBoolean("Chest", this.field_111020_b);
+			nbttagcompound.setBoolean("Chest", this.StructureNetherBridgePiecesChest);
 		}
 
 		public void buildComponent(StructureComponent structurecomponent, List<StructureComponent> list,
@@ -229,7 +229,7 @@ public class StructureNetherBridgePieces {
 			this.getNextComponentZ((StructureNetherBridgePieces.Start) structurecomponent, list, random, 0, 1, true);
 		}
 
-		public static StructureNetherBridgePieces.Corridor2 func_175876_a(List<StructureComponent> parList,
+		public static StructureNetherBridgePieces.Corridor2 createCorridor2(List<StructureComponent> parList,
 				EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, EnumFacing parEnumFacing,
 				int parInt4) {
 			StructureBoundingBox structureboundingbox = StructureBoundingBox.getComponentToAddBoundingBox(parInt1,
@@ -261,10 +261,10 @@ public class StructureNetherBridgePieces {
 					Blocks.nether_brick_fence.getDefaultState(), Blocks.nether_brick.getDefaultState(), false);
 			this.fillWithBlocks(world, structureboundingbox, 3, 3, 4, 3, 4, 4,
 					Blocks.nether_brick_fence.getDefaultState(), Blocks.nether_brick.getDefaultState(), false);
-			if (this.field_111020_b && structureboundingbox.isVecInside(
+			if (this.StructureNetherBridgePiecesChest && structureboundingbox.isVecInside(
 					new BlockPos(this.getXWithOffset(1, 3), this.getYWithOffset(2), this.getZWithOffset(1, 3)))) {
-				this.field_111020_b = false;
-				this.generateChestContents(world, structureboundingbox, random, 1, 2, 3, field_111019_a,
+				this.StructureNetherBridgePiecesChest = false;
+				this.generateChestContents(world, structureboundingbox, random, 1, 2, 3, chestContents,
 						2 + random.nextInt(4));
 			}
 
@@ -299,7 +299,7 @@ public class StructureNetherBridgePieces {
 					true);
 		}
 
-		public static StructureNetherBridgePieces.Corridor3 func_175883_a(List<StructureComponent> parList,
+		public static StructureNetherBridgePieces.Corridor3 createCorridor3(List<StructureComponent> parList,
 				EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, EnumFacing parEnumFacing,
 				int parInt4) {
 			StructureBoundingBox structureboundingbox = StructureBoundingBox.getComponentToAddBoundingBox(parInt1,
@@ -381,7 +381,7 @@ public class StructureNetherBridgePieces {
 					random.nextInt(8) > 0);
 		}
 
-		public static StructureNetherBridgePieces.Corridor4 func_175880_a(List<StructureComponent> parList,
+		public static StructureNetherBridgePieces.Corridor4 createCorridor4(List<StructureComponent> parList,
 				EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, EnumFacing parEnumFacing,
 				int parInt4) {
 			StructureBoundingBox structureboundingbox = StructureBoundingBox.getComponentToAddBoundingBox(parInt1,
@@ -462,7 +462,7 @@ public class StructureNetherBridgePieces {
 					true);
 		}
 
-		public static StructureNetherBridgePieces.Corridor5 func_175877_a(List<StructureComponent> parList,
+		public static StructureNetherBridgePieces.Corridor5 createCorridor5(List<StructureComponent> parList,
 				EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, EnumFacing parEnumFacing,
 				int parInt4) {
 			StructureBoundingBox structureboundingbox = StructureBoundingBox.getComponentToAddBoundingBox(parInt1,
@@ -525,7 +525,7 @@ public class StructureNetherBridgePieces {
 			this.getNextComponentZ((StructureNetherBridgePieces.Start) structurecomponent, list, random, 0, 2, false);
 		}
 
-		public static StructureNetherBridgePieces.Crossing func_175873_a(List<StructureComponent> parList,
+		public static StructureNetherBridgePieces.Crossing createCrossing(List<StructureComponent> parList,
 				EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, EnumFacing parEnumFacing,
 				int parInt4) {
 			StructureBoundingBox structureboundingbox = StructureBoundingBox.getComponentToAddBoundingBox(parInt1,
@@ -606,7 +606,7 @@ public class StructureNetherBridgePieces {
 			this.getNextComponentZ((StructureNetherBridgePieces.Start) structurecomponent, list, random, 0, 1, true);
 		}
 
-		public static StructureNetherBridgePieces.Crossing2 func_175878_a(List<StructureComponent> parList,
+		public static StructureNetherBridgePieces.Crossing2 createCrossing2(List<StructureComponent> parList,
 				EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, EnumFacing parEnumFacing,
 				int parInt4) {
 			StructureBoundingBox structureboundingbox = StructureBoundingBox.getComponentToAddBoundingBox(parInt1,
@@ -681,7 +681,7 @@ public class StructureNetherBridgePieces {
 			this.getNextComponentZ((StructureNetherBridgePieces.Start) structurecomponent, list, random, 3, 8, false);
 		}
 
-		public static StructureNetherBridgePieces.Crossing3 func_175885_a(List<StructureComponent> parList,
+		public static StructureNetherBridgePieces.Crossing3 createCrossing3(List<StructureComponent> parList,
 				EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, EnumFacing parEnumFacing,
 				int parInt4) {
 			StructureBoundingBox structureboundingbox = StructureBoundingBox.getComponentToAddBoundingBox(parInt1,
@@ -773,7 +773,7 @@ public class StructureNetherBridgePieces {
 			this.fillSeed = parRandom.nextInt();
 		}
 
-		public static StructureNetherBridgePieces.End func_175884_a(List<StructureComponent> parList,
+		public static StructureNetherBridgePieces.End createEnd(List<StructureComponent> parList,
 				EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, EnumFacing parEnumFacing,
 				int parInt4) {
 			StructureBoundingBox structureboundingbox = StructureBoundingBox.getComponentToAddBoundingBox(parInt1,
@@ -849,7 +849,7 @@ public class StructureNetherBridgePieces {
 					true);
 		}
 
-		public static StructureNetherBridgePieces.Entrance func_175881_a(List<StructureComponent> parList,
+		public static StructureNetherBridgePieces.Entrance createEntrance(List<StructureComponent> parList,
 				EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, EnumFacing parEnumFacing,
 				int parInt4) {
 			StructureBoundingBox structureboundingbox = StructureBoundingBox.getComponentToAddBoundingBox(parInt1,
@@ -995,7 +995,7 @@ public class StructureNetherBridgePieces {
 					true);
 		}
 
-		public static StructureNetherBridgePieces.NetherStalkRoom func_175875_a(List<StructureComponent> parList,
+		public static StructureNetherBridgePieces.NetherStalkRoom createNetherStalkRoom(List<StructureComponent> parList,
 				EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, EnumFacing parEnumFacing,
 				int parInt4) {
 			StructureBoundingBox structureboundingbox = StructureBoundingBox.getComponentToAddBoundingBox(parInt1,
@@ -1174,7 +1174,7 @@ public class StructureNetherBridgePieces {
 	}
 
 	abstract static class Piece extends StructureComponent {
-		protected static final List<WeightedRandomChestContent> field_111019_a = Lists.newArrayList(
+		protected static final List<WeightedRandomChestContent> chestContents = Lists.newArrayList(
 				new WeightedRandomChestContent[] { new WeightedRandomChestContent(Items.diamond, 0, 1, 3, 5),
 						new WeightedRandomChestContent(Items.iron_ingot, 0, 1, 5, 5),
 						new WeightedRandomChestContent(Items.gold_ingot, 0, 1, 3, 15),
@@ -1206,18 +1206,18 @@ public class StructureNetherBridgePieces {
 			int i = 0;
 
 			for (StructureNetherBridgePieces.PieceWeight structurenetherbridgepieces$pieceweight : parList) {
-				if (structurenetherbridgepieces$pieceweight.field_78824_d > 0
-						&& structurenetherbridgepieces$pieceweight.field_78827_c < structurenetherbridgepieces$pieceweight.field_78824_d) {
+				if (structurenetherbridgepieces$pieceweight.maxPlaceCount > 0
+						&& structurenetherbridgepieces$pieceweight.placeCount < structurenetherbridgepieces$pieceweight.maxPlaceCount) {
 					flag = true;
 				}
 
-				i += structurenetherbridgepieces$pieceweight.field_78826_b;
+				i += structurenetherbridgepieces$pieceweight.weight;
 			}
 
 			return flag ? i : -1;
 		}
 
-		private StructureNetherBridgePieces.Piece func_175871_a(StructureNetherBridgePieces.Start parStart,
+		private StructureNetherBridgePieces.Piece generatePiece(StructureNetherBridgePieces.Start parStart,
 				List<StructureNetherBridgePieces.PieceWeight> parList, List<StructureComponent> parList2,
 				EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, EnumFacing parEnumFacing,
 				int parInt4) {
@@ -1230,21 +1230,21 @@ public class StructureNetherBridgePieces {
 				int k = parRandom.nextInt(i);
 
 				for (StructureNetherBridgePieces.PieceWeight structurenetherbridgepieces$pieceweight : parList) {
-					k -= structurenetherbridgepieces$pieceweight.field_78826_b;
+					k -= structurenetherbridgepieces$pieceweight.weight;
 					if (k < 0) {
-						if (!structurenetherbridgepieces$pieceweight.func_78822_a(parInt4)
+						if (!structurenetherbridgepieces$pieceweight.doPlace(parInt4)
 								|| structurenetherbridgepieces$pieceweight == parStart.theNetherBridgePieceWeight
-										&& !structurenetherbridgepieces$pieceweight.field_78825_e) {
+										&& !structurenetherbridgepieces$pieceweight.allowInRow) {
 							break;
 						}
 
 						StructureNetherBridgePieces.Piece structurenetherbridgepieces$piece = StructureNetherBridgePieces
-								.func_175887_b(structurenetherbridgepieces$pieceweight, parList2, parRandom, parInt1,
+								.findAndCreateBridgePieceFactory(structurenetherbridgepieces$pieceweight, parList2, parRandom, parInt1,
 										parInt2, parInt3, parEnumFacing, parInt4);
 						if (structurenetherbridgepieces$piece != null) {
-							++structurenetherbridgepieces$pieceweight.field_78827_c;
+							++structurenetherbridgepieces$pieceweight.placeCount;
 							parStart.theNetherBridgePieceWeight = structurenetherbridgepieces$pieceweight;
-							if (!structurenetherbridgepieces$pieceweight.func_78823_a()) {
+							if (!structurenetherbridgepieces$pieceweight.isValid()) {
 								parList.remove(structurenetherbridgepieces$pieceweight);
 							}
 
@@ -1254,11 +1254,11 @@ public class StructureNetherBridgePieces {
 				}
 			}
 
-			return StructureNetherBridgePieces.End.func_175884_a(parList2, parRandom, parInt1, parInt2, parInt3,
+			return StructureNetherBridgePieces.End.createEnd(parList2, parRandom, parInt1, parInt2, parInt3,
 					parEnumFacing, parInt4);
 		}
 
-		private StructureComponent func_175870_a(StructureNetherBridgePieces.Start parStart,
+		private StructureComponent generateAndAddPiece(StructureNetherBridgePieces.Start parStart,
 				List<StructureComponent> parList, EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3,
 				EnumFacing parEnumFacing, int parInt4, boolean parFlag) {
 			if (Math.abs(parInt1 - parStart.getBoundingBox().minX) <= 112
@@ -1268,16 +1268,16 @@ public class StructureNetherBridgePieces {
 					list = parStart.secondaryWeights;
 				}
 
-				StructureNetherBridgePieces.Piece structurenetherbridgepieces$piece = this.func_175871_a(parStart, list,
+				StructureNetherBridgePieces.Piece structurenetherbridgepieces$piece = this.generatePiece(parStart, list,
 						parList, parRandom, parInt1, parInt2, parInt3, parEnumFacing, parInt4 + 1);
 				if (structurenetherbridgepieces$piece != null) {
 					parList.add(structurenetherbridgepieces$piece);
-					parStart.field_74967_d.add(structurenetherbridgepieces$piece);
+					parStart.pendingChildren.add(structurenetherbridgepieces$piece);
 				}
 
 				return structurenetherbridgepieces$piece;
 			} else {
-				return StructureNetherBridgePieces.End.func_175884_a(parList, parRandom, parInt1, parInt2, parInt3,
+				return StructureNetherBridgePieces.End.createEnd(parList, parRandom, parInt1, parInt2, parInt3,
 						parEnumFacing, parInt4);
 			}
 		}
@@ -1288,19 +1288,19 @@ public class StructureNetherBridgePieces {
 			if (this.coordBaseMode != null) {
 				switch (this.coordBaseMode) {
 				case NORTH:
-					return this.func_175870_a(parStart, parList, parRandom, this.boundingBox.minX + parInt1,
+					return this.generateAndAddPiece(parStart, parList, parRandom, this.boundingBox.minX + parInt1,
 							this.boundingBox.minY + parInt2, this.boundingBox.minZ - 1, this.coordBaseMode,
 							this.getComponentType(), parFlag);
 				case SOUTH:
-					return this.func_175870_a(parStart, parList, parRandom, this.boundingBox.minX + parInt1,
+					return this.generateAndAddPiece(parStart, parList, parRandom, this.boundingBox.minX + parInt1,
 							this.boundingBox.minY + parInt2, this.boundingBox.maxZ + 1, this.coordBaseMode,
 							this.getComponentType(), parFlag);
 				case WEST:
-					return this.func_175870_a(parStart, parList, parRandom, this.boundingBox.minX - 1,
+					return this.generateAndAddPiece(parStart, parList, parRandom, this.boundingBox.minX - 1,
 							this.boundingBox.minY + parInt2, this.boundingBox.minZ + parInt1, this.coordBaseMode,
 							this.getComponentType(), parFlag);
 				case EAST:
-					return this.func_175870_a(parStart, parList, parRandom, this.boundingBox.maxX + 1,
+					return this.generateAndAddPiece(parStart, parList, parRandom, this.boundingBox.maxX + 1,
 							this.boundingBox.minY + parInt2, this.boundingBox.minZ + parInt1, this.coordBaseMode,
 							this.getComponentType(), parFlag);
 				}
@@ -1315,19 +1315,19 @@ public class StructureNetherBridgePieces {
 			if (this.coordBaseMode != null) {
 				switch (this.coordBaseMode) {
 				case NORTH:
-					return this.func_175870_a(parStart, parList, parRandom, this.boundingBox.minX - 1,
+					return this.generateAndAddPiece(parStart, parList, parRandom, this.boundingBox.minX - 1,
 							this.boundingBox.minY + parInt1, this.boundingBox.minZ + parInt2, EnumFacing.WEST,
 							this.getComponentType(), parFlag);
 				case SOUTH:
-					return this.func_175870_a(parStart, parList, parRandom, this.boundingBox.minX - 1,
+					return this.generateAndAddPiece(parStart, parList, parRandom, this.boundingBox.minX - 1,
 							this.boundingBox.minY + parInt1, this.boundingBox.minZ + parInt2, EnumFacing.WEST,
 							this.getComponentType(), parFlag);
 				case WEST:
-					return this.func_175870_a(parStart, parList, parRandom, this.boundingBox.minX + parInt2,
+					return this.generateAndAddPiece(parStart, parList, parRandom, this.boundingBox.minX + parInt2,
 							this.boundingBox.minY + parInt1, this.boundingBox.minZ - 1, EnumFacing.NORTH,
 							this.getComponentType(), parFlag);
 				case EAST:
-					return this.func_175870_a(parStart, parList, parRandom, this.boundingBox.minX + parInt2,
+					return this.generateAndAddPiece(parStart, parList, parRandom, this.boundingBox.minX + parInt2,
 							this.boundingBox.minY + parInt1, this.boundingBox.minZ - 1, EnumFacing.NORTH,
 							this.getComponentType(), parFlag);
 				}
@@ -1342,19 +1342,19 @@ public class StructureNetherBridgePieces {
 			if (this.coordBaseMode != null) {
 				switch (this.coordBaseMode) {
 				case NORTH:
-					return this.func_175870_a(parStart, parList, parRandom, this.boundingBox.maxX + 1,
+					return this.generateAndAddPiece(parStart, parList, parRandom, this.boundingBox.maxX + 1,
 							this.boundingBox.minY + parInt1, this.boundingBox.minZ + parInt2, EnumFacing.EAST,
 							this.getComponentType(), parFlag);
 				case SOUTH:
-					return this.func_175870_a(parStart, parList, parRandom, this.boundingBox.maxX + 1,
+					return this.generateAndAddPiece(parStart, parList, parRandom, this.boundingBox.maxX + 1,
 							this.boundingBox.minY + parInt1, this.boundingBox.minZ + parInt2, EnumFacing.EAST,
 							this.getComponentType(), parFlag);
 				case WEST:
-					return this.func_175870_a(parStart, parList, parRandom, this.boundingBox.minX + parInt2,
+					return this.generateAndAddPiece(parStart, parList, parRandom, this.boundingBox.minX + parInt2,
 							this.boundingBox.minY + parInt1, this.boundingBox.maxZ + 1, EnumFacing.SOUTH,
 							this.getComponentType(), parFlag);
 				case EAST:
-					return this.func_175870_a(parStart, parList, parRandom, this.boundingBox.minX + parInt2,
+					return this.generateAndAddPiece(parStart, parList, parRandom, this.boundingBox.minX + parInt2,
 							this.boundingBox.minY + parInt1, this.boundingBox.maxZ + 1, EnumFacing.SOUTH,
 							this.getComponentType(), parFlag);
 				}
@@ -1370,29 +1370,29 @@ public class StructureNetherBridgePieces {
 
 	static class PieceWeight {
 		public Class<? extends StructureNetherBridgePieces.Piece> weightClass;
-		public final int field_78826_b;
-		public int field_78827_c;
-		public int field_78824_d;
-		public boolean field_78825_e;
+		public final int weight;
+		public int placeCount;
+		public int maxPlaceCount;
+		public boolean allowInRow;
 
 		public PieceWeight(Class<? extends StructureNetherBridgePieces.Piece> parClass1, int parInt1, int parInt2,
 				boolean parFlag) {
 			this.weightClass = parClass1;
-			this.field_78826_b = parInt1;
-			this.field_78824_d = parInt2;
-			this.field_78825_e = parFlag;
+			this.weight = parInt1;
+			this.maxPlaceCount = parInt2;
+			this.allowInRow = parFlag;
 		}
 
 		public PieceWeight(Class<? extends StructureNetherBridgePieces.Piece> parClass1, int parInt1, int parInt2) {
 			this(parClass1, parInt1, parInt2, false);
 		}
 
-		public boolean func_78822_a(int parInt1) {
-			return this.field_78824_d == 0 || this.field_78827_c < this.field_78824_d;
+		public boolean doPlace(int parInt1) {
+			return this.maxPlaceCount == 0 || this.placeCount < this.maxPlaceCount;
 		}
 
-		public boolean func_78823_a() {
-			return this.field_78824_d == 0 || this.field_78827_c < this.field_78824_d;
+		public boolean isValid() {
+			return this.maxPlaceCount == 0 || this.placeCount < this.maxPlaceCount;
 		}
 	}
 
@@ -1412,7 +1412,7 @@ public class StructureNetherBridgePieces {
 			this.getNextComponentZ((StructureNetherBridgePieces.Start) structurecomponent, list, random, 6, 2, false);
 		}
 
-		public static StructureNetherBridgePieces.Stairs func_175872_a(List<StructureComponent> parList,
+		public static StructureNetherBridgePieces.Stairs createStairs(List<StructureComponent> parList,
 				EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, int parInt4,
 				EnumFacing parEnumFacing) {
 			StructureBoundingBox structureboundingbox = StructureBoundingBox.getComponentToAddBoundingBox(parInt1,
@@ -1479,7 +1479,7 @@ public class StructureNetherBridgePieces {
 		public StructureNetherBridgePieces.PieceWeight theNetherBridgePieceWeight;
 		public List<StructureNetherBridgePieces.PieceWeight> primaryWeights;
 		public List<StructureNetherBridgePieces.PieceWeight> secondaryWeights;
-		public List<StructureComponent> field_74967_d = Lists.newArrayList();
+		public List<StructureComponent> pendingChildren = Lists.newArrayList();
 
 		public Start() {
 		}
@@ -1489,14 +1489,14 @@ public class StructureNetherBridgePieces {
 			this.primaryWeights = Lists.newArrayList();
 
 			for (StructureNetherBridgePieces.PieceWeight structurenetherbridgepieces$pieceweight : StructureNetherBridgePieces.primaryComponents) {
-				structurenetherbridgepieces$pieceweight.field_78827_c = 0;
+				structurenetherbridgepieces$pieceweight.placeCount = 0;
 				this.primaryWeights.add(structurenetherbridgepieces$pieceweight);
 			}
 
 			this.secondaryWeights = Lists.newArrayList();
 
 			for (StructureNetherBridgePieces.PieceWeight structurenetherbridgepieces$pieceweight1 : StructureNetherBridgePieces.secondaryComponents) {
-				structurenetherbridgepieces$pieceweight1.field_78827_c = 0;
+				structurenetherbridgepieces$pieceweight1.placeCount = 0;
 				this.secondaryWeights.add(structurenetherbridgepieces$pieceweight1);
 			}
 
@@ -1528,7 +1528,7 @@ public class StructureNetherBridgePieces {
 					false);
 		}
 
-		public static StructureNetherBridgePieces.Straight func_175882_a(List<StructureComponent> parList,
+		public static StructureNetherBridgePieces.Straight createStraight(List<StructureComponent> parList,
 				EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, EnumFacing parEnumFacing,
 				int parInt4) {
 			StructureBoundingBox structureboundingbox = StructureBoundingBox.getComponentToAddBoundingBox(parInt1,
@@ -1611,7 +1611,7 @@ public class StructureNetherBridgePieces {
 			nbttagcompound.setBoolean("Mob", this.hasSpawner);
 		}
 
-		public static StructureNetherBridgePieces.Throne func_175874_a(List<StructureComponent> parList,
+		public static StructureNetherBridgePieces.Throne createThrone(List<StructureComponent> parList,
 				EaglercraftRandom parRandom, int parInt1, int parInt2, int parInt3, int parInt4,
 				EnumFacing parEnumFacing) {
 			StructureBoundingBox structureboundingbox = StructureBoundingBox.getComponentToAddBoundingBox(parInt1,

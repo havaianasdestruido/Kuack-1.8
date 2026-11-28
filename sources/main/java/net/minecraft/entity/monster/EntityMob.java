@@ -108,7 +108,7 @@ public abstract class EntityMob extends EntityCreature implements IMob {
 		float f = (float) this.getEntityAttribute(SharedMonsterAttributes.attackDamage).getAttributeValue();
 		int i = 0;
 		if (entity instanceof EntityLivingBase) {
-			f += EnchantmentHelper.func_152377_a(this.getHeldItem(),
+			f += EnchantmentHelper.getModifierForCreature(this.getHeldItem(),
 					((EntityLivingBase) entity).getCreatureAttribute());
 			i += EnchantmentHelper.getKnockbackModifier(this);
 		}

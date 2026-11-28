@@ -138,7 +138,7 @@ public class SaveFormatOld implements ISaveFormat {
 		return false;
 	}
 
-	public boolean func_154335_d(String parString1) {
+	public boolean isNewLevelIdAcceptable(String parString1) {
 		return !canLoadWorld(parString1);
 	}
 
@@ -203,7 +203,7 @@ public class SaveFormatOld implements ISaveFormat {
 		return new SaveHandler(this.savesDirectory, s);
 	}
 
-	public boolean func_154334_a(String var1) {
+	public boolean isConvertible(String var1) {
 		return false;
 	}
 

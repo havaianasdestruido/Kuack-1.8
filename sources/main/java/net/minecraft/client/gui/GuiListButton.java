@@ -24,7 +24,7 @@ import net.minecraft.client.resources.I18n;
  * 
  */
 public class GuiListButton extends GuiButton {
-	private boolean field_175216_o;
+	private boolean value;
 	private String localizationStr;
 	private final GuiPageButtonList.GuiResponder guiResponder;
 
@@ -32,7 +32,7 @@ public class GuiListButton extends GuiButton {
 			String parString1, boolean parFlag) {
 		super(parInt1, parInt2, parInt3, 150, 20, "");
 		this.localizationStr = parString1;
-		this.field_175216_o = parFlag;
+		this.value = parFlag;
 		this.displayString = this.buildDisplayString();
 		this.guiResponder = responder;
 	}
@@ -42,13 +42,13 @@ public class GuiListButton extends GuiButton {
 	 */
 	private String buildDisplayString() {
 		return I18n.format(this.localizationStr, new Object[0]) + ": "
-				+ (this.field_175216_o ? I18n.format("gui.yes", new Object[0]) : I18n.format("gui.no", new Object[0]));
+				+ (this.value ? I18n.format("gui.yes", new Object[0]) : I18n.format("gui.no", new Object[0]));
 	}
 
-	public void func_175212_b(boolean parFlag) {
-		this.field_175216_o = parFlag;
+	public void setValue(boolean parFlag) {
+		this.value = parFlag;
 		this.displayString = this.buildDisplayString();
-		this.guiResponder.func_175321_a(this.id, parFlag);
+		this.guiResponder.setEntryValue(this.id, parFlag);
 	}
 
 	/**+
@@ -57,9 +57,9 @@ public class GuiListButton extends GuiButton {
 	 */
 	public boolean mousePressed(Minecraft minecraft, int i, int j) {
 		if (super.mousePressed(minecraft, i, j)) {
-			this.field_175216_o = !this.field_175216_o;
+			this.value = !this.value;
 			this.displayString = this.buildDisplayString();
-			this.guiResponder.func_175321_a(this.id, this.field_175216_o);
+			this.guiResponder.setEntryValue(this.id, this.value);
 			return true;
 		} else {
 			return false;

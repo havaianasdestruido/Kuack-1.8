@@ -253,7 +253,7 @@ public class ChunkUpdateManager {
 	private void uploadDisplayList(WorldRenderer chunkRenderer, int parInt1, RenderChunk parRenderChunk) {
 		EaglercraftGPU.glNewList(parInt1, GL_COMPILE);
 		GlStateManager.pushMatrix();
-		this.worldVertexUploader.func_181679_a(chunkRenderer);
+		this.worldVertexUploader.drawBuffer(chunkRenderer);
 		GlStateManager.popMatrix();
 		EaglercraftGPU.glEndList();
 	}

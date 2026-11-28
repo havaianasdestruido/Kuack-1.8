@@ -46,7 +46,7 @@ public class CrashReport {
 	 * Holds the keys and values of all crash report sections.
 	 */
 	private final List<CrashReportCategory> crashReportSections = Lists.newArrayList();
-	private boolean field_85059_f = true;
+	private boolean firstCategoryInCrashReport = true;
 	private String[] stacktrace;
 
 	public CrashReport(String descriptionIn, Throwable causeThrowable) {
@@ -212,7 +212,7 @@ public class CrashReport {
 	 */
 	public CrashReportCategory makeCategoryDepth(String categoryName, int stacktraceLength) {
 		CrashReportCategory crashreportcategory = new CrashReportCategory(this, categoryName);
-		if (this.field_85059_f) {
+		if (this.firstCategoryInCrashReport) {
 			int i = crashreportcategory.getPrunedStackTrace(stacktraceLength);
 			String[] astacktraceelement = EagRuntime.getStackTraceElements(cause);
 			String stacktraceelement = null;
@@ -230,7 +230,7 @@ public class CrashReport {
 				}
 			}
 
-			this.field_85059_f = crashreportcategory.firstTwoElementsOfStackTraceMatch(stacktraceelement,
+			this.firstCategoryInCrashReport = crashreportcategory.firstTwoElementsOfStackTraceMatch(stacktraceelement,
 					stacktraceelement1);
 			if (i > 0 && !this.crashReportSections.isEmpty()) {
 				CrashReportCategory crashreportcategory1 = (CrashReportCategory) this.crashReportSections
@@ -241,7 +241,7 @@ public class CrashReport {
 				this.stacktrace = new String[j];
 				System.arraycopy(astacktraceelement, 0, this.stacktrace, 0, this.stacktrace.length);
 			} else {
-				this.field_85059_f = false;
+				this.firstCategoryInCrashReport = false;
 			}
 		}
 

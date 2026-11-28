@@ -71,14 +71,14 @@ public class BlockLever extends Block {
 	 * Check whether this Block can be placed on the given side
 	 */
 	public boolean canPlaceBlockOnSide(World world, BlockPos blockpos, EnumFacing enumfacing) {
-		return func_181090_a(world, blockpos, enumfacing.getOpposite());
+		return canAttachTo(world, blockpos, enumfacing.getOpposite());
 	}
 
 	public boolean canPlaceBlockAt(World world, BlockPos blockpos) {
 		EnumFacing[] facings = EnumFacing._VALUES;
 		for (int i = 0; i < facings.length; ++i) {
 			EnumFacing enumfacing = facings[i];
-			if (func_181090_a(world, blockpos, enumfacing)) {
+			if (canAttachTo(world, blockpos, enumfacing)) {
 				return true;
 			}
 		}
@@ -86,8 +86,8 @@ public class BlockLever extends Block {
 		return false;
 	}
 
-	protected static boolean func_181090_a(World parWorld, BlockPos parBlockPos, EnumFacing parEnumFacing) {
-		return BlockButton.func_181088_a(parWorld, parBlockPos, parEnumFacing);
+	protected static boolean canAttachTo(World parWorld, BlockPos parBlockPos, EnumFacing parEnumFacing) {
+		return BlockButton.canPlaceBlock(parWorld, parBlockPos, parEnumFacing);
 	}
 
 	/**+
@@ -97,14 +97,14 @@ public class BlockLever extends Block {
 	public IBlockState onBlockPlaced(World world, BlockPos blockpos, EnumFacing enumfacing, float var4, float var5,
 			float var6, int var7, EntityLivingBase entitylivingbase) {
 		IBlockState iblockstate = this.getDefaultState().withProperty(POWERED, Boolean.valueOf(false));
-		if (func_181090_a(world, blockpos, enumfacing.getOpposite())) {
+		if (canAttachTo(world, blockpos, enumfacing.getOpposite())) {
 			return iblockstate.withProperty(FACING,
 					BlockLever.EnumOrientation.forFacings(enumfacing, entitylivingbase.getHorizontalFacing()));
 		} else {
 			EnumFacing[] facings = EnumFacing.Plane.HORIZONTAL.facingsArray;
 			for (int i = 0; i < facings.length; ++i) {
 				EnumFacing enumfacing1 = facings[i];
-				if (enumfacing1 != enumfacing && func_181090_a(world, blockpos, enumfacing1.getOpposite())) {
+				if (enumfacing1 != enumfacing && canAttachTo(world, blockpos, enumfacing1.getOpposite())) {
 					return iblockstate.withProperty(FACING,
 							BlockLever.EnumOrientation.forFacings(enumfacing1, entitylivingbase.getHorizontalFacing()));
 				}
@@ -142,7 +142,7 @@ public class BlockLever extends Block {
 	 * Called when a neighboring block changes.
 	 */
 	public void onNeighborBlockChange(World world, BlockPos blockpos, IBlockState iblockstate, Block var4) {
-		if (this.func_181091_e(world, blockpos, iblockstate) && !func_181090_a(world, blockpos,
+		if (this.checkCanSurvive(world, blockpos, iblockstate) && !canAttachTo(world, blockpos,
 				((BlockLever.EnumOrientation) iblockstate.getValue(FACING)).getFacing().getOpposite())) {
 			this.dropBlockAsItem(world, blockpos, iblockstate, 0);
 			world.setBlockToAir(blockpos);
@@ -150,7 +150,7 @@ public class BlockLever extends Block {
 
 	}
 
-	private boolean func_181091_e(World parWorld, BlockPos parBlockPos, IBlockState parIBlockState) {
+	private boolean checkCanSurvive(World parWorld, BlockPos parBlockPos, IBlockState parIBlockState) {
 		if (this.canPlaceBlockAt(parWorld, parBlockPos)) {
 			return true;
 		} else {

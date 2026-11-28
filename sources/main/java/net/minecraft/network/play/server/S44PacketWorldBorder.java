@@ -134,7 +134,7 @@ public class S44PacketWorldBorder implements Packet<INetHandlerPlayClient> {
 		inethandlerplayclient.handleWorldBorder(this);
 	}
 
-	public void func_179788_a(WorldBorder border) {
+	public void apply(WorldBorder border) {
 		switch (this.action) {
 		case SET_SIZE:
 			border.setTransition(this.targetSize);

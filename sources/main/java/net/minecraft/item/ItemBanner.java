@@ -133,7 +133,7 @@ public class ItemBanner extends ItemBlock {
 		for (int i = 0; i < colors.length; ++i) {
 			EnumDyeColor enumdyecolor = colors[i];
 			NBTTagCompound nbttagcompound = new NBTTagCompound();
-			TileEntityBanner.func_181020_a(nbttagcompound, enumdyecolor.getDyeDamage(), (NBTTagList) null);
+			TileEntityBanner.setBaseColorAndPatterns(nbttagcompound, enumdyecolor.getDyeDamage(), (NBTTagList) null);
 			NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 			nbttagcompound1.setTag("BlockEntityTag", nbttagcompound);
 			ItemStack itemstack = new ItemStack(item, 1, enumdyecolor.getDyeDamage());

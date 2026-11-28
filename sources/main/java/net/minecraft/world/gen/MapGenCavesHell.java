@@ -33,13 +33,13 @@ public class MapGenCavesHell extends MapGenBase {
 		super(scramble);
 	}
 
-	protected void func_180705_a(long parLong1, int parInt1, int parInt2, ChunkPrimer parChunkPrimer, double parDouble1,
+	protected void addRoom(long parLong1, int parInt1, int parInt2, ChunkPrimer parChunkPrimer, double parDouble1,
 			double parDouble2, double parDouble3) {
-		this.func_180704_a(parLong1, parInt1, parInt2, parChunkPrimer, parDouble1, parDouble2, parDouble3,
+		this.addTunnel(parLong1, parInt1, parInt2, parChunkPrimer, parDouble1, parDouble2, parDouble3,
 				1.0F + this.rand.nextFloat() * 6.0F, 0.0F, 0.0F, -1, -1, 0.5D);
 	}
 
-	protected void func_180704_a(long parLong1, int parInt1, int parInt2, ChunkPrimer parChunkPrimer, double parDouble1,
+	protected void addTunnel(long parLong1, int parInt1, int parInt2, ChunkPrimer parChunkPrimer, double parDouble1,
 			double parDouble2, double parDouble3, float parFloat1, float parFloat2, float parFloat3, int parInt3,
 			int parInt4, double parDouble4) {
 		double d0 = (double) (parInt1 * 16 + 8);
@@ -82,10 +82,10 @@ public class MapGenCavesHell extends MapGenBase {
 			f1 = f1 + (random.nextFloat() - random.nextFloat()) * random.nextFloat() * 2.0F;
 			f = f + (random.nextFloat() - random.nextFloat()) * random.nextFloat() * 4.0F;
 			if (!flag1 && parInt3 == j && parFloat1 > 1.0F) {
-				this.func_180704_a(random.nextLong(), parInt1, parInt2, parChunkPrimer, parDouble1, parDouble2,
+				this.addTunnel(random.nextLong(), parInt1, parInt2, parChunkPrimer, parDouble1, parDouble2,
 						parDouble3, random.nextFloat() * 0.5F + 0.5F, parFloat2 - 1.5707964F, parFloat3 / 3.0F, parInt3,
 						parInt4, 1.0D);
-				this.func_180704_a(random.nextLong(), parInt1, parInt2, parChunkPrimer, parDouble1, parDouble2,
+				this.addTunnel(random.nextLong(), parInt1, parInt2, parChunkPrimer, parDouble1, parDouble2,
 						parDouble3, random.nextFloat() * 0.5F + 0.5F, parFloat2 + 1.5707964F, parFloat3 / 3.0F, parInt3,
 						parInt4, 1.0D);
 				return;
@@ -198,7 +198,7 @@ public class MapGenCavesHell extends MapGenBase {
 			double d2 = (double) (j * 16 + this.rand.nextInt(16));
 			int k1 = 1;
 			if (this.rand.nextInt(4) == 0) {
-				this.func_180705_a(this.rand.nextLong(), k, l, chunkprimer, d0, d1, d2);
+				this.addRoom(this.rand.nextLong(), k, l, chunkprimer, d0, d1, d2);
 				k1 += this.rand.nextInt(4);
 			}
 
@@ -206,7 +206,7 @@ public class MapGenCavesHell extends MapGenBase {
 				float f = this.rand.nextFloat() * 3.1415927F * 2.0F;
 				float f1 = (this.rand.nextFloat() - 0.5F) * 2.0F / 8.0F;
 				float f2 = this.rand.nextFloat() * 2.0F + this.rand.nextFloat();
-				this.func_180704_a(this.rand.nextLong(), k, l, chunkprimer, d0, d1, d2, f2 * 2.0F, f, f1, 0, 0, 0.5D);
+				this.addTunnel(this.rand.nextLong(), k, l, chunkprimer, d0, d1, d2, f2 * 2.0F, f, f1, 0, 0, 0.5D);
 			}
 		}
 

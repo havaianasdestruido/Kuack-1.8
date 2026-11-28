@@ -45,26 +45,26 @@ public class GuiSlider extends GuiButton {
 		this.displayString = this.getDisplayString();
 	}
 
-	public float func_175220_c() {
+	public float getSliderValue() {
 		return this.min + (this.max - this.min) * this.sliderPosition;
 	}
 
-	public void func_175218_a(float parFloat1, boolean parFlag) {
+	public void setSliderValue(float parFloat1, boolean parFlag) {
 		this.sliderPosition = (parFloat1 - this.min) / (this.max - this.min);
 		this.displayString = this.getDisplayString();
 		if (parFlag) {
-			this.responder.onTick(this.id, this.func_175220_c());
+			this.responder.onTick(this.id, this.getSliderValue());
 		}
 
 	}
 
-	public float func_175217_d() {
+	public float getSliderPosition() {
 		return this.sliderPosition;
 	}
 
 	private String getDisplayString() {
-		return this.formatHelper == null ? I18n.format(this.name, new Object[0]) + ": " + this.func_175220_c()
-				: this.formatHelper.getText(this.id, I18n.format(this.name, new Object[0]), this.func_175220_c());
+		return this.formatHelper == null ? I18n.format(this.name, new Object[0]) + ": " + this.getSliderValue()
+				: this.formatHelper.getText(this.id, I18n.format(this.name, new Object[0]), this.getSliderValue());
 	}
 
 	/**+
@@ -93,7 +93,7 @@ public class GuiSlider extends GuiButton {
 				}
 
 				this.displayString = this.getDisplayString();
-				this.responder.onTick(this.id, this.func_175220_c());
+				this.responder.onTick(this.id, this.getSliderValue());
 			}
 
 			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
@@ -104,10 +104,10 @@ public class GuiSlider extends GuiButton {
 		}
 	}
 
-	public void func_175219_a(float parFloat1) {
+	public void setSliderPosition(float parFloat1) {
 		this.sliderPosition = parFloat1;
 		this.displayString = this.getDisplayString();
-		this.responder.onTick(this.id, this.func_175220_c());
+		this.responder.onTick(this.id, this.getSliderValue());
 	}
 
 	/**+
@@ -126,7 +126,7 @@ public class GuiSlider extends GuiButton {
 			}
 
 			this.displayString = this.getDisplayString();
-			this.responder.onTick(this.id, this.func_175220_c());
+			this.responder.onTick(this.id, this.getSliderValue());
 			this.isMouseDown = true;
 			return true;
 		} else {

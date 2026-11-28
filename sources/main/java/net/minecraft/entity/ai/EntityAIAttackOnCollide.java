@@ -106,7 +106,7 @@ public class EntityAIAttackOnCollide extends EntityAIBase {
 		this.attacker.getLookHelper().setLookPositionWithEntity(entitylivingbase, 30.0F, 30.0F);
 		double d0 = this.attacker.getDistanceSq(entitylivingbase.posX, entitylivingbase.getEntityBoundingBox().minY,
 				entitylivingbase.posZ);
-		double d1 = this.func_179512_a(entitylivingbase);
+		double d1 = this.getAttackReachSqr(entitylivingbase);
 		--this.delayCounter;
 		if ((this.longMemory || this.attacker.getEntitySenses().canSee(entitylivingbase)) && this.delayCounter <= 0
 				&& (this.targetX == 0.0D && this.targetY == 0.0D && this.targetZ == 0.0D
@@ -139,7 +139,7 @@ public class EntityAIAttackOnCollide extends EntityAIBase {
 
 	}
 
-	protected double func_179512_a(EntityLivingBase attackTarget) {
+	protected double getAttackReachSqr(EntityLivingBase attackTarget) {
 		return (double) (this.attacker.width * 2.0F * this.attacker.width * 2.0F + attackTarget.width);
 	}
 }

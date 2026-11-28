@@ -26,12 +26,12 @@ import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
  */
 public class GenLayerHills extends GenLayer {
 	private static final Logger logger = LogManager.getLogger();
-	private GenLayer field_151628_d;
+	private GenLayer riverLayer;
 
 	public GenLayerHills(long parLong1, GenLayer parGenLayer, GenLayer parGenLayer2) {
 		super(parLong1);
 		this.parent = parGenLayer;
-		this.field_151628_d = parGenLayer2;
+		this.riverLayer = parGenLayer2;
 	}
 
 	/**+
@@ -42,7 +42,7 @@ public class GenLayerHills extends GenLayer {
 	 */
 	public int[] getInts(int i, int j, int k, int l) {
 		int[] aint = this.parent.getInts(i - 1, j - 1, k + 2, l + 2);
-		int[] aint1 = this.field_151628_d.getInts(i - 1, j - 1, k + 2, l + 2);
+		int[] aint1 = this.riverLayer.getInts(i - 1, j - 1, k + 2, l + 2);
 		int[] aint2 = IntCache.getIntCache(k * l);
 
 		for (int i1 = 0; i1 < l; ++i1) {

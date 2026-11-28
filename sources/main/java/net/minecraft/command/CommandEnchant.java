@@ -119,7 +119,7 @@ public class CommandEnchant extends CommandBase {
 	 */
 	public List<String> addTabCompletionOptions(ICommandSender var1, String[] astring, BlockPos var3) {
 		return astring.length == 1 ? getListOfStringsMatchingLastWord(astring, this.getListOfPlayers())
-				: (astring.length == 2 ? getListOfStringsMatchingLastWord(astring, Enchantment.func_181077_c()) : null);
+				: (astring.length == 2 ? getListOfStringsMatchingLastWord(astring, Enchantment.getEffects()) : null);
 	}
 
 	protected String[] getListOfPlayers() {

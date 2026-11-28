@@ -179,9 +179,9 @@ public class EntityFishHook extends Entity {
 		this.motionY = parDouble2;
 		this.motionZ = parDouble3;
 		float f1 = MathHelper.sqrt_double(parDouble1 * parDouble1 + parDouble3 * parDouble3);
-		this.prevRotationYaw = this.rotationYaw = (float) (MathHelper.func_181159_b(parDouble1, parDouble3) * 180.0D
+		this.prevRotationYaw = this.rotationYaw = (float) (MathHelper.atan2(parDouble1, parDouble3) * 180.0D
 				/ 3.1415927410125732D);
-		this.prevRotationPitch = this.rotationPitch = (float) (MathHelper.func_181159_b(parDouble2, (double) f1)
+		this.prevRotationPitch = this.rotationPitch = (float) (MathHelper.atan2(parDouble2, (double) f1)
 				* 180.0D / 3.1415927410125732D);
 		this.ticksInGround = 0;
 	}
@@ -322,10 +322,10 @@ public class EntityFishHook extends Entity {
 			if (!this.inGround) {
 				this.moveEntity(this.motionX, this.motionY, this.motionZ);
 				float f5 = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionZ * this.motionZ);
-				this.rotationYaw = (float) (MathHelper.func_181159_b(this.motionX, this.motionZ) * 180.0D
+				this.rotationYaw = (float) (MathHelper.atan2(this.motionX, this.motionZ) * 180.0D
 						/ 3.1415927410125732D);
 
-				for (this.rotationPitch = (float) (MathHelper.func_181159_b(this.motionY, (double) f5) * 180.0D
+				for (this.rotationPitch = (float) (MathHelper.atan2(this.motionY, (double) f5) * 180.0D
 						/ 3.1415927410125732D); this.rotationPitch
 								- this.prevRotationPitch < -180.0F; this.prevRotationPitch -= 360.0F) {
 					;

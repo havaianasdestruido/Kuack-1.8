@@ -43,6 +43,14 @@ Put the numbers in the PR description (a short before/after table is ideal) and 
 implemented but measured to be a non-win, record the measurement and back the change out
 instead of shipping it — see FINDINGS #2 for the existing example.
 
+## Game sources
+
+`sources/main/java/net/minecraft` is decompiled Minecraft 1.8 with readable member names. The
+generated MCP names (`func_*`/`field_*`) that could be renamed are recorded in
+`patches/minecraft/rename_map.json`; the remaining ones are listed there with the reason they
+must stay. Write new patch code against the readable names and extend that map if you need a
+generated one; `tests/test_readable_names.py` enforces it.
+
 ## Documentation
 
 Update `README.md` and `TODO.md` when behaviour, build steps or priorities change. Keep

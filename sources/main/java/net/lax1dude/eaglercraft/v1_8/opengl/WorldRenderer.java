@@ -85,12 +85,12 @@ public class WorldRenderer {
 	/**
 	 * MOST LIKELY USED TO SORT QUADS BACK TO FRONT
 	 */
-	public void func_181674_a(float parFloat1, float parFloat2, float parFloat3) {
+	public void sortVertexData(float parFloat1, float parFloat2, float parFloat3) {
 		int i = this.vertexCount / 4;
 		final float[] afloat = new float[i];
 
 		for (int j = 0; j < i; ++j) {
-			afloat[j] = func_181665_a(this.floatBuffer, (float) ((double) parFloat1 + this.xOffset),
+			afloat[j] = getDistanceSq(this.floatBuffer, (float) ((double) parFloat1 + this.xOffset),
 					(float) ((double) parFloat2 + this.yOffset), (float) ((double) parFloat3 + this.zOffset),
 					this.vertexFormat.attribStride >> 2, j * this.vertexFormat.attribStride);
 		}
@@ -143,7 +143,7 @@ public class WorldRenderer {
 	/**
 	 * SLOW AND STUPID UPLOAD QUEUE SYSTEM, MUST BE REPLACED
 	 */
-	public WorldRenderer.State func_181672_a() {
+	public WorldRenderer.State getVertexState() {
 		this.intBuffer.position(0);
 		VertexFormat fmt = this.vertexFormat;
 		int i = (fmt.attribStride >> 2) * vertexCount;
@@ -153,7 +153,7 @@ public class WorldRenderer {
 		return new WorldRenderer.State(aint, fmt);
 	}
 
-	private static float func_181665_a(FloatBuffer parFloatBuffer, float parFloat1, float parFloat2, float parFloat3,
+	private static float getDistanceSq(FloatBuffer parFloatBuffer, float parFloat1, float parFloat2, float parFloat3,
 			int parInt1, int parInt2) {
 		float f = parFloatBuffer.get(parInt2 + parInt1 * 0 + 0);
 		float f1 = parFloatBuffer.get(parInt2 + parInt1 * 0 + 1);
@@ -174,7 +174,7 @@ public class WorldRenderer {
 	}
 
 	/**
-	 * SLOW AND STUPID COMPANION FUNCTION TO 'func_181672_a'
+	 * SLOW AND STUPID COMPANION FUNCTION TO 'getVertexState'
 	 */
 	public void setVertexState(WorldRenderer.State state) {
 		this.grow(state.getRawBuffer().length);

@@ -476,9 +476,9 @@ public class EntityZombie extends EntityMob {
 		return f;
 	}
 
-	protected boolean func_175448_a(ItemStack itemstack) {
+	protected boolean canEquipItem(ItemStack itemstack) {
 		return itemstack.getItem() == Items.egg && this.isChild() && this.isRiding() ? false
-				: super.func_175448_a(itemstack);
+				: super.canEquipItem(itemstack);
 	}
 
 	/**+
@@ -661,7 +661,7 @@ public class EntityZombie extends EntityMob {
 			for (int k = (int) this.posX - 4; k < (int) this.posX + 4 && j < 14; ++k) {
 				for (int l = (int) this.posY - 4; l < (int) this.posY + 4 && j < 14; ++l) {
 					for (int i1 = (int) this.posZ - 4; i1 < (int) this.posZ + 4 && j < 14; ++i1) {
-						Block block = this.worldObj.getBlockState(blockpos$mutableblockpos.func_181079_c(k, l, i1))
+						Block block = this.worldObj.getBlockState(blockpos$mutableblockpos.setPos(k, l, i1))
 								.getBlock();
 						if (block == Blocks.iron_bars || block == Blocks.bed) {
 							if (this.rand.nextFloat() < 0.3F) {
@@ -721,7 +721,7 @@ public class EntityZombie extends EntityMob {
 		if (damagesource.getEntity() instanceof EntityCreeper && !(this instanceof EntityPigZombie)
 				&& ((EntityCreeper) damagesource.getEntity()).getPowered()
 				&& ((EntityCreeper) damagesource.getEntity()).isAIEnabled()) {
-			((EntityCreeper) damagesource.getEntity()).func_175493_co();
+			((EntityCreeper) damagesource.getEntity()).incrementDroppedSkulls();
 			this.entityDropItem(new ItemStack(Items.skull, 1, 2), 0.0F);
 		}
 

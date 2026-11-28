@@ -205,7 +205,7 @@ public class TileEntityChest extends TileEntityLockable implements ITickable, II
 		this.adjacentChestChecked = false;
 	}
 
-	private void func_174910_a(TileEntityChest chestTe, EnumFacing side) {
+	private void setNeighbor(TileEntityChest chestTe, EnumFacing side) {
 		if (chestTe.isInvalid()) {
 			this.adjacentChestChecked = false;
 		} else if (this.adjacentChestChecked) {
@@ -254,7 +254,7 @@ public class TileEntityChest extends TileEntityLockable implements ITickable, II
 			TileEntity tileentity = this.worldObj.getTileEntity(blockpos);
 			if (tileentity instanceof TileEntityChest) {
 				TileEntityChest tileentitychest = (TileEntityChest) tileentity;
-				tileentitychest.func_174910_a(this, side.getOpposite());
+				tileentitychest.setNeighbor(this, side.getOpposite());
 				return tileentitychest;
 			}
 		}

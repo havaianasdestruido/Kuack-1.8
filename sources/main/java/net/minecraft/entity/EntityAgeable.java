@@ -30,8 +30,8 @@ import net.minecraft.world.World;
  */
 public abstract class EntityAgeable extends EntityCreature {
 	protected int growingAge;
-	protected int field_175502_b;
-	protected int field_175503_c;
+	protected int forcedAge;
+	protected int forcedAgeTimer;
 	private float ageWidth = -1.0F;
 	private float ageHeight;
 
@@ -107,14 +107,14 @@ public abstract class EntityAgeable extends EntityCreature {
 		int k = i - j;
 		this.setGrowingAge(i);
 		if (parFlag) {
-			this.field_175502_b += k;
-			if (this.field_175503_c == 0) {
-				this.field_175503_c = 40;
+			this.forcedAge += k;
+			if (this.forcedAgeTimer == 0) {
+				this.forcedAgeTimer = 40;
 			}
 		}
 
 		if (this.getGrowingAge() == 0) {
-			this.setGrowingAge(this.field_175502_b);
+			this.setGrowingAge(this.forcedAge);
 		}
 
 	}
@@ -147,7 +147,7 @@ public abstract class EntityAgeable extends EntityCreature {
 	public void writeEntityToNBT(NBTTagCompound nbttagcompound) {
 		super.writeEntityToNBT(nbttagcompound);
 		nbttagcompound.setInteger("Age", this.getGrowingAge());
-		nbttagcompound.setInteger("ForcedAge", this.field_175502_b);
+		nbttagcompound.setInteger("ForcedAge", this.forcedAge);
 	}
 
 	/**+
@@ -157,7 +157,7 @@ public abstract class EntityAgeable extends EntityCreature {
 	public void readEntityFromNBT(NBTTagCompound nbttagcompound) {
 		super.readEntityFromNBT(nbttagcompound);
 		this.setGrowingAge(nbttagcompound.getInteger("Age"));
-		this.field_175502_b = nbttagcompound.getInteger("ForcedAge");
+		this.forcedAge = nbttagcompound.getInteger("ForcedAge");
 	}
 
 	/**+
@@ -168,8 +168,8 @@ public abstract class EntityAgeable extends EntityCreature {
 	public void onLivingUpdate() {
 		super.onLivingUpdate();
 		if (this.worldObj.isRemote) {
-			if (this.field_175503_c > 0) {
-				if (this.field_175503_c % 4 == 0) {
+			if (this.forcedAgeTimer > 0) {
+				if (this.forcedAgeTimer % 4 == 0) {
 					this.worldObj.spawnParticle(EnumParticleTypes.VILLAGER_HAPPY,
 							this.posX + (double) (this.rand.nextFloat() * this.width * 2.0F) - (double) this.width,
 							this.posY + 0.5D + (double) (this.rand.nextFloat() * this.height),
@@ -177,7 +177,7 @@ public abstract class EntityAgeable extends EntityCreature {
 							0.0D, 0.0D, 0.0D, new int[0]);
 				}
 
-				--this.field_175503_c;
+				--this.forcedAgeTimer;
 			}
 
 			this.setScaleForAge(this.isChild());

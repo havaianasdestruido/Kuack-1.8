@@ -53,17 +53,17 @@ import net.lax1dude.eaglercraft.v1_8.sp.gui.GuiScreenLANInfo;
  */
 public class GuiSelectWorld extends GuiScreen implements GuiYesNoCallback {
 	private static final Logger logger = LogManager.getLogger();
-	private final DateFormat field_146633_h = new SimpleDateFormat();
+	private final DateFormat saveDateFormat = new SimpleDateFormat();
 	protected GuiScreen parentScreen;
-	protected String field_146628_f = "Select world";
-	private boolean field_146634_i;
-	private int field_146640_r;
-	private java.util.List<SaveFormatComparator> field_146639_s;
-	private GuiSelectWorld.List field_146638_t;
-	private String field_146637_u;
+	protected String screenTitle = "Select world";
+	private boolean worldsLoaded;
+	private int selectedIndex;
+	private java.util.List<SaveFormatComparator> saveList;
+	private GuiSelectWorld.List availableWorlds;
+	private String worldNameLabel;
 	private String field_146636_v;
-	private String[] field_146635_w = new String[4];
-	private boolean field_146643_x;
+	private String[] worldNames = new String[4];
+	private boolean confirmingDelete;
 	private GuiButton deleteButton;
 	private GuiButton selectButton;
 	private GuiButton renameButton;
@@ -73,7 +73,7 @@ public class GuiSelectWorld extends GuiScreen implements GuiYesNoCallback {
 
 	public GuiSelectWorld(GuiScreen parentScreenIn) {
 		this.parentScreen = parentScreenIn;
-		this.field_146639_s = new ArrayList();
+		this.saveList = new ArrayList();
 	}
 
 	/**+
@@ -82,18 +82,18 @@ public class GuiSelectWorld extends GuiScreen implements GuiYesNoCallback {
 	 * window resizes, the buttonList is cleared beforehand.
 	 */
 	public void initGui() {
-		this.field_146628_f = I18n.format("selectWorld.title", new Object[0]);
-		this.field_146637_u = I18n.format("selectWorld.world", new Object[0]);
+		this.screenTitle = I18n.format("selectWorld.title", new Object[0]);
+		this.worldNameLabel = I18n.format("selectWorld.world", new Object[0]);
 		this.field_146636_v = I18n.format("selectWorld.conversion", new Object[0]);
-		this.field_146635_w[WorldSettings.GameType.SURVIVAL.getID()] = I18n.format("gameMode.survival", new Object[0]);
-		this.field_146635_w[WorldSettings.GameType.CREATIVE.getID()] = I18n.format("gameMode.creative", new Object[0]);
-		this.field_146635_w[WorldSettings.GameType.ADVENTURE.getID()] = I18n.format("gameMode.adventure",
+		this.worldNames[WorldSettings.GameType.SURVIVAL.getID()] = I18n.format("gameMode.survival", new Object[0]);
+		this.worldNames[WorldSettings.GameType.CREATIVE.getID()] = I18n.format("gameMode.creative", new Object[0]);
+		this.worldNames[WorldSettings.GameType.ADVENTURE.getID()] = I18n.format("gameMode.adventure",
 				new Object[0]);
-		this.field_146635_w[WorldSettings.GameType.SPECTATOR.getID()] = I18n.format("gameMode.spectator",
+		this.worldNames[WorldSettings.GameType.SPECTATOR.getID()] = I18n.format("gameMode.spectator",
 				new Object[0]);
-		this.field_146638_t = new GuiSelectWorld.List(this.mc);
-		this.field_146638_t.registerScrollButtons(4, 5);
-		this.func_146618_g();
+		this.availableWorlds = new GuiSelectWorld.List(this.mc);
+		this.availableWorlds.registerScrollButtons(4, 5);
+		this.addWorldSelectionButtons();
 	}
 
 	public void updateScreen() {
@@ -109,7 +109,7 @@ public class GuiSelectWorld extends GuiScreen implements GuiYesNoCallback {
 					}));
 		} else if (waitingForWorlds && SingleplayerServerController.isReady()) {
 			waitingForWorlds = false;
-			this.func_146627_h();
+			this.loadLevelList();
 		}
 	}
 
@@ -118,22 +118,22 @@ public class GuiSelectWorld extends GuiScreen implements GuiYesNoCallback {
 	 */
 	public void handleMouseInput() throws IOException {
 		super.handleMouseInput();
-		this.field_146638_t.handleMouseInput();
+		this.availableWorlds.handleMouseInput();
 	}
 
-	private void func_146627_h() {
+	private void loadLevelList() {
 		ISaveFormat isaveformat = this.mc.getSaveLoader();
-		this.field_146639_s = isaveformat.getSaveList();
-		Collections.sort(this.field_146639_s);
-		this.field_146640_r = -1;
+		this.saveList = isaveformat.getSaveList();
+		Collections.sort(this.saveList);
+		this.selectedIndex = -1;
 	}
 
-	protected String func_146621_a(int parInt1) {
-		return ((SaveFormatComparator) this.field_146639_s.get(parInt1)).getFileName();
+	protected String getSaveFileName(int parInt1) {
+		return ((SaveFormatComparator) this.saveList.get(parInt1)).getFileName();
 	}
 
-	protected String func_146614_d(int parInt1) {
-		String s = ((SaveFormatComparator) this.field_146639_s.get(parInt1)).getDisplayName();
+	protected String getWorldName(int parInt1) {
+		String s = ((SaveFormatComparator) this.saveList.get(parInt1)).getDisplayName();
 		if (StringUtils.isEmpty(s)) {
 			s = I18n.format("selectWorld.world", new Object[0]) + " " + (parInt1 + 1);
 		}
@@ -141,7 +141,7 @@ public class GuiSelectWorld extends GuiScreen implements GuiYesNoCallback {
 		return s;
 	}
 
-	public void func_146618_g() {
+	public void addWorldSelectionButtons() {
 		this.buttonList.add(this.selectButton = new GuiButton(1, this.width / 2 - 154, this.height - 52, 150, 20,
 				I18n.format("selectWorld.select", new Object[0])));
 		this.buttonList.add(new GuiButton(3, this.width / 2 + 4, this.height - 52, 150, 20,
@@ -167,44 +167,44 @@ public class GuiSelectWorld extends GuiScreen implements GuiYesNoCallback {
 	protected void actionPerformed(GuiButton parGuiButton) {
 		if (parGuiButton.enabled) {
 			if (parGuiButton.id == 2) {
-				String s = this.func_146614_d(this.field_146640_r);
+				String s = this.getWorldName(this.selectedIndex);
 				if (s != null) {
-					this.field_146643_x = true;
-					GuiYesNo guiyesno = func_152129_a(this, s, this.field_146640_r);
+					this.confirmingDelete = true;
+					GuiYesNo guiyesno = makeDeleteWorldYesNo(this, s, this.selectedIndex);
 					this.mc.displayGuiScreen(guiyesno);
 				}
 			} else if (parGuiButton.id == 1) {
-				this.func_146615_e(this.field_146640_r);
+				this.deleteWorldAndReload(this.selectedIndex);
 			} else if (parGuiButton.id == 3) {
 				hasRequestedWorlds = false; // force refresh
 				this.mc.displayGuiScreen(new GuiScreenCreateWorldSelection(this));
 			} else if (parGuiButton.id == 6) {
 				hasRequestedWorlds = false; // force refresh
-				this.mc.displayGuiScreen(new GuiRenameWorld(this, this.func_146621_a(this.field_146640_r)));
+				this.mc.displayGuiScreen(new GuiRenameWorld(this, this.getSaveFileName(this.selectedIndex)));
 			} else if (parGuiButton.id == 0) {
 				this.mc.displayGuiScreen(this.parentScreen);
 			} else if (parGuiButton.id == 7) {
 				hasRequestedWorlds = false; // force refresh
 				this.mc.displayGuiScreen(
-						new GuiScreenBackupWorldSelection(this, this.func_146621_a(this.field_146640_r),
-								((SaveFormatComparator) field_146639_s.get(this.field_146640_r)).levelDat));
+						new GuiScreenBackupWorldSelection(this, this.getSaveFileName(this.selectedIndex),
+								((SaveFormatComparator) saveList.get(this.selectedIndex)).levelDat));
 			} else {
-				this.field_146638_t.actionPerformed(parGuiButton);
+				this.availableWorlds.actionPerformed(parGuiButton);
 			}
 
 		}
 	}
 
-	public void func_146615_e(int parInt1) {
+	public void deleteWorldAndReload(int parInt1) {
 		this.mc.displayGuiScreen((GuiScreen) null);
-		if (!this.field_146634_i) {
-			this.field_146634_i = true;
-			String s = this.func_146621_a(parInt1);
+		if (!this.worldsLoaded) {
+			this.worldsLoaded = true;
+			String s = this.getSaveFileName(parInt1);
 			if (s == null) {
 				s = "World" + parInt1;
 			}
 
-			String s1 = this.func_146614_d(parInt1);
+			String s1 = this.getWorldName(parInt1);
 			if (s1 == null) {
 				s1 = "World" + parInt1;
 			}
@@ -217,12 +217,12 @@ public class GuiSelectWorld extends GuiScreen implements GuiYesNoCallback {
 	}
 
 	public void confirmClicked(boolean flag, int i) {
-		if (this.field_146643_x) {
-			this.field_146643_x = false;
+		if (this.confirmingDelete) {
+			this.confirmingDelete = false;
 			if (flag) {
 				hasRequestedWorlds = false; // force refresh
 				ISaveFormat isaveformat = this.mc.getSaveLoader();
-				isaveformat.deleteWorldDirectory(this.func_146621_a(i));
+				isaveformat.deleteWorldDirectory(this.getSaveFileName(i));
 				this.mc.displayGuiScreen(new GuiScreenIntegratedServerBusy(this, "singleplayer.busy.deleting",
 						"singleplayer.failed.deleting", SingleplayerServerController::isReady));
 			} else {
@@ -237,8 +237,8 @@ public class GuiSelectWorld extends GuiScreen implements GuiYesNoCallback {
 	 * mouseY, renderPartialTicks
 	 */
 	public void drawScreen(int i, int j, float f) {
-		this.field_146638_t.drawScreen(i, j, f);
-		this.drawCenteredString(this.fontRendererObj, this.field_146628_f, this.width / 2, 20, 16777215);
+		this.availableWorlds.drawScreen(i, j, f);
+		this.drawCenteredString(this.fontRendererObj, this.screenTitle, this.width / 2, 20, 16777215);
 
 		GlStateManager.pushMatrix();
 		GlStateManager.scale(0.75f, 0.75f, 0.75f);
@@ -273,7 +273,7 @@ public class GuiSelectWorld extends GuiScreen implements GuiYesNoCallback {
 		super.mouseClicked(xx, yy, btn);
 	}
 
-	public static GuiYesNo func_152129_a(GuiYesNoCallback parGuiYesNoCallback, String parString1, int parInt1) {
+	public static GuiYesNo makeDeleteWorldYesNo(GuiYesNoCallback parGuiYesNoCallback, String parString1, int parInt1) {
 		String s = I18n.format("selectWorld.deleteQuestion", new Object[0]);
 		String s1 = "\'" + parString1 + "\' " + I18n.format("selectWorld.deleteWarning", new Object[0]);
 		String s2 = I18n.format("selectWorld.deleteButton", new Object[0]);
@@ -288,29 +288,29 @@ public class GuiSelectWorld extends GuiScreen implements GuiYesNoCallback {
 		}
 
 		protected int getSize() {
-			return GuiSelectWorld.this.field_146639_s.size();
+			return GuiSelectWorld.this.saveList.size();
 		}
 
 		protected void elementClicked(int i, boolean flag, int var3, int var4) {
-			GuiSelectWorld.this.field_146640_r = i;
-			boolean flag1 = GuiSelectWorld.this.field_146640_r >= 0
-					&& GuiSelectWorld.this.field_146640_r < this.getSize();
+			GuiSelectWorld.this.selectedIndex = i;
+			boolean flag1 = GuiSelectWorld.this.selectedIndex >= 0
+					&& GuiSelectWorld.this.selectedIndex < this.getSize();
 			GuiSelectWorld.this.selectButton.enabled = flag1;
 			GuiSelectWorld.this.deleteButton.enabled = flag1;
 			GuiSelectWorld.this.renameButton.enabled = flag1;
 			GuiSelectWorld.this.recreateButton.enabled = flag1;
 			if (flag && flag1) {
-				GuiSelectWorld.this.func_146615_e(i);
+				GuiSelectWorld.this.deleteWorldAndReload(i);
 			}
 
 		}
 
 		protected boolean isSelected(int i) {
-			return i == GuiSelectWorld.this.field_146640_r;
+			return i == GuiSelectWorld.this.selectedIndex;
 		}
 
 		protected int getContentHeight() {
-			return GuiSelectWorld.this.field_146639_s.size() * 36;
+			return GuiSelectWorld.this.saveList.size() * 36;
 		}
 
 		protected void drawBackground() {
@@ -318,22 +318,22 @@ public class GuiSelectWorld extends GuiScreen implements GuiYesNoCallback {
 		}
 
 		protected void drawSlot(int i, int j, int k, int var4, int var5, int var6) {
-			SaveFormatComparator saveformatcomparator = (SaveFormatComparator) GuiSelectWorld.this.field_146639_s
+			SaveFormatComparator saveformatcomparator = (SaveFormatComparator) GuiSelectWorld.this.saveList
 					.get(i);
 			String s = saveformatcomparator.getDisplayName();
 			if (StringUtils.isEmpty(s)) {
-				s = GuiSelectWorld.this.field_146637_u + " " + (i + 1);
+				s = GuiSelectWorld.this.worldNameLabel + " " + (i + 1);
 			}
 
 			String s1 = saveformatcomparator.getFileName();
 			s1 = s1 + " ("
-					+ GuiSelectWorld.this.field_146633_h.format(new Date(saveformatcomparator.getLastTimePlayed()));
+					+ GuiSelectWorld.this.saveDateFormat.format(new Date(saveformatcomparator.getLastTimePlayed()));
 			s1 = s1 + ")";
 			String s2 = "";
 			if (saveformatcomparator.requiresConversion()) {
 				s2 = GuiSelectWorld.this.field_146636_v + " " + s2;
 			} else {
-				s2 = GuiSelectWorld.this.field_146635_w[saveformatcomparator.getEnumGameType().getID()];
+				s2 = GuiSelectWorld.this.worldNames[saveformatcomparator.getEnumGameType().getID()];
 				if (saveformatcomparator.isHardcoreModeEnabled()) {
 					s2 = EnumChatFormatting.DARK_RED + I18n.format("gameMode.hardcore", new Object[0])
 							+ EnumChatFormatting.RESET;

@@ -394,7 +394,7 @@ public class EntityBoat extends Entity {
 			double d18 = this.prevPosX - this.posX;
 			double d21 = this.prevPosZ - this.posZ;
 			if (d18 * d18 + d21 * d21 > 0.001D) {
-				d15 = (double) ((float) (MathHelper.func_181159_b(d21, d18) * 180.0D / 3.141592653589793D));
+				d15 = (double) ((float) (MathHelper.atan2(d21, d18) * 180.0D / 3.141592653589793D));
 			}
 
 			double d23 = MathHelper.wrapAngleTo180_double(d15 - (double) this.rotationYaw);

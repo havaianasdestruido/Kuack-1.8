@@ -32,49 +32,49 @@ import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
  * 
  */
 public class EntityAIFindEntityNearest extends EntityAIBase {
-	private static final Logger field_179444_a = LogManager.getLogger();
-	private EntityLiving field_179442_b;
-	private final Predicate<EntityLivingBase> field_179443_c;
-	private final EntityAINearestAttackableTarget.Sorter field_179440_d;
-	private EntityLivingBase field_179441_e;
+	private static final Logger LOGGER = LogManager.getLogger();
+	private EntityLiving mob;
+	private final Predicate<EntityLivingBase> predicate;
+	private final EntityAINearestAttackableTarget.Sorter sorter;
+	private EntityLivingBase target;
 	private Class<? extends EntityLivingBase> field_179439_f;
 
 	public EntityAIFindEntityNearest(EntityLiving parEntityLiving, Class<? extends EntityLivingBase> parClass1) {
-		this.field_179442_b = parEntityLiving;
+		this.mob = parEntityLiving;
 		this.field_179439_f = parClass1;
 		if (parEntityLiving instanceof EntityCreature) {
-			field_179444_a.warn("Use NearestAttackableTargetGoal.class for PathfinerMob mobs!");
+			LOGGER.warn("Use NearestAttackableTargetGoal.class for PathfinerMob mobs!");
 		}
 
-		this.field_179443_c = new Predicate<EntityLivingBase>() {
+		this.predicate = new Predicate<EntityLivingBase>() {
 			public boolean apply(EntityLivingBase entitylivingbase) {
-				double d0 = EntityAIFindEntityNearest.this.func_179438_f();
+				double d0 = EntityAIFindEntityNearest.this.getFollowRange();
 				if (entitylivingbase.isSneaking()) {
 					d0 *= 0.800000011920929D;
 				}
 
 				return entitylivingbase.isInvisible() ? false
 						: ((double) entitylivingbase
-								.getDistanceToEntity(EntityAIFindEntityNearest.this.field_179442_b) > d0 ? false
-										: EntityAITarget.isSuitableTarget(EntityAIFindEntityNearest.this.field_179442_b,
+								.getDistanceToEntity(EntityAIFindEntityNearest.this.mob) > d0 ? false
+										: EntityAITarget.isSuitableTarget(EntityAIFindEntityNearest.this.mob,
 												entitylivingbase, false, true));
 			}
 		};
-		this.field_179440_d = new EntityAINearestAttackableTarget.Sorter(parEntityLiving);
+		this.sorter = new EntityAINearestAttackableTarget.Sorter(parEntityLiving);
 	}
 
 	/**+
 	 * Returns whether the EntityAIBase should begin execution.
 	 */
 	public boolean shouldExecute() {
-		double d0 = this.func_179438_f();
-		List list = this.field_179442_b.worldObj.getEntitiesWithinAABB(this.field_179439_f,
-				this.field_179442_b.getEntityBoundingBox().expand(d0, 4.0D, d0), this.field_179443_c);
+		double d0 = this.getFollowRange();
+		List list = this.mob.worldObj.getEntitiesWithinAABB(this.field_179439_f,
+				this.mob.getEntityBoundingBox().expand(d0, 4.0D, d0), this.predicate);
 		if (list.isEmpty()) {
 			return false;
 		} else {
-			this.field_179441_e = (EntityLivingBase) EntityAINearestAttackableTarget.findNearest(list,
-					this.field_179442_b);
+			this.target = (EntityLivingBase) EntityAINearestAttackableTarget.findNearest(list,
+					this.mob);
 			return true;
 		}
 	}
@@ -84,14 +84,14 @@ public class EntityAIFindEntityNearest extends EntityAIBase {
 	 * executing
 	 */
 	public boolean continueExecuting() {
-		EntityLivingBase entitylivingbase = this.field_179442_b.getAttackTarget();
+		EntityLivingBase entitylivingbase = this.mob.getAttackTarget();
 		if (entitylivingbase == null) {
 			return false;
 		} else if (!entitylivingbase.isEntityAlive()) {
 			return false;
 		} else {
-			double d0 = this.func_179438_f();
-			return this.field_179442_b.getDistanceSqToEntity(entitylivingbase) > d0 * d0 ? false
+			double d0 = this.getFollowRange();
+			return this.mob.getDistanceSqToEntity(entitylivingbase) > d0 * d0 ? false
 					: !(entitylivingbase instanceof EntityPlayerMP)
 							|| !((EntityPlayerMP) entitylivingbase).theItemInWorldManager.isCreative();
 		}
@@ -101,7 +101,7 @@ public class EntityAIFindEntityNearest extends EntityAIBase {
 	 * Execute a one shot task or start executing a continuous task
 	 */
 	public void startExecuting() {
-		this.field_179442_b.setAttackTarget(this.field_179441_e);
+		this.mob.setAttackTarget(this.target);
 		super.startExecuting();
 	}
 
@@ -109,12 +109,12 @@ public class EntityAIFindEntityNearest extends EntityAIBase {
 	 * Resets the task
 	 */
 	public void resetTask() {
-		this.field_179442_b.setAttackTarget((EntityLivingBase) null);
+		this.mob.setAttackTarget((EntityLivingBase) null);
 		super.startExecuting();
 	}
 
-	protected double func_179438_f() {
-		IAttributeInstance iattributeinstance = this.field_179442_b
+	protected double getFollowRange() {
+		IAttributeInstance iattributeinstance = this.mob
 				.getEntityAttribute(SharedMonsterAttributes.followRange);
 		return iattributeinstance == null ? 16.0D : iattributeinstance.getAttributeValue();
 	}

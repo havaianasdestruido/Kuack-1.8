@@ -10,7 +10,7 @@
 		"GlStateManager.doPolygonOffset": "GL11.glPolygonOffset",
 		"GlStateManager.colorLogicOp": "GL11.glLogicOp",
 		"GlStateManager.texGen": "GL11.glTexGeni",
-		"GlStateManager.func_179105_a": "GL11.glTexGen",
+		"GlStateManager.texGenPlane": "GL11.glTexGen",
 		"GlStateManager.setActiveTexture": "GL13.glActiveTexture",
 		"GlStateManager.shadeModel": "GL11.glShadeModel",
 		"GlStateManager.clear": "GL11.glClear",

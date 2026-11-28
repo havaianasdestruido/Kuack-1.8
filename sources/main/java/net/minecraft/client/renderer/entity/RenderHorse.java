@@ -69,7 +69,7 @@ public class RenderHorse extends RenderLiving<EntityHorse> {
 	 * be called unless you call Render.bindEntityTexture.
 	 */
 	protected ResourceLocation getEntityTexture(EntityHorse entityhorse) {
-		if (!entityhorse.func_110239_cn()) {
+		if (!entityhorse.hasLayeredTextures()) {
 			switch (entityhorse.getHorseType()) {
 			case 0:
 			default:
@@ -90,7 +90,7 @@ public class RenderHorse extends RenderLiving<EntityHorse> {
 
 	private ResourceLocation func_110848_b(EntityHorse horse) {
 		String s = horse.getHorseTexture();
-		if (!horse.func_175507_cI()) {
+		if (!horse.EntityHorseHasTexture()) {
 			return null;
 		} else {
 			ResourceLocation resourcelocation = (ResourceLocation) field_110852_a.get(s);

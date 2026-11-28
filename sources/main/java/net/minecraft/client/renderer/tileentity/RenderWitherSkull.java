@@ -40,7 +40,7 @@ public class RenderWitherSkull extends Render<EntityWitherSkull> {
 		super(renderManagerIn);
 	}
 
-	private float func_82400_a(float parFloat1, float parFloat2, float parFloat3) {
+	private float getRenderYaw(float parFloat1, float parFloat2, float parFloat3) {
 		float f;
 		for (f = parFloat2 - parFloat1; f < -180.0F; f += 360.0F) {
 			;
@@ -65,7 +65,7 @@ public class RenderWitherSkull extends Render<EntityWitherSkull> {
 	public void doRender(EntityWitherSkull entitywitherskull, double d0, double d1, double d2, float f, float f1) {
 		GlStateManager.pushMatrix();
 		GlStateManager.disableCull();
-		float f2 = this.func_82400_a(entitywitherskull.prevRotationYaw, entitywitherskull.rotationYaw, f1);
+		float f2 = this.getRenderYaw(entitywitherskull.prevRotationYaw, entitywitherskull.rotationYaw, f1);
 		float f3 = entitywitherskull.prevRotationPitch
 				+ (entitywitherskull.rotationPitch - entitywitherskull.prevRotationPitch) * f1;
 		GlStateManager.translate((float) d0, (float) d1, (float) d2);

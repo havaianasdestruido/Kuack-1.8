@@ -97,7 +97,7 @@ public class ItemBlock extends Item {
 			if (parItemStack.hasTagCompound() && parItemStack.getTagCompound().hasKey("BlockEntityTag", 10)) {
 				TileEntity tileentity = worldIn.getTileEntity(stack);
 				if (tileentity != null) {
-					if (!worldIn.isRemote && tileentity.func_183000_F()
+					if (!worldIn.isRemote && tileentity.onlyOpsCanSetNbt()
 							&& !minecraftserver.getConfigurationManager().canSendCommands(pos.getGameProfile())) {
 						return false;
 					}

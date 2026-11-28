@@ -106,7 +106,7 @@ public class TileEntityBrewingStand extends TileEntityLockable implements ITicka
 		}
 
 		if (!this.worldObj.isRemote) {
-			boolean[] aboolean = this.func_174902_m();
+			boolean[] aboolean = this.createFilledSlotsArray();
 			if (!Arrays.equals(aboolean, this.filledSlots)) {
 				this.filledSlots = aboolean;
 				IBlockState iblockstate = this.worldObj.getBlockState(this.getPos());
@@ -321,7 +321,7 @@ public class TileEntityBrewingStand extends TileEntityLockable implements ITicka
 				: itemstack.getItem() == Items.potionitem || itemstack.getItem() == Items.glass_bottle;
 	}
 
-	public boolean[] func_174902_m() {
+	public boolean[] createFilledSlotsArray() {
 		boolean[] aboolean = new boolean[3];
 
 		for (int i = 0; i < 3; ++i) {

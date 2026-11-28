@@ -90,8 +90,8 @@ public class ModelIronGolem extends ModelBase {
 	public void setRotationAngles(float f, float f1, float var3, float f2, float f3, float var6, Entity var7) {
 		this.ironGolemHead.rotateAngleY = f2 / 57.295776F;
 		this.ironGolemHead.rotateAngleX = f3 / 57.295776F;
-		this.ironGolemLeftLeg.rotateAngleX = -1.5F * this.func_78172_a(f, 13.0F) * f1;
-		this.ironGolemRightLeg.rotateAngleX = 1.5F * this.func_78172_a(f, 13.0F) * f1;
+		this.ironGolemLeftLeg.rotateAngleX = -1.5F * this.triangleWave(f, 13.0F) * f1;
+		this.ironGolemRightLeg.rotateAngleX = 1.5F * this.triangleWave(f, 13.0F) * f1;
 		this.ironGolemLeftLeg.rotateAngleY = 0.0F;
 		this.ironGolemRightLeg.rotateAngleY = 0.0F;
 	}
@@ -105,22 +105,22 @@ public class ModelIronGolem extends ModelBase {
 		EntityIronGolem entityirongolem = (EntityIronGolem) entitylivingbase;
 		int i = entityirongolem.getAttackTimer();
 		if (i > 0) {
-			this.ironGolemRightArm.rotateAngleX = -2.0F + 1.5F * this.func_78172_a((float) i - f2, 10.0F);
-			this.ironGolemLeftArm.rotateAngleX = -2.0F + 1.5F * this.func_78172_a((float) i - f2, 10.0F);
+			this.ironGolemRightArm.rotateAngleX = -2.0F + 1.5F * this.triangleWave((float) i - f2, 10.0F);
+			this.ironGolemLeftArm.rotateAngleX = -2.0F + 1.5F * this.triangleWave((float) i - f2, 10.0F);
 		} else {
 			int j = entityirongolem.getHoldRoseTick();
 			if (j > 0) {
-				this.ironGolemRightArm.rotateAngleX = -0.8F + 0.025F * this.func_78172_a((float) j, 70.0F);
+				this.ironGolemRightArm.rotateAngleX = -0.8F + 0.025F * this.triangleWave((float) j, 70.0F);
 				this.ironGolemLeftArm.rotateAngleX = 0.0F;
 			} else {
-				this.ironGolemRightArm.rotateAngleX = (-0.2F + 1.5F * this.func_78172_a(f, 13.0F)) * f1;
-				this.ironGolemLeftArm.rotateAngleX = (-0.2F - 1.5F * this.func_78172_a(f, 13.0F)) * f1;
+				this.ironGolemRightArm.rotateAngleX = (-0.2F + 1.5F * this.triangleWave(f, 13.0F)) * f1;
+				this.ironGolemLeftArm.rotateAngleX = (-0.2F - 1.5F * this.triangleWave(f, 13.0F)) * f1;
 			}
 		}
 
 	}
 
-	private float func_78172_a(float parFloat1, float parFloat2) {
+	private float triangleWave(float parFloat1, float parFloat2) {
 		return (Math.abs(parFloat1 % parFloat2 - parFloat2 * 0.5F) - parFloat2 * 0.25F) / (parFloat2 * 0.25F);
 	}
 }

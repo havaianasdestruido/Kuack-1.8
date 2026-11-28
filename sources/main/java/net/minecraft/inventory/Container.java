@@ -589,7 +589,7 @@ public abstract class Container {
 		return parInt1 & 3;
 	}
 
-	public static int func_94534_d(int parInt1, int parInt2) {
+	public static int getQuickcraftMask(int parInt1, int parInt2) {
 		return parInt1 & 3 | (parInt2 & 3) << 2;
 	}
 

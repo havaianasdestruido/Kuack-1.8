@@ -46,9 +46,9 @@ public class StatisticsFile extends StatFileWriter {
 	private static final Logger logger = LogManager.getLogger();
 	private final MinecraftServer mcServer;
 	private final VFile2 statsFile;
-	private final Set<StatBase> field_150888_e = Sets.newHashSet();
-	private int field_150885_f = -300;
-	private boolean field_150886_g = false;
+	private final Set<StatBase> dirty = Sets.newHashSet();
+	private int lastStatRequest = -300;
+	private boolean hasUnsentAchievement = false;
 
 	public StatisticsFile(MinecraftServer serverIn, VFile2 statsFileIn) {
 		this.mcServer = serverIn;
@@ -78,30 +78,30 @@ public class StatisticsFile extends StatFileWriter {
 	public void unlockAchievement(EntityPlayer playerIn, StatBase statIn, int parInt1) {
 		int i = statIn.isAchievement() ? this.readStat(statIn) : 0;
 		super.unlockAchievement(playerIn, statIn, parInt1);
-		this.field_150888_e.add(statIn);
+		this.dirty.add(statIn);
 		if (statIn.isAchievement() && i == 0 && parInt1 > 0) {
-			this.field_150886_g = true;
+			this.hasUnsentAchievement = true;
 			if (this.mcServer.isAnnouncingPlayerAchievements()) {
 				this.mcServer.getConfigurationManager().sendChatMsg(new ChatComponentTranslation(
-						"chat.type.achievement", new Object[] { playerIn.getDisplayName(), statIn.func_150955_j() }));
+						"chat.type.achievement", new Object[] { playerIn.getDisplayName(), statIn.createChatComponent() }));
 			}
 		}
 
 		if (statIn.isAchievement() && i > 0 && parInt1 == 0) {
-			this.field_150886_g = true;
+			this.hasUnsentAchievement = true;
 			if (this.mcServer.isAnnouncingPlayerAchievements()) {
 				this.mcServer.getConfigurationManager()
 						.sendChatMsg(new ChatComponentTranslation("chat.type.achievement.taken",
-								new Object[] { playerIn.getDisplayName(), statIn.func_150955_j() }));
+								new Object[] { playerIn.getDisplayName(), statIn.createChatComponent() }));
 			}
 		}
 
 	}
 
-	public Set<StatBase> func_150878_c() {
-		HashSet hashset = Sets.newHashSet(this.field_150888_e);
-		this.field_150888_e.clear();
-		this.field_150886_g = false;
+	public Set<StatBase> getDirty() {
+		HashSet hashset = Sets.newHashSet(this.dirty);
+		this.dirty.clear();
+		this.hasUnsentAchievement = false;
 		return hashset;
 	}
 
@@ -180,20 +180,20 @@ public class StatisticsFile extends StatFileWriter {
 		return jsonobject.toString();
 	}
 
-	public void func_150877_d() {
+	public void markAllDirty() {
 		for (StatBase statbase : this.statsData.keySet()) {
-			this.field_150888_e.add(statbase);
+			this.dirty.add(statbase);
 		}
 
 	}
 
-	public void func_150876_a(EntityPlayerMP parEntityPlayerMP) {
+	public void sendStats(EntityPlayerMP parEntityPlayerMP) {
 		int i = this.mcServer.getTickCounter();
 		HashMap hashmap = Maps.newHashMap();
-		if (this.field_150886_g || i - this.field_150885_f > 300) {
-			this.field_150885_f = i;
+		if (this.hasUnsentAchievement || i - this.lastStatRequest > 300) {
+			this.lastStatRequest = i;
 
-			for (StatBase statbase : this.func_150878_c()) {
+			for (StatBase statbase : this.getDirty()) {
 				hashmap.put(statbase, Integer.valueOf(this.readStat(statbase)));
 			}
 		}
@@ -208,14 +208,14 @@ public class StatisticsFile extends StatFileWriter {
 			Achievement achievement = AchievementList.achievementList.get(i);
 			if (this.hasAchievementUnlocked(achievement)) {
 				hashmap.put(achievement, Integer.valueOf(this.readStat(achievement)));
-				this.field_150888_e.remove(achievement);
+				this.dirty.remove(achievement);
 			}
 		}
 
 		player.playerNetServerHandler.sendPacket(new S37PacketStatistics(hashmap));
 	}
 
-	public boolean func_150879_e() {
-		return this.field_150886_g;
+	public boolean StatisticsFileHasUnsentAchievement() {
+		return this.hasUnsentAchievement;
 	}
 }

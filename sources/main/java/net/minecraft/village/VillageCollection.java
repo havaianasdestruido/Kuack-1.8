@@ -168,7 +168,7 @@ public class VillageCollection extends WorldSavedData {
 						if (villagedoorinfo == null) {
 							this.addToNewDoorsList(blockpos);
 						} else {
-							villagedoorinfo.func_179849_a(this.tickCounter);
+							villagedoorinfo.setLastActivityTimestamp(this.tickCounter);
 						}
 					}
 				}

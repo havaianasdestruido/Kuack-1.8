@@ -90,7 +90,7 @@ import net.minecraft.util.Vec3i;
 public class RenderItem implements IResourceManagerReloadListener {
 	private static final ResourceLocation RES_ITEM_GLINT = new ResourceLocation(
 			"textures/misc/enchanted_item_glint.png");
-	private boolean field_175058_l = true;
+	private boolean notRenderingEffectsInGUI = true;
 	public float zLevel;
 	private final ItemModelMesher itemModelMesher;
 	private final TextureManager textureManager;
@@ -101,8 +101,8 @@ public class RenderItem implements IResourceManagerReloadListener {
 		this.registerItems();
 	}
 
-	public void func_175039_a(boolean parFlag) {
-		this.field_175058_l = parFlag;
+	public void isNotRenderingEffectsInGUI(boolean parFlag) {
+		this.notRenderingEffectsInGUI = parFlag;
 	}
 
 	public ItemModelMesher getItemModelMesher() {
@@ -325,7 +325,7 @@ public class RenderItem implements IResourceManagerReloadListener {
 		}
 	}
 
-	public void func_181564_a(ItemStack parItemStack, ItemCameraTransforms.TransformType parTransformType) {
+	public void RenderItemRenderItem(ItemStack parItemStack, ItemCameraTransforms.TransformType parTransformType) {
 		if (parItemStack != null) {
 			IBakedModel ibakedmodel = this.itemModelMesher.getItemModel(parItemStack);
 			this.renderItemModelTransform(parItemStack, ibakedmodel, parTransformType);
@@ -375,7 +375,7 @@ public class RenderItem implements IResourceManagerReloadListener {
 		ItemCameraTransforms itemcameratransforms = model.getItemCameraTransforms();
 		itemcameratransforms.applyTransform(cameraTransformType);
 		boolean flag = DeferredStateManager.isEnableShadowRender();
-		if (this.func_183005_a(itemcameratransforms.getTransform(cameraTransformType))) {
+		if (this.isThereOneNegativeScale(itemcameratransforms.getTransform(cameraTransformType))) {
 			GlStateManager.cullFace(flag ? GL_BACK : GL_FRONT);
 		}
 
@@ -388,7 +388,7 @@ public class RenderItem implements IResourceManagerReloadListener {
 		this.textureManager.getTexture(TextureMap.locationBlocksTexture).restoreLastBlurMipmap();
 	}
 
-	private boolean func_183005_a(ItemTransformVec3f parItemTransformVec3f) {
+	private boolean isThereOneNegativeScale(ItemTransformVec3f parItemTransformVec3f) {
 		return parItemTransformVec3f.scale.x < 0.0F ^ parItemTransformVec3f.scale.y < 0.0F
 				^ parItemTransformVec3f.scale.z < 0.0F;
 	}
@@ -506,9 +506,9 @@ public class RenderItem implements IResourceManagerReloadListener {
 				GlStateManager.disableBlend();
 				Tessellator tessellator = Tessellator.getInstance();
 				WorldRenderer worldrenderer = tessellator.getWorldRenderer();
-				this.func_181565_a(worldrenderer, xPosition + 2, yPosition + 13, 13, 2, 0, 0, 0, 255);
-				this.func_181565_a(worldrenderer, xPosition + 2, yPosition + 13, 12, 1, (255 - i) / 4, 64, 0, 255);
-				this.func_181565_a(worldrenderer, xPosition + 2, yPosition + 13, j, 1, 255 - i, i, 0, 255);
+				this.RenderItemDraw(worldrenderer, xPosition + 2, yPosition + 13, 13, 2, 0, 0, 0, 255);
+				this.RenderItemDraw(worldrenderer, xPosition + 2, yPosition + 13, 12, 1, (255 - i) / 4, 64, 0, 255);
+				this.RenderItemDraw(worldrenderer, xPosition + 2, yPosition + 13, j, 1, 255 - i, i, 0, 255);
 				GlStateManager.enableBlend();
 				GlStateManager.enableAlpha();
 				GlStateManager.enableTexture2D();
@@ -519,7 +519,7 @@ public class RenderItem implements IResourceManagerReloadListener {
 		}
 	}
 
-	private void func_181565_a(WorldRenderer parWorldRenderer, int parInt1, int parInt2, int parInt3, int parInt4,
+	private void RenderItemDraw(WorldRenderer parWorldRenderer, int parInt1, int parInt2, int parInt3, int parInt4,
 			int parInt5, int parInt6, int parInt7, int parInt8) {
 		parWorldRenderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
 		parWorldRenderer.pos((double) (parInt1 + 0), (double) (parInt2 + 0), 0.0D)

@@ -33,24 +33,24 @@ import net.minecraft.world.biome.BiomeGenBase;
  * 
  */
 public class MapGenStronghold extends MapGenStructure {
-	private List<BiomeGenBase> field_151546_e;
+	private List<BiomeGenBase> allowedBiomes;
 	private boolean ranBiomeCheck;
 	private ChunkCoordIntPair[] structureCoords;
-	private double field_82671_h;
-	private int field_82672_i;
+	private double distance;
+	private int spread;
 
 	public MapGenStronghold(boolean scramble) {
 		super(scramble);
 		this.structureCoords = new ChunkCoordIntPair[3];
-		this.field_82671_h = 32.0D;
-		this.field_82672_i = 3;
-		this.field_151546_e = Lists.newArrayList();
+		this.distance = 32.0D;
+		this.spread = 3;
+		this.allowedBiomes = Lists.newArrayList();
 
 		BiomeGenBase[] biomes = BiomeGenBase.getBiomeGenArray();
 		for (int i = 0; i < biomes.length; ++i) {
 			BiomeGenBase biomegenbase = biomes[i];
 			if (biomegenbase != null && biomegenbase.minHeight > 0.0F) {
-				this.field_151546_e.add(biomegenbase);
+				this.allowedBiomes.add(biomegenbase);
 			}
 		}
 
@@ -61,13 +61,13 @@ public class MapGenStronghold extends MapGenStructure {
 
 		for (Entry entry : parMap.entrySet()) {
 			if (((String) entry.getKey()).equals("distance")) {
-				this.field_82671_h = MathHelper.parseDoubleWithDefaultAndMax((String) entry.getValue(),
-						this.field_82671_h, 1.0D);
+				this.distance = MathHelper.parseDoubleWithDefaultAndMax((String) entry.getValue(),
+						this.distance, 1.0D);
 			} else if (((String) entry.getKey()).equals("count")) {
 				this.structureCoords = new ChunkCoordIntPair[MathHelper
 						.parseIntWithDefaultAndMax((String) entry.getValue(), this.structureCoords.length, 1)];
 			} else if (((String) entry.getKey()).equals("spread")) {
-				this.field_82672_i = MathHelper.parseIntWithDefaultAndMax((String) entry.getValue(), this.field_82672_i,
+				this.spread = MathHelper.parseIntWithDefaultAndMax((String) entry.getValue(), this.spread,
 						1);
 			}
 		}
@@ -86,21 +86,21 @@ public class MapGenStronghold extends MapGenStructure {
 			int k = 1;
 
 			for (int l = 0; l < this.structureCoords.length; ++l) {
-				double d1 = (1.25D * (double) k + random.nextDouble()) * this.field_82671_h * (double) k;
+				double d1 = (1.25D * (double) k + random.nextDouble()) * this.distance * (double) k;
 				int i1 = (int) Math.round(Math.cos(d0) * d1);
 				int j1 = (int) Math.round(Math.sin(d0) * d1);
 				BlockPos blockpos = this.worldObj.getWorldChunkManager().findBiomePosition((i1 << 4) + 8, (j1 << 4) + 8,
-						112, this.field_151546_e, random);
+						112, this.allowedBiomes, random);
 				if (blockpos != null) {
 					i1 = blockpos.getX() >> 4;
 					j1 = blockpos.getZ() >> 4;
 				}
 
 				this.structureCoords[l] = new ChunkCoordIntPair(i1, j1);
-				d0 += 6.283185307179586D * (double) k / (double) this.field_82672_i;
-				if (l == this.field_82672_i) {
+				d0 += 6.283185307179586D * (double) k / (double) this.spread;
+				if (l == this.spread) {
 					k += 2 + random.nextInt(5);
-					this.field_82672_i += 1 + random.nextInt(2);
+					this.spread += 1 + random.nextInt(2);
 				}
 			}
 
@@ -160,7 +160,7 @@ public class MapGenStronghold extends MapGenStructure {
 			this.components.add(structurestrongholdpieces$stairs2);
 			structurestrongholdpieces$stairs2.buildComponent(structurestrongholdpieces$stairs2, this.components,
 					parRandom);
-			List list = structurestrongholdpieces$stairs2.field_75026_c;
+			List list = structurestrongholdpieces$stairs2.pendingChildren;
 
 			while (!list.isEmpty()) {
 				int i = parRandom.nextInt(list.size());

@@ -59,7 +59,7 @@ public class WorldGenBigMushroom extends WorldGenerator {
 				for (int k = blockpos.getX() - b0; k <= blockpos.getX() + b0 && flag; ++k) {
 					for (int l = blockpos.getZ() - b0; l <= blockpos.getZ() + b0 && flag; ++l) {
 						if (j >= 0 && j < 256) {
-							Block block = world.getBlockState(blockpos$mutableblockpos.func_181079_c(k, j, l))
+							Block block = world.getBlockState(blockpos$mutableblockpos.setPos(k, j, l))
 									.getBlock();
 							if (block.getMaterial() != Material.air && block.getMaterial() != Material.leaves) {
 								flag = false;

@@ -49,7 +49,7 @@ public abstract class GuiSlot {
 	private int scrollDownButtonID;
 	protected int mouseX;
 	protected int mouseY;
-	protected boolean field_148163_i = true;
+	protected boolean centerListVertically = true;
 	/**+
 	 * Where the mouse was in the window when you first clicked to
 	 * scroll
@@ -62,7 +62,7 @@ public abstract class GuiSlot {
 	 */
 	protected int selectedElement = -1;
 	protected long lastClicked;
-	protected boolean field_178041_q = true;
+	protected boolean visible = true;
 	/**+
 	 * Set to true if a selected element in this gui will show an
 	 * outline box
@@ -125,7 +125,7 @@ public abstract class GuiSlot {
 
 	protected abstract void drawBackground();
 
-	protected void func_178040_a(int var1, int var2, int var3) {
+	protected void updateItemPos(int var1, int var2, int var3) {
 	}
 
 	protected abstract void drawSlot(int var1, int var2, int var3, int var4, int var5, int var6);
@@ -136,10 +136,10 @@ public abstract class GuiSlot {
 	protected void drawListHeader(int parInt1, int parInt2, Tessellator parTessellator) {
 	}
 
-	protected void func_148132_a(int parInt1, int parInt2) {
+	protected void clickedHeader(int parInt1, int parInt2) {
 	}
 
-	protected void func_148142_b(int parInt1, int parInt2) {
+	protected void renderDecorations(int parInt1, int parInt2) {
 	}
 
 	public int getSlotIndexFromScreenCoords(int parInt1, int parInt2) {
@@ -165,10 +165,10 @@ public abstract class GuiSlot {
 	 * Stop the thing from scrolling out of bounds
 	 */
 	protected void bindAmountScrolled() {
-		this.amountScrolled = MathHelper.clamp_float(this.amountScrolled, 0.0F, (float) this.func_148135_f());
+		this.amountScrolled = MathHelper.clamp_float(this.amountScrolled, 0.0F, (float) this.getMaxScroll());
 	}
 
-	public int func_148135_f() {
+	public int getMaxScroll() {
 		return Math.max(0, this.getContentHeight() - (this.bottom - this.top - 4));
 	}
 
@@ -209,7 +209,7 @@ public abstract class GuiSlot {
 	}
 
 	public void drawScreen(int mouseXIn, int mouseYIn, float parFloat1) {
-		if (this.field_178041_q) {
+		if (this.visible) {
 			this.mouseX = mouseXIn;
 			this.mouseY = mouseYIn;
 			this.drawBackground();
@@ -277,7 +277,7 @@ public abstract class GuiSlot {
 			worldrenderer.pos((double) this.left, (double) (this.bottom - b0), 0.0D).tex(0.0D, 0.0D).color(0, 0, 0, 0)
 					.endVertex();
 			tessellator.draw();
-			int i1 = this.func_148135_f();
+			int i1 = this.getMaxScroll();
 			if (i1 > 0) {
 				int j1 = (this.bottom - this.top) * (this.bottom - this.top) / this.getContentHeight();
 				j1 = MathHelper.clamp_int(j1, 32, this.bottom - this.top - 8);
@@ -313,7 +313,7 @@ public abstract class GuiSlot {
 				tessellator.draw();
 			}
 
-			this.func_148142_b(mouseXIn, mouseYIn);
+			this.renderDecorations(mouseXIn, mouseYIn);
 			GlStateManager.enableTexture2D();
 			GlStateManager.shadeModel(GL_FLAT);
 			GlStateManager.enableAlpha();
@@ -333,7 +333,7 @@ public abstract class GuiSlot {
 					this.elementClicked(l, false, this.mouseX, this.mouseY);
 					this.selectedElement = l;
 				} else if (this.mouseX >= i && this.mouseX <= j && k < 0) {
-					this.func_148132_a(this.mouseX - i, this.mouseY - this.top + (int) this.amountScrolled - 4);
+					this.clickedHeader(this.mouseX - i, this.mouseY - this.top + (int) this.amountScrolled - 4);
 				}
 			}
 
@@ -352,7 +352,7 @@ public abstract class GuiSlot {
 							this.selectedElement = i1;
 							this.lastClicked = Minecraft.getSystemTime();
 						} else if (this.mouseX >= j2 && this.mouseX <= k2 && l2 < 0) {
-							this.func_148132_a(this.mouseX - j2,
+							this.clickedHeader(this.mouseX - j2,
 									this.mouseY - this.top + (int) this.amountScrolled - 4);
 							flag1 = false;
 						}
@@ -361,7 +361,7 @@ public abstract class GuiSlot {
 						int j1 = i3 + 6;
 						if (this.mouseX >= i3 && this.mouseX <= j1) {
 							this.scrollMultiplier = -1.0F;
-							int k1 = this.func_148135_f();
+							int k1 = this.getMaxScroll();
 							if (k1 < 1) {
 								k1 = 1;
 							}
@@ -433,7 +433,7 @@ public abstract class GuiSlot {
 			int k = mouseYIn + j * this.slotHeight + this.headerPadding;
 			int l = this.slotHeight - 4;
 			if (k > this.bottom || k + l < this.top) {
-				this.func_178040_a(j, mouseXIn, k);
+				this.updateItemPos(j, mouseXIn, k);
 			}
 
 			if (this.showSelectionBox && this.isSelected(j)) {

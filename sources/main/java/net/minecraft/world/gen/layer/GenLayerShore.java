@@ -61,8 +61,8 @@ public class GenLayerShore extends GenLayer {
 					int l3 = aint[j1 + 1 + 1 + (i1 + 1) * (k + 2)];
 					int k4 = aint[j1 + 1 - 1 + (i1 + 1) * (k + 2)];
 					int j5 = aint[j1 + 1 + (i1 + 1 + 1) * (k + 2)];
-					if (this.func_151631_c(i3) && this.func_151631_c(l3) && this.func_151631_c(k4)
-							&& this.func_151631_c(j5)) {
+					if (this.isJungleCompatible(i3) && this.isJungleCompatible(l3) && this.isJungleCompatible(k4)
+							&& this.isJungleCompatible(j5)) {
 						if (!isBiomeOceanic(i3) && !isBiomeOceanic(l3) && !isBiomeOceanic(k4) && !isBiomeOceanic(j5)) {
 							aint1[j1 + i1 * k] = k1;
 						} else {
@@ -74,7 +74,7 @@ public class GenLayerShore extends GenLayer {
 				} else if (k1 != BiomeGenBase.extremeHills.biomeID && k1 != BiomeGenBase.extremeHillsPlus.biomeID
 						&& k1 != BiomeGenBase.extremeHillsEdge.biomeID) {
 					if (biomegenbase != null && biomegenbase.isSnowyBiome()) {
-						this.func_151632_a(aint, aint1, j1, i1, k, k1, BiomeGenBase.coldBeach.biomeID);
+						this.replaceIfNeighborOcean(aint, aint1, j1, i1, k, k1, BiomeGenBase.coldBeach.biomeID);
 					} else if (k1 != BiomeGenBase.mesa.biomeID && k1 != BiomeGenBase.mesaPlateau_F.biomeID) {
 						if (k1 != BiomeGenBase.ocean.biomeID && k1 != BiomeGenBase.deepOcean.biomeID
 								&& k1 != BiomeGenBase.river.biomeID && k1 != BiomeGenBase.swampland.biomeID) {
@@ -97,8 +97,8 @@ public class GenLayerShore extends GenLayer {
 						int j2 = aint[j1 + 1 - 1 + (i1 + 1) * (k + 2)];
 						int k2 = aint[j1 + 1 + (i1 + 1 + 1) * (k + 2)];
 						if (!isBiomeOceanic(l1) && !isBiomeOceanic(i2) && !isBiomeOceanic(j2) && !isBiomeOceanic(k2)) {
-							if (this.func_151633_d(l1) && this.func_151633_d(i2) && this.func_151633_d(j2)
-									&& this.func_151633_d(k2)) {
+							if (this.isMesa(l1) && this.isMesa(i2) && this.isMesa(j2)
+									&& this.isMesa(k2)) {
 								aint1[j1 + i1 * k] = k1;
 							} else {
 								aint1[j1 + i1 * k] = BiomeGenBase.desert.biomeID;
@@ -108,7 +108,7 @@ public class GenLayerShore extends GenLayer {
 						}
 					}
 				} else {
-					this.func_151632_a(aint, aint1, j1, i1, k, k1, BiomeGenBase.stoneBeach.biomeID);
+					this.replaceIfNeighborOcean(aint, aint1, j1, i1, k, k1, BiomeGenBase.stoneBeach.biomeID);
 				}
 			}
 		}
@@ -116,7 +116,7 @@ public class GenLayerShore extends GenLayer {
 		return aint1;
 	}
 
-	private void func_151632_a(int[] parArrayOfInt, int[] parArrayOfInt2, int parInt1, int parInt2, int parInt3,
+	private void replaceIfNeighborOcean(int[] parArrayOfInt, int[] parArrayOfInt2, int parInt1, int parInt2, int parInt3,
 			int parInt4, int parInt5) {
 		if (isBiomeOceanic(parInt4)) {
 			parArrayOfInt2[parInt1 + parInt2 * parInt3] = parInt4;
@@ -134,7 +134,7 @@ public class GenLayerShore extends GenLayer {
 		}
 	}
 
-	private boolean func_151631_c(int parInt1) {
+	private boolean isJungleCompatible(int parInt1) {
 		return BiomeGenBase.getBiome(parInt1) != null
 				&& BiomeGenBase.getBiome(parInt1).getBiomeClass() == BiomeGenJungle.class
 						? true
@@ -143,7 +143,7 @@ public class GenLayerShore extends GenLayer {
 								|| parInt1 == BiomeGenBase.taiga.biomeID || isBiomeOceanic(parInt1);
 	}
 
-	private boolean func_151633_d(int parInt1) {
+	private boolean isMesa(int parInt1) {
 		return BiomeGenBase.getBiome(parInt1) instanceof BiomeGenMesa;
 	}
 }

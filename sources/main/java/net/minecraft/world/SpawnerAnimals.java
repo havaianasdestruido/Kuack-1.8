@@ -187,7 +187,7 @@ public final class SpawnerAnimals {
 		Chunk chunk = worldIn.getChunkFromChunkCoords(x, z);
 		int i = x * 16 + worldIn.rand.nextInt(16);
 		int j = z * 16 + worldIn.rand.nextInt(16);
-		int k = MathHelper.func_154354_b(chunk.getHeight(new BlockPos(i, 0, j)) + 1, 16);
+		int k = MathHelper.roundUp(chunk.getHeight(new BlockPos(i, 0, j)) + 1, 16);
 		int l = worldIn.rand.nextInt(k > 0 ? k : chunk.getTopFilledSegment() + 16 - 1);
 		return new BlockPos(i, l, j);
 	}

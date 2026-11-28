@@ -25,27 +25,27 @@ import net.minecraft.world.gen.ChunkProviderSettings;
  * 
  */
 public class GenLayerBiome extends GenLayer {
-	private BiomeGenBase[] field_151623_c = new BiomeGenBase[] { BiomeGenBase.desert, BiomeGenBase.desert,
+	private BiomeGenBase[] warmBiomes = new BiomeGenBase[] { BiomeGenBase.desert, BiomeGenBase.desert,
 			BiomeGenBase.desert, BiomeGenBase.savanna, BiomeGenBase.savanna, BiomeGenBase.plains };
-	private BiomeGenBase[] field_151621_d = new BiomeGenBase[] { BiomeGenBase.forest, BiomeGenBase.roofedForest,
+	private BiomeGenBase[] mediumBiomes = new BiomeGenBase[] { BiomeGenBase.forest, BiomeGenBase.roofedForest,
 			BiomeGenBase.extremeHills, BiomeGenBase.plains, BiomeGenBase.birchForest, BiomeGenBase.swampland };
-	private BiomeGenBase[] field_151622_e = new BiomeGenBase[] { BiomeGenBase.forest, BiomeGenBase.extremeHills,
+	private BiomeGenBase[] coldBiomes = new BiomeGenBase[] { BiomeGenBase.forest, BiomeGenBase.extremeHills,
 			BiomeGenBase.taiga, BiomeGenBase.plains };
-	private BiomeGenBase[] field_151620_f = new BiomeGenBase[] { BiomeGenBase.icePlains, BiomeGenBase.icePlains,
+	private BiomeGenBase[] iceBiomes = new BiomeGenBase[] { BiomeGenBase.icePlains, BiomeGenBase.icePlains,
 			BiomeGenBase.icePlains, BiomeGenBase.coldTaiga };
-	private final ChunkProviderSettings field_175973_g;
+	private final ChunkProviderSettings settings;
 
 	public GenLayerBiome(long parLong1, GenLayer parGenLayer, WorldType parWorldType, String parString1) {
 		super(parLong1);
 		this.parent = parGenLayer;
 		if (parWorldType == WorldType.DEFAULT_1_1) {
-			this.field_151623_c = new BiomeGenBase[] { BiomeGenBase.desert, BiomeGenBase.forest,
+			this.warmBiomes = new BiomeGenBase[] { BiomeGenBase.desert, BiomeGenBase.forest,
 					BiomeGenBase.extremeHills, BiomeGenBase.swampland, BiomeGenBase.plains, BiomeGenBase.taiga };
-			this.field_175973_g = null;
+			this.settings = null;
 		} else if (parWorldType == WorldType.CUSTOMIZED) {
-			this.field_175973_g = ChunkProviderSettings.Factory.jsonToFactory(parString1).func_177864_b();
+			this.settings = ChunkProviderSettings.Factory.jsonToFactory(parString1).build();
 		} else {
-			this.field_175973_g = null;
+			this.settings = null;
 		}
 
 	}
@@ -66,8 +66,8 @@ public class GenLayerBiome extends GenLayer {
 				int k1 = aint[j1 + i1 * k];
 				int l1 = (k1 & 3840) >> 8;
 				k1 = k1 & -3841;
-				if (this.field_175973_g != null && this.field_175973_g.fixedBiome >= 0) {
-					aint1[j1 + i1 * k] = this.field_175973_g.fixedBiome;
+				if (this.settings != null && this.settings.fixedBiome >= 0) {
+					aint1[j1 + i1 * k] = this.settings.fixedBiome;
 				} else if (isBiomeOceanic(k1)) {
 					aint1[j1 + i1 * k] = k1;
 				} else if (k1 == BiomeGenBase.mushroomIsland.biomeID) {
@@ -80,22 +80,22 @@ public class GenLayerBiome extends GenLayer {
 							aint1[j1 + i1 * k] = BiomeGenBase.mesaPlateau_F.biomeID;
 						}
 					} else {
-						aint1[j1 + i1 * k] = this.field_151623_c[this.nextInt(this.field_151623_c.length)].biomeID;
+						aint1[j1 + i1 * k] = this.warmBiomes[this.nextInt(this.warmBiomes.length)].biomeID;
 					}
 				} else if (k1 == 2) {
 					if (l1 > 0) {
 						aint1[j1 + i1 * k] = BiomeGenBase.jungle.biomeID;
 					} else {
-						aint1[j1 + i1 * k] = this.field_151621_d[this.nextInt(this.field_151621_d.length)].biomeID;
+						aint1[j1 + i1 * k] = this.mediumBiomes[this.nextInt(this.mediumBiomes.length)].biomeID;
 					}
 				} else if (k1 == 3) {
 					if (l1 > 0) {
 						aint1[j1 + i1 * k] = BiomeGenBase.megaTaiga.biomeID;
 					} else {
-						aint1[j1 + i1 * k] = this.field_151622_e[this.nextInt(this.field_151622_e.length)].biomeID;
+						aint1[j1 + i1 * k] = this.coldBiomes[this.nextInt(this.coldBiomes.length)].biomeID;
 					}
 				} else if (k1 == 4) {
-					aint1[j1 + i1 * k] = this.field_151620_f[this.nextInt(this.field_151620_f.length)].biomeID;
+					aint1[j1 + i1 * k] = this.iceBiomes[this.nextInt(this.iceBiomes.length)].biomeID;
 				} else {
 					aint1[j1 + i1 * k] = BiomeGenBase.mushroomIsland.biomeID;
 				}

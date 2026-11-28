@@ -290,7 +290,7 @@ public class EntityOcelot extends EntityTameable {
 				&& this.worldObj.getCollidingBoundingBoxes(this, this.getEntityBoundingBox()).isEmpty()
 				&& !this.worldObj.isAnyLiquid(this.getEntityBoundingBox())) {
 			BlockPos blockpos = new BlockPos(this.posX, this.getEntityBoundingBox().minY, this.posZ);
-			if (blockpos.getY() < this.worldObj.func_181545_F()) {
+			if (blockpos.getY() < this.worldObj.getSeaLevel()) {
 				return false;
 			}
 

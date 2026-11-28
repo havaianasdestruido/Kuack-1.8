@@ -43,10 +43,10 @@ public class MerchantRecipeList extends ArrayList<MerchantRecipe> {
 	public MerchantRecipe canRecipeBeUsed(ItemStack parItemStack, ItemStack parItemStack2, int parInt1) {
 		if (parInt1 > 0 && parInt1 < this.size()) {
 			MerchantRecipe merchantrecipe1 = (MerchantRecipe) this.get(parInt1);
-			return !this.func_181078_a(parItemStack, merchantrecipe1.getItemToBuy())
+			return !this.areItemStacksExactlyEqual(parItemStack, merchantrecipe1.getItemToBuy())
 					|| (parItemStack2 != null || merchantrecipe1.hasSecondItemToBuy())
 							&& (!merchantrecipe1.hasSecondItemToBuy()
-									|| !this.func_181078_a(parItemStack2, merchantrecipe1.getSecondItemToBuy()))
+									|| !this.areItemStacksExactlyEqual(parItemStack2, merchantrecipe1.getSecondItemToBuy()))
 					|| parItemStack.stackSize < merchantrecipe1.getItemToBuy().stackSize
 					|| merchantrecipe1.hasSecondItemToBuy()
 							&& parItemStack2.stackSize < merchantrecipe1.getSecondItemToBuy().stackSize ? null
@@ -54,11 +54,11 @@ public class MerchantRecipeList extends ArrayList<MerchantRecipe> {
 		} else {
 			for (int i = 0; i < this.size(); ++i) {
 				MerchantRecipe merchantrecipe = (MerchantRecipe) this.get(i);
-				if (this.func_181078_a(parItemStack, merchantrecipe.getItemToBuy())
+				if (this.areItemStacksExactlyEqual(parItemStack, merchantrecipe.getItemToBuy())
 						&& parItemStack.stackSize >= merchantrecipe.getItemToBuy().stackSize
 						&& (!merchantrecipe.hasSecondItemToBuy() && parItemStack2 == null
 								|| merchantrecipe.hasSecondItemToBuy()
-										&& this.func_181078_a(parItemStack2, merchantrecipe.getSecondItemToBuy())
+										&& this.areItemStacksExactlyEqual(parItemStack2, merchantrecipe.getSecondItemToBuy())
 										&& parItemStack2.stackSize >= merchantrecipe.getSecondItemToBuy().stackSize)) {
 					return merchantrecipe;
 				}
@@ -68,10 +68,10 @@ public class MerchantRecipeList extends ArrayList<MerchantRecipe> {
 		}
 	}
 
-	private boolean func_181078_a(ItemStack parItemStack, ItemStack parItemStack2) {
+	private boolean areItemStacksExactlyEqual(ItemStack parItemStack, ItemStack parItemStack2) {
 		return ItemStack.areItemsEqual(parItemStack, parItemStack2)
 				&& (!parItemStack2.hasTagCompound() || parItemStack.hasTagCompound()
-						&& NBTUtil.func_181123_a(parItemStack2.getTagCompound(), parItemStack.getTagCompound(), false));
+						&& NBTUtil.areNBTEquals(parItemStack2.getTagCompound(), parItemStack.getTagCompound(), false));
 	}
 
 	public void writeToBuf(PacketBuffer buffer) {

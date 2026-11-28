@@ -31,13 +31,13 @@ import net.minecraft.util.ResourceLocation;
  * 
  */
 public class RenderSnowball<T extends Entity> extends Render<T> {
-	protected final Item field_177084_a;
-	private final RenderItem field_177083_e;
+	protected final Item item;
+	private final RenderItem itemRenderer;
 
 	public RenderSnowball(RenderManager renderManagerIn, Item parItem, RenderItem parRenderItem) {
 		super(renderManagerIn);
-		this.field_177084_a = parItem;
-		this.field_177083_e = parRenderItem;
+		this.item = parItem;
+		this.itemRenderer = parRenderItem;
 	}
 
 	/**+
@@ -57,8 +57,8 @@ public class RenderSnowball<T extends Entity> extends Render<T> {
 		GlStateManager.rotate(-this.renderManager.playerViewY, 0.0F, 1.0F, 0.0F);
 		GlStateManager.rotate(this.renderManager.playerViewX, 1.0F, 0.0F, 0.0F);
 		this.bindTexture(TextureMap.locationBlocksTexture);
-		ItemStack itm = this.func_177082_d(entity);
-		this.field_177083_e.func_181564_a(itm, ItemCameraTransforms.TransformType.GROUND);
+		ItemStack itm = this.getStackToRender(entity);
+		this.itemRenderer.RenderItemRenderItem(itm, ItemCameraTransforms.TransformType.GROUND);
 		GlStateManager.disableRescaleNormal();
 		GlStateManager.popMatrix();
 		if (DynamicLightManager.isRenderingLights()) {
@@ -72,8 +72,8 @@ public class RenderSnowball<T extends Entity> extends Render<T> {
 		super.doRender(entity, d0, d1, d2, f, f1);
 	}
 
-	public ItemStack func_177082_d(T entityIn) {
-		return new ItemStack(this.field_177084_a, 1, 0);
+	public ItemStack getStackToRender(T entityIn) {
+		return new ItemStack(this.item, 1, 0);
 	}
 
 	/**+

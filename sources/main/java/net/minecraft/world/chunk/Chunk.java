@@ -72,7 +72,7 @@ public class Chunk {
 	private final ClassInheritanceMultiMap<Entity>[] entityLists;
 	private boolean isTerrainPopulated;
 	private boolean isLightPopulated;
-	private boolean field_150815_m;
+	private boolean chunkTicked;
 	private boolean isModified;
 	private boolean hasEntities;
 	private long lastSaveTime;
@@ -948,7 +948,7 @@ public class Chunk {
 			if (!this.isTerrainPopulated) {
 				parIChunkProvider.populate(parIChunkProvider2, parInt1, parInt2);
 			} else {
-				parIChunkProvider.func_177460_a(parIChunkProvider2, this, parInt1, parInt2);
+				parIChunkProvider.populateChunk(parIChunkProvider2, this, parInt1, parInt2);
 			}
 		}
 
@@ -957,7 +957,7 @@ public class Chunk {
 			if (!chunk.isTerrainPopulated) {
 				parIChunkProvider.populate(parIChunkProvider2, parInt1 - 1, parInt2);
 			} else {
-				parIChunkProvider.func_177460_a(parIChunkProvider2, chunk, parInt1 - 1, parInt2);
+				parIChunkProvider.populateChunk(parIChunkProvider2, chunk, parInt1 - 1, parInt2);
 			}
 		}
 
@@ -966,7 +966,7 @@ public class Chunk {
 			if (!chunk1.isTerrainPopulated) {
 				parIChunkProvider.populate(parIChunkProvider2, parInt1, parInt2 - 1);
 			} else {
-				parIChunkProvider.func_177460_a(parIChunkProvider2, chunk1, parInt1, parInt2 - 1);
+				parIChunkProvider.populateChunk(parIChunkProvider2, chunk1, parInt1, parInt2 - 1);
 			}
 		}
 
@@ -975,7 +975,7 @@ public class Chunk {
 			if (!chunk2.isTerrainPopulated) {
 				parIChunkProvider.populate(parIChunkProvider2, parInt1 - 1, parInt2 - 1);
 			} else {
-				parIChunkProvider.func_177460_a(parIChunkProvider2, chunk2, parInt1 - 1, parInt2 - 1);
+				parIChunkProvider.populateChunk(parIChunkProvider2, chunk2, parInt1 - 1, parInt2 - 1);
 			}
 		}
 
@@ -1007,14 +1007,14 @@ public class Chunk {
 		return new BlockPos(pos.getX(), this.precipitationHeightMap[k], pos.getZ());
 	}
 
-	public void func_150804_b(boolean parFlag) {
+	public void onTick(boolean parFlag) {
 		if (this.isGapLightingUpdated && !this.worldObj.provider.getHasNoSky() && !parFlag) {
 			this.recheckGaps(this.worldObj.isRemote);
 		}
 
-		this.field_150815_m = true;
+		this.chunkTicked = true;
 		if (!this.isLightPopulated && this.isTerrainPopulated) {
-			this.func_150809_p();
+			this.checkLight();
 		}
 
 		while (!this.tileEntityPosQueue.isEmpty()) {
@@ -1030,7 +1030,7 @@ public class Chunk {
 	}
 
 	public boolean isPopulated() {
-		return this.field_150815_m && this.isTerrainPopulated && this.isLightPopulated;
+		return this.chunkTicked && this.isTerrainPopulated && this.isLightPopulated;
 	}
 
 	/**+
@@ -1225,16 +1225,16 @@ public class Chunk {
 
 	}
 
-	public void func_150809_p() {
+	public void checkLight() {
 		this.isTerrainPopulated = true;
 		this.isLightPopulated = true;
 		BlockPos blockpos = new BlockPos(this.xPosition << 4, 0, this.zPosition << 4);
 		if (!this.worldObj.provider.getHasNoSky()) {
 			if (this.worldObj.isAreaLoaded(blockpos.add(-1, 0, -1),
-					blockpos.add(16, this.worldObj.func_181545_F(), 16))) {
+					blockpos.add(16, this.worldObj.getSeaLevel(), 16))) {
 				label92: for (int i = 0; i < 16; ++i) {
 					for (int j = 0; j < 16; ++j) {
-						if (!this.func_150811_f(i, j)) {
+						if (!this.ChunkCheckLight(i, j)) {
 							this.isLightPopulated = false;
 							break label92;
 						}
@@ -1247,10 +1247,10 @@ public class Chunk {
 						EnumFacing enumfacing = facings[i];
 						int k = enumfacing.getAxisDirection() == EnumFacing.AxisDirection.POSITIVE ? 16 : 1;
 						this.worldObj.getChunkFromBlockCoords(blockpos.offset(enumfacing, k))
-								.func_180700_a(enumfacing.getOpposite());
+								.checkLightSide(enumfacing.getOpposite());
 					}
 
-					this.func_177441_y();
+					this.setSkylightUpdated();
 				}
 			} else {
 				this.isLightPopulated = false;
@@ -1259,7 +1259,7 @@ public class Chunk {
 
 	}
 
-	private void func_177441_y() {
+	private void setSkylightUpdated() {
 		for (int i = 0; i < this.updateSkylightColumns.length; ++i) {
 			this.updateSkylightColumns[i] = true;
 		}
@@ -1267,40 +1267,40 @@ public class Chunk {
 		this.recheckGaps(false);
 	}
 
-	private void func_180700_a(EnumFacing parEnumFacing) {
+	private void checkLightSide(EnumFacing parEnumFacing) {
 		if (this.isTerrainPopulated) {
 			if (parEnumFacing == EnumFacing.EAST) {
 				for (int i = 0; i < 16; ++i) {
-					this.func_150811_f(15, i);
+					this.ChunkCheckLight(15, i);
 				}
 			} else if (parEnumFacing == EnumFacing.WEST) {
 				for (int j = 0; j < 16; ++j) {
-					this.func_150811_f(0, j);
+					this.ChunkCheckLight(0, j);
 				}
 			} else if (parEnumFacing == EnumFacing.SOUTH) {
 				for (int k = 0; k < 16; ++k) {
-					this.func_150811_f(k, 15);
+					this.ChunkCheckLight(k, 15);
 				}
 			} else if (parEnumFacing == EnumFacing.NORTH) {
 				for (int l = 0; l < 16; ++l) {
-					this.func_150811_f(l, 0);
+					this.ChunkCheckLight(l, 0);
 				}
 			}
 
 		}
 	}
 
-	private boolean func_150811_f(int x, int z) {
+	private boolean ChunkCheckLight(int x, int z) {
 		int i = this.getTopFilledSegment();
 		boolean flag = false;
 		boolean flag1 = false;
 		BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos((this.xPosition << 4) + x, 0,
 				(this.zPosition << 4) + z);
 
-		for (int j = i + 16 - 1; j > this.worldObj.func_181545_F() || j > 0 && !flag1; --j) {
-			blockpos$mutableblockpos.func_181079_c(blockpos$mutableblockpos.getX(), j, blockpos$mutableblockpos.getZ());
+		for (int j = i + 16 - 1; j > this.worldObj.getSeaLevel() || j > 0 && !flag1; --j) {
+			blockpos$mutableblockpos.setPos(blockpos$mutableblockpos.getX(), j, blockpos$mutableblockpos.getZ());
 			int k = this.getBlockLightOpacity(blockpos$mutableblockpos);
-			if (k == 255 && blockpos$mutableblockpos.getY() < this.worldObj.func_181545_F()) {
+			if (k == 255 && blockpos$mutableblockpos.getY() < this.worldObj.getSeaLevel()) {
 				flag1 = true;
 			}
 
@@ -1312,7 +1312,7 @@ public class Chunk {
 		}
 
 		for (int l = blockpos$mutableblockpos.getY(); l > 0; --l) {
-			blockpos$mutableblockpos.func_181079_c(blockpos$mutableblockpos.getX(), l, blockpos$mutableblockpos.getZ());
+			blockpos$mutableblockpos.setPos(blockpos$mutableblockpos.getX(), l, blockpos$mutableblockpos.getZ());
 			if (this.getBlock(blockpos$mutableblockpos).getLightValue() > 0) {
 				this.worldObj.checkLight(blockpos$mutableblockpos);
 			}

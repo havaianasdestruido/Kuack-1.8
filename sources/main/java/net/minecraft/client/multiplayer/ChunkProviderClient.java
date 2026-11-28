@@ -127,7 +127,7 @@ public class ChunkProviderClient implements IChunkProvider {
 		long i = System.currentTimeMillis();
 
 		for (int j = 0, k = this.chunkListing.size(); j < k; ++j) {
-			this.chunkListing.get(j).func_150804_b(System.currentTimeMillis() - i > 5L);
+			this.chunkListing.get(j).onTick(System.currentTimeMillis() - i > 5L);
 		}
 
 		if (System.currentTimeMillis() - i > 100L) {
@@ -151,7 +151,7 @@ public class ChunkProviderClient implements IChunkProvider {
 	public void populate(IChunkProvider var1, int var2, int var3) {
 	}
 
-	public boolean func_177460_a(IChunkProvider var1, Chunk var2, int var3, int var4) {
+	public boolean populateChunk(IChunkProvider var1, Chunk var2, int var3, int var4) {
 		return false;
 	}
 

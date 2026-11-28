@@ -29,7 +29,7 @@ import net.minecraft.village.MerchantRecipe;
 public class SlotMerchantResult extends Slot {
 	private final InventoryMerchant theMerchantInventory;
 	private EntityPlayer thePlayer;
-	private int field_75231_g;
+	private int removeCount;
 	private final IMerchant theMerchant;
 
 	public SlotMerchantResult(EntityPlayer player, IMerchant merchant, InventoryMerchant merchantInventory,
@@ -54,7 +54,7 @@ public class SlotMerchantResult extends Slot {
 	 */
 	public ItemStack decrStackSize(int i) {
 		if (this.getHasStack()) {
-			this.field_75231_g += Math.min(i, this.getStack().stackSize);
+			this.removeCount += Math.min(i, this.getStack().stackSize);
 		}
 
 		return super.decrStackSize(i);
@@ -66,7 +66,7 @@ public class SlotMerchantResult extends Slot {
 	 * count then calls onCrafting(item).
 	 */
 	protected void onCrafting(ItemStack itemstack, int i) {
-		this.field_75231_g += i;
+		this.removeCount += i;
 		this.onCrafting(itemstack);
 	}
 
@@ -76,8 +76,8 @@ public class SlotMerchantResult extends Slot {
 	 * count then calls onCrafting(item).
 	 */
 	protected void onCrafting(ItemStack itemstack) {
-		itemstack.onCrafting(this.thePlayer.worldObj, this.thePlayer, this.field_75231_g);
-		this.field_75231_g = 0;
+		itemstack.onCrafting(this.thePlayer.worldObj, this.thePlayer, this.removeCount);
+		this.removeCount = 0;
 	}
 
 	public void onPickupFromSlot(EntityPlayer entityplayer, ItemStack itemstack) {

@@ -27,7 +27,7 @@ import net.minecraft.world.World;
  * 
  */
 public class EntityCloudFX extends EntityFX {
-	float field_70569_a;
+	float oSize;
 
 	protected EntityCloudFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double parDouble1,
 			double parDouble2, double parDouble3) {
@@ -43,7 +43,7 @@ public class EntityCloudFX extends EntityFX {
 				- (float) (Math.random() * 0.30000001192092896D);
 		this.particleScale *= 0.75F;
 		this.particleScale *= f;
-		this.field_70569_a = this.particleScale;
+		this.oSize = this.particleScale;
 		this.particleMaxAge = (int) (8.0D / (Math.random() * 0.8D + 0.3D));
 		this.particleMaxAge = (int) ((float) this.particleMaxAge * f);
 		this.noClip = false;
@@ -56,7 +56,7 @@ public class EntityCloudFX extends EntityFX {
 			float f4, float f5) {
 		float f6 = ((float) this.particleAge + f) / (float) this.particleMaxAge * 32.0F;
 		f6 = MathHelper.clamp_float(f6, 0.0F, 1.0F);
-		this.particleScale = this.field_70569_a * f6;
+		this.particleScale = this.oSize * f6;
 		super.renderParticle(worldrenderer, entity, f, f1, f2, f3, f4, f5);
 	}
 

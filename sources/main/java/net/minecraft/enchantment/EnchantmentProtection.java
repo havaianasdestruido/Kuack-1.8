@@ -135,7 +135,7 @@ public class EnchantmentProtection extends Enchantment {
 		return parInt1;
 	}
 
-	public static double func_92092_a(Entity parEntity, double parDouble1) {
+	public static double getBlastDamageReduction(Entity parEntity, double parDouble1) {
 		int i = EnchantmentHelper.getMaxEnchantmentLevel(Enchantment.blastProtection.effectId,
 				parEntity.getInventory());
 		if (i > 0) {

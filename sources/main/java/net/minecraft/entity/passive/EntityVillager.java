@@ -491,7 +491,7 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc {
 		for (int i = 0; i < nbttaglist.tagCount(); ++i) {
 			ItemStack itemstack = ItemStack.loadItemStackFromNBT(nbttaglist.getCompoundTagAt(i));
 			if (itemstack != null) {
-				this.villagerInventory.func_174894_a(itemstack);
+				this.villagerInventory.addItem(itemstack);
 			}
 		}
 
@@ -610,7 +610,7 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc {
 	 * Returns current or updated value of {@link #isWillingToMate}
 	 */
 	public boolean getIsWillingToMate(boolean updateFirst) {
-		if (!this.isWillingToMate && updateFirst && this.func_175553_cp()) {
+		if (!this.isWillingToMate && updateFirst && this.hasEnoughFoodToBreed()) {
 			boolean flag = false;
 
 			for (int i = 0; i < this.villagerInventory.getSizeInventory(); ++i) {
@@ -886,7 +886,7 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc {
 		ItemStack itemstack = entityitem.getEntityItem();
 		Item item = itemstack.getItem();
 		if (this.canVillagerPickupItem(item)) {
-			ItemStack itemstack1 = this.villagerInventory.func_174894_a(itemstack);
+			ItemStack itemstack1 = this.villagerInventory.addItem(itemstack);
 			if (itemstack1 == null) {
 				entityitem.setDead();
 			} else {
@@ -901,7 +901,7 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc {
 				|| itemIn == Items.wheat_seeds;
 	}
 
-	public boolean func_175553_cp() {
+	public boolean hasEnoughFoodToBreed() {
 		return this.hasEnoughItems(1);
 	}
 
@@ -915,7 +915,7 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc {
 		return this.hasEnoughItems(2);
 	}
 
-	public boolean func_175557_cr() {
+	public boolean wantsMoreFood() {
 		boolean flag = this.getProfession() == 0;
 		return flag ? !this.hasEnoughItems(5) : !this.hasEnoughItems(1);
 	}
@@ -998,34 +998,34 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc {
 	}
 
 	static class ItemAndEmeraldToItem implements EntityVillager.ITradeList {
-		public ItemStack field_179411_a;
-		public EntityVillager.PriceInfo field_179409_b;
-		public ItemStack field_179410_c;
-		public EntityVillager.PriceInfo field_179408_d;
+		public ItemStack buyingItemStack;
+		public EntityVillager.PriceInfo buyingPriceInfo;
+		public ItemStack sellingItemstack;
+		public EntityVillager.PriceInfo sellingPriceInfo;
 
 		public ItemAndEmeraldToItem(Item parItem, EntityVillager.PriceInfo parPriceInfo, Item parItem2,
 				EntityVillager.PriceInfo parPriceInfo2) {
-			this.field_179411_a = new ItemStack(parItem);
-			this.field_179409_b = parPriceInfo;
-			this.field_179410_c = new ItemStack(parItem2);
-			this.field_179408_d = parPriceInfo2;
+			this.buyingItemStack = new ItemStack(parItem);
+			this.buyingPriceInfo = parPriceInfo;
+			this.sellingItemstack = new ItemStack(parItem2);
+			this.sellingPriceInfo = parPriceInfo2;
 		}
 
 		public void modifyMerchantRecipeList(MerchantRecipeList merchantrecipelist, EaglercraftRandom random) {
 			int i = 1;
-			if (this.field_179409_b != null) {
-				i = this.field_179409_b.getPrice(random);
+			if (this.buyingPriceInfo != null) {
+				i = this.buyingPriceInfo.getPrice(random);
 			}
 
 			int j = 1;
-			if (this.field_179408_d != null) {
-				j = this.field_179408_d.getPrice(random);
+			if (this.sellingPriceInfo != null) {
+				j = this.sellingPriceInfo.getPrice(random);
 			}
 
 			merchantrecipelist.add(new MerchantRecipe(
-					new ItemStack(this.field_179411_a.getItem(), i, this.field_179411_a.getMetadata()),
+					new ItemStack(this.buyingItemStack.getItem(), i, this.buyingItemStack.getMetadata()),
 					new ItemStack(Items.emerald),
-					new ItemStack(this.field_179410_c.getItem(), j, this.field_179410_c.getMetadata())));
+					new ItemStack(this.sellingItemstack.getItem(), j, this.sellingItemstack.getMetadata())));
 		}
 	}
 
@@ -1046,55 +1046,55 @@ public class EntityVillager extends EntityAgeable implements IMerchant, INpc {
 	}
 
 	static class ListEnchantedItemForEmeralds implements EntityVillager.ITradeList {
-		public ItemStack field_179407_a;
-		public EntityVillager.PriceInfo field_179406_b;
+		public ItemStack enchantedItemStack;
+		public EntityVillager.PriceInfo EntityVillagerPriceInfo;
 
 		public ListEnchantedItemForEmeralds(Item parItem, EntityVillager.PriceInfo parPriceInfo) {
-			this.field_179407_a = new ItemStack(parItem);
-			this.field_179406_b = parPriceInfo;
+			this.enchantedItemStack = new ItemStack(parItem);
+			this.EntityVillagerPriceInfo = parPriceInfo;
 		}
 
 		public void modifyMerchantRecipeList(MerchantRecipeList merchantrecipelist, EaglercraftRandom random) {
 			int i = 1;
-			if (this.field_179406_b != null) {
-				i = this.field_179406_b.getPrice(random);
+			if (this.EntityVillagerPriceInfo != null) {
+				i = this.EntityVillagerPriceInfo.getPrice(random);
 			}
 
 			ItemStack itemstack = new ItemStack(Items.emerald, i, 0);
-			ItemStack itemstack1 = new ItemStack(this.field_179407_a.getItem(), 1, this.field_179407_a.getMetadata());
+			ItemStack itemstack1 = new ItemStack(this.enchantedItemStack.getItem(), 1, this.enchantedItemStack.getMetadata());
 			itemstack1 = EnchantmentHelper.addRandomEnchantment(random, itemstack1, 5 + random.nextInt(15));
 			merchantrecipelist.add(new MerchantRecipe(itemstack, itemstack1));
 		}
 	}
 
 	static class ListItemForEmeralds implements EntityVillager.ITradeList {
-		public ItemStack field_179403_a;
-		public EntityVillager.PriceInfo field_179402_b;
+		public ItemStack itemToBuy;
+		public EntityVillager.PriceInfo priceInfo;
 
 		public ListItemForEmeralds(Item par1Item, EntityVillager.PriceInfo priceInfo) {
-			this.field_179403_a = new ItemStack(par1Item);
-			this.field_179402_b = priceInfo;
+			this.itemToBuy = new ItemStack(par1Item);
+			this.priceInfo = priceInfo;
 		}
 
 		public ListItemForEmeralds(ItemStack stack, EntityVillager.PriceInfo priceInfo) {
-			this.field_179403_a = stack;
-			this.field_179402_b = priceInfo;
+			this.itemToBuy = stack;
+			this.priceInfo = priceInfo;
 		}
 
 		public void modifyMerchantRecipeList(MerchantRecipeList merchantrecipelist, EaglercraftRandom random) {
 			int i = 1;
-			if (this.field_179402_b != null) {
-				i = this.field_179402_b.getPrice(random);
+			if (this.priceInfo != null) {
+				i = this.priceInfo.getPrice(random);
 			}
 
 			ItemStack itemstack;
 			ItemStack itemstack1;
 			if (i < 0) {
 				itemstack = new ItemStack(Items.emerald, 1, 0);
-				itemstack1 = new ItemStack(this.field_179403_a.getItem(), -i, this.field_179403_a.getMetadata());
+				itemstack1 = new ItemStack(this.itemToBuy.getItem(), -i, this.itemToBuy.getMetadata());
 			} else {
 				itemstack = new ItemStack(Items.emerald, i, 0);
-				itemstack1 = new ItemStack(this.field_179403_a.getItem(), 1, this.field_179403_a.getMetadata());
+				itemstack1 = new ItemStack(this.itemToBuy.getItem(), 1, this.itemToBuy.getMetadata());
 			}
 
 			merchantrecipelist.add(new MerchantRecipe(itemstack, itemstack1));

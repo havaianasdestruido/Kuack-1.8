@@ -30,13 +30,13 @@ import net.minecraft.world.gen.feature.WorldGenTaiga2;
  * 
  */
 public class BiomeGenSnow extends BiomeGenBase {
-	private boolean field_150615_aC;
-	private WorldGenIceSpike field_150616_aD = new WorldGenIceSpike();
-	private WorldGenIcePath field_150617_aE = new WorldGenIcePath(4);
+	private boolean superIcy;
+	private WorldGenIceSpike iceSpike = new WorldGenIceSpike();
+	private WorldGenIcePath icePatch = new WorldGenIcePath(4);
 
 	public BiomeGenSnow(int parInt1, boolean parFlag) {
 		super(parInt1);
-		this.field_150615_aC = parFlag;
+		this.superIcy = parFlag;
 		if (parFlag) {
 			this.topBlock = Blocks.snow.getDefaultState();
 		}
@@ -45,17 +45,17 @@ public class BiomeGenSnow extends BiomeGenBase {
 	}
 
 	public void decorate(World world, EaglercraftRandom random, BlockPos blockpos) {
-		if (this.field_150615_aC) {
+		if (this.superIcy) {
 			for (int i = 0; i < 3; ++i) {
 				int j = random.nextInt(16) + 8;
 				int k = random.nextInt(16) + 8;
-				this.field_150616_aD.generate(world, random, world.getHeight(blockpos.add(j, 0, k)));
+				this.iceSpike.generate(world, random, world.getHeight(blockpos.add(j, 0, k)));
 			}
 
 			for (int l = 0; l < 2; ++l) {
 				int i1 = random.nextInt(16) + 8;
 				int j1 = random.nextInt(16) + 8;
-				this.field_150617_aE.generate(world, random, world.getHeight(blockpos.add(i1, 0, j1)));
+				this.icePatch.generate(world, random, world.getHeight(blockpos.add(i1, 0, j1)));
 			}
 		}
 

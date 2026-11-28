@@ -154,7 +154,7 @@ public abstract class BlockStoneSlab extends BlockSlab {
 	 * Get the MapColor for this Block and the given BlockState
 	 */
 	public MapColor getMapColor(IBlockState iblockstate) {
-		return ((BlockStoneSlab.EnumType) iblockstate.getValue(VARIANT)).func_181074_c();
+		return ((BlockStoneSlab.EnumType) iblockstate.getValue(VARIANT)).BlockStoneSlabGetMapColor();
 	}
 
 	public static enum EnumType implements IStringSerializable {
@@ -166,7 +166,7 @@ public abstract class BlockStoneSlab extends BlockSlab {
 
 		public static final BlockStoneSlab.EnumType[] META_LOOKUP = new BlockStoneSlab.EnumType[8];
 		private final int meta;
-		private final MapColor field_181075_k;
+		private final MapColor mapColor;
 		private final String name;
 		private final String unlocalizedName;
 
@@ -176,7 +176,7 @@ public abstract class BlockStoneSlab extends BlockSlab {
 
 		private EnumType(int parInt2, MapColor parMapColor, String parString2, String parString3) {
 			this.meta = parInt2;
-			this.field_181075_k = parMapColor;
+			this.mapColor = parMapColor;
 			this.name = parString2;
 			this.unlocalizedName = parString3;
 		}
@@ -185,8 +185,8 @@ public abstract class BlockStoneSlab extends BlockSlab {
 			return this.meta;
 		}
 
-		public MapColor func_181074_c() {
-			return this.field_181075_k;
+		public MapColor BlockStoneSlabGetMapColor() {
+			return this.mapColor;
 		}
 
 		public String toString() {

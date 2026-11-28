@@ -117,10 +117,10 @@ public class ChunkLoader {
 
 		for (int j2 = 0; j2 < 16; ++j2) {
 			for (int k2 = 0; k2 < 16; ++k2) {
-				blockpos$mutableblockpos.func_181079_c(parAnvilConverterData.x << 4 | j2, 0,
+				blockpos$mutableblockpos.setPos(parAnvilConverterData.x << 4 | j2, 0,
 						parAnvilConverterData.z << 4 | k2);
 				abyte[k2 << 4 | j2] = (byte) (parWorldChunkManager.getBiomeGenerator(blockpos$mutableblockpos,
-						BiomeGenBase.field_180279_ad).biomeID & 255);
+						BiomeGenBase.DEFAULT).biomeID & 255);
 			}
 		}
 

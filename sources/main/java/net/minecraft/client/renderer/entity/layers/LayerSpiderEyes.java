@@ -112,7 +112,7 @@ public class LayerSpiderEyes implements LayerRenderer<EntitySpider> {
 		j = i % 65536;
 		k = i / 65536;
 		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, (float) j / 1.0F, (float) k / 1.0F);
-		this.spiderRenderer.func_177105_a(entityspider, f2);
+		this.spiderRenderer.setLightmap(entityspider, f2);
 		GlStateManager.disableBlend();
 		GlStateManager.enableAlpha();
 		GlStateManager.disablePolygonOffset();

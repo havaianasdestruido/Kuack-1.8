@@ -147,9 +147,9 @@ public class CommandExecuteAt extends CommandBase {
 	public List<String> addTabCompletionOptions(ICommandSender var1, String[] astring, BlockPos blockpos) {
 		return astring.length == 1
 				? getListOfStringsMatchingLastWord(astring, MinecraftServer.getServer().getAllUsernames())
-				: (astring.length > 1 && astring.length <= 4 ? func_175771_a(astring, 1, blockpos)
+				: (astring.length > 1 && astring.length <= 4 ? getTabCompletionCoordinate(astring, 1, blockpos)
 						: (astring.length > 5 && astring.length <= 8 && "detect".equals(astring[4])
-								? func_175771_a(astring, 5, blockpos)
+								? getTabCompletionCoordinate(astring, 5, blockpos)
 								: (astring.length == 9 && "detect".equals(astring[4])
 										? getListOfStringsMatchingLastWord(astring, Block.blockRegistry.getKeys())
 										: null)));

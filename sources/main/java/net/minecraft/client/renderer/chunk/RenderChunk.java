@@ -61,7 +61,7 @@ public class RenderChunk {
 	private BlockPos position;
 	public CompiledChunk compiledChunk = CompiledChunk.DUMMY;
 	private ChunkCompileTaskGenerator compileTask = null;
-	private final Set<TileEntity> field_181056_j = Sets.newHashSet();
+	private final Set<TileEntity> setTileEntities = Sets.newHashSet();
 	private final int index;
 	private final float[] modelviewMatrix = new float[16];
 	public AxisAlignedBB boundingBox;
@@ -159,7 +159,7 @@ public class RenderChunk {
 				IBlockState iblockstate = regionrendercache.getBlockStateFaster(blockpos$mutableblockpos);
 				Block block = iblockstate.getBlock();
 				if (block.isOpaqueCube()) {
-					visgraph.func_178606_a(blockpos$mutableblockpos);
+					visgraph.setOpaqueCube(blockpos$mutableblockpos);
 				}
 
 				if (block.hasTileEntity()) {
@@ -168,7 +168,7 @@ public class RenderChunk {
 							.getSpecialRenderer(tileentity);
 					if (tileentity != null && tileentityspecialrenderer != null) {
 						compiledchunk.addTileEntity(tileentity);
-						if (tileentityspecialrenderer.func_181055_a()) {
+						if (tileentityspecialrenderer.forceTileEntityRender()) {
 							hashset.add(tileentity);
 						}
 					}
@@ -219,12 +219,12 @@ public class RenderChunk {
 		compiledchunk.setVisibility(visgraph.computeVisibility());
 
 		HashSet hashset1 = Sets.newHashSet(hashset);
-		HashSet hashset2 = Sets.newHashSet(this.field_181056_j);
-		hashset1.removeAll(this.field_181056_j);
+		HashSet hashset2 = Sets.newHashSet(this.setTileEntities);
+		hashset1.removeAll(this.setTileEntities);
 		hashset2.removeAll(hashset);
-		this.field_181056_j.clear();
-		this.field_181056_j.addAll(hashset);
-		this.renderGlobal.func_181023_a(hashset2, hashset1);
+		this.setTileEntities.clear();
+		this.setTileEntities.addAll(hashset);
+		this.renderGlobal.updateTileEntities(hashset2, hashset1);
 
 	}
 
@@ -261,11 +261,11 @@ public class RenderChunk {
 			CompiledChunk compiledChunkIn) {
 		if ((layer == EnumWorldBlockLayer.TRANSLUCENT || layer == EnumWorldBlockLayer.REALISTIC_WATER)
 				&& !compiledChunkIn.isLayerEmpty(layer)) {
-			worldRendererIn.func_181674_a(x, y, z);
+			worldRendererIn.sortVertexData(x, y, z);
 			if (layer == EnumWorldBlockLayer.REALISTIC_WATER) {
-				compiledChunkIn.setStateRealisticWater(worldRendererIn.func_181672_a());
+				compiledChunkIn.setStateRealisticWater(worldRendererIn.getVertexState());
 			} else {
-				compiledChunkIn.setState(worldRendererIn.func_181672_a());
+				compiledChunkIn.setState(worldRendererIn.getVertexState());
 			}
 		}
 
@@ -317,7 +317,7 @@ public class RenderChunk {
 		return this.needsUpdate;
 	}
 
-	public BlockPos func_181701_a(EnumFacing parEnumFacing) {
+	public BlockPos getBlockPosOffset16(EnumFacing parEnumFacing) {
 		return (BlockPos) this.field_181702_p.get(parEnumFacing);
 	}
 }

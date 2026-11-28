@@ -35,29 +35,29 @@ public class BlockFaceUV {
 		this.rotation = rotationIn;
 	}
 
-	public float func_178348_a(int parInt1) {
+	public float getVertexU(int parInt1) {
 		if (this.uvs == null) {
 			throw new NullPointerException("uvs");
 		} else {
-			int i = this.func_178347_d(parInt1);
+			int i = this.getVertexRotated(parInt1);
 			return i != 0 && i != 1 ? this.uvs[2] : this.uvs[0];
 		}
 	}
 
-	public float func_178346_b(int parInt1) {
+	public float getVertexV(int parInt1) {
 		if (this.uvs == null) {
 			throw new NullPointerException("uvs");
 		} else {
-			int i = this.func_178347_d(parInt1);
+			int i = this.getVertexRotated(parInt1);
 			return i != 0 && i != 3 ? this.uvs[3] : this.uvs[1];
 		}
 	}
 
-	private int func_178347_d(int parInt1) {
+	private int getVertexRotated(int parInt1) {
 		return (parInt1 + this.rotation / 90) % 4;
 	}
 
-	public int func_178345_c(int parInt1) {
+	public int getVertexRotatedRev(int parInt1) {
 		return (parInt1 + (4 - this.rotation / 90)) % 4;
 	}
 

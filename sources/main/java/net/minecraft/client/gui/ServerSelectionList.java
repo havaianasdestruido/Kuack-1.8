@@ -33,7 +33,7 @@ import net.minecraft.client.resources.I18n;
  */
 public class ServerSelectionList extends GuiListExtended {
 	private final GuiMultiplayer owner;
-	private final List<ServerListEntryNormal> field_148198_l = Lists.newArrayList();
+	private final List<ServerListEntryNormal> serverListInternet = Lists.newArrayList();
 	private int selectedSlotIndex = -1;
 
 	private final ServerListEntryNormal serverListEntryLAN;
@@ -51,7 +51,7 @@ public class ServerSelectionList extends GuiListExtended {
 			@Override
 			public boolean mousePressed(int i, int var2, int var3, int var4, int j, int k) {
 				if (ServerSelectionList.this.selectedSlotIndex != i) {
-					super.field_148298_f = 0;
+					super.lastClickTime = 0;
 				}
 				return super.mousePressed(i, var2, var3, var4, Math.max(j, 32), k);
 			}
@@ -63,17 +63,17 @@ public class ServerSelectionList extends GuiListExtended {
 	 */
 	public GuiListExtended.IGuiListEntry getListEntry(int i) {
 		if (i < getOrigSize()) {
-			return (GuiListExtended.IGuiListEntry) this.field_148198_l.get(i);
+			return (GuiListExtended.IGuiListEntry) this.serverListInternet.get(i);
 		}
 		return serverListEntryLAN;
 	}
 
 	protected int getOrigSize() {
-		return this.field_148198_l.size();
+		return this.serverListInternet.size();
 	}
 
 	protected int getSize() {
-		return this.field_148198_l.size() + GuiMultiplayer.getLanServerList().countServers();
+		return this.serverListInternet.size() + GuiMultiplayer.getLanServerList().countServers();
 	}
 
 	public void setSelectedSlotIndex(int selectedSlotIndexIn) {
@@ -87,15 +87,15 @@ public class ServerSelectionList extends GuiListExtended {
 		return i == this.selectedSlotIndex;
 	}
 
-	public int func_148193_k() {
+	public int getSelected() {
 		return this.selectedSlotIndex;
 	}
 
-	public void func_148195_a(ServerList parServerList) {
-		this.field_148198_l.clear();
+	public void updateOnlineServers(ServerList parServerList) {
+		this.serverListInternet.clear();
 
 		for (int i = 0; i < parServerList.countServers(); ++i) {
-			this.field_148198_l.add(new ServerListEntryNormal(this.owner, parServerList.getServerData(i)));
+			this.serverListInternet.add(new ServerListEntryNormal(this.owner, parServerList.getServerData(i)));
 		}
 
 	}

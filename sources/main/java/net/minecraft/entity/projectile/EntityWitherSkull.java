@@ -71,7 +71,7 @@ public class EntityWitherSkull extends EntityFireball {
 	public float getExplosionResistance(Explosion explosion, World world, BlockPos blockpos, IBlockState iblockstate) {
 		float f = super.getExplosionResistance(explosion, world, blockpos, iblockstate);
 		Block block = iblockstate.getBlock();
-		if (this.isInvulnerable() && EntityWither.func_181033_a(block)) {
+		if (this.isInvulnerable() && EntityWither.canDestroyBlock(block)) {
 			f = Math.min(0.8F, f);
 		}
 

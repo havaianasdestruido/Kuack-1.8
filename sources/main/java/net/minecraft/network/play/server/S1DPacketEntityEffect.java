@@ -72,7 +72,7 @@ public class S1DPacketEntityEffect implements Packet<INetHandlerPlayClient> {
 		parPacketBuffer.writeByte(this.hideParticles);
 	}
 
-	public boolean func_149429_c() {
+	public boolean isMaxDuration() {
 		return this.duration == 32767;
 	}
 
@@ -99,7 +99,7 @@ public class S1DPacketEntityEffect implements Packet<INetHandlerPlayClient> {
 		return this.duration;
 	}
 
-	public boolean func_179707_f() {
+	public boolean doesShowParticles() {
 		return this.hideParticles != 0;
 	}
 }

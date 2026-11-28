@@ -35,7 +35,7 @@ public class PlayerMenuObject implements ISpectatorMenuObject {
 		this.profile = profileIn;
 	}
 
-	public void func_178661_a(SpectatorMenu menu) {
+	public void selectItem(SpectatorMenu menu) {
 		Minecraft.getMinecraft().getNetHandler().addToSendQueue(new C18PacketSpectate(this.profile.getId()));
 	}
 
@@ -43,7 +43,7 @@ public class PlayerMenuObject implements ISpectatorMenuObject {
 		return new ChatComponentText(this.profile.getName());
 	}
 
-	public void func_178663_a(float alpha, int parInt1) {
+	public void renderIcon(float alpha, int parInt1) {
 		Minecraft.getMinecraft().getTextureManager().bindTexture(
 				Minecraft.getMinecraft().getNetHandler().getSkinCache().getSkin(profile).getResourceLocation());
 		GlStateManager.color(1.0F, 1.0F, 1.0F, (float) parInt1 / 255.0F);
@@ -51,7 +51,7 @@ public class PlayerMenuObject implements ISpectatorMenuObject {
 		Gui.drawScaledCustomSizeModalRect(2, 2, 40.0F, 8.0F, 8, 8, 12, 12, 64.0F, 64.0F);
 	}
 
-	public boolean func_178662_A_() {
+	public boolean isEnabled() {
 		return true;
 	}
 }

@@ -41,7 +41,7 @@ public class ContainerEnchantment extends Container {
 	private EaglercraftRandom rand;
 	public int xpSeed;
 	public int[] enchantLevels;
-	public int[] field_178151_h;
+	public int[] enchantmentIds;
 
 	public ContainerEnchantment(InventoryPlayer playerInv, World worldIn) {
 		this(playerInv, worldIn, BlockPos.ORIGIN);
@@ -60,7 +60,7 @@ public class ContainerEnchantment extends Container {
 		};
 		this.rand = new EaglercraftRandom();
 		this.enchantLevels = new int[3];
-		this.field_178151_h = new int[] { -1, -1, -1 };
+		this.enchantmentIds = new int[] { -1, -1, -1 };
 		this.worldPointer = worldIn;
 		this.position = pos;
 		this.xpSeed = playerInv.player.getXPSeed();
@@ -98,9 +98,9 @@ public class ContainerEnchantment extends Container {
 		icrafting.sendProgressBarUpdate(this, 1, this.enchantLevels[1]);
 		icrafting.sendProgressBarUpdate(this, 2, this.enchantLevels[2]);
 		icrafting.sendProgressBarUpdate(this, 3, this.xpSeed & -16);
-		icrafting.sendProgressBarUpdate(this, 4, this.field_178151_h[0]);
-		icrafting.sendProgressBarUpdate(this, 5, this.field_178151_h[1]);
-		icrafting.sendProgressBarUpdate(this, 6, this.field_178151_h[2]);
+		icrafting.sendProgressBarUpdate(this, 4, this.enchantmentIds[0]);
+		icrafting.sendProgressBarUpdate(this, 5, this.enchantmentIds[1]);
+		icrafting.sendProgressBarUpdate(this, 6, this.enchantmentIds[2]);
 	}
 
 	/**+
@@ -116,9 +116,9 @@ public class ContainerEnchantment extends Container {
 			icrafting.sendProgressBarUpdate(this, 1, this.enchantLevels[1]);
 			icrafting.sendProgressBarUpdate(this, 2, this.enchantLevels[2]);
 			icrafting.sendProgressBarUpdate(this, 3, this.xpSeed & -16);
-			icrafting.sendProgressBarUpdate(this, 4, this.field_178151_h[0]);
-			icrafting.sendProgressBarUpdate(this, 5, this.field_178151_h[1]);
-			icrafting.sendProgressBarUpdate(this, 6, this.field_178151_h[2]);
+			icrafting.sendProgressBarUpdate(this, 4, this.enchantmentIds[0]);
+			icrafting.sendProgressBarUpdate(this, 5, this.enchantmentIds[1]);
+			icrafting.sendProgressBarUpdate(this, 6, this.enchantmentIds[2]);
 		}
 
 	}
@@ -129,7 +129,7 @@ public class ContainerEnchantment extends Container {
 		} else if (i == 3) {
 			this.xpSeed = j;
 		} else if (i >= 4 && i <= 6) {
-			this.field_178151_h[i - 4] = j;
+			this.enchantmentIds[i - 4] = j;
 		} else {
 			super.updateProgressBar(i, j);
 		}
@@ -190,7 +190,7 @@ public class ContainerEnchantment extends Container {
 					for (int i1 = 0; i1 < 3; ++i1) {
 						this.enchantLevels[i1] = EnchantmentHelper.calcItemStackEnchantability(this.rand, i1, l,
 								itemstack);
-						this.field_178151_h[i1] = -1;
+						this.enchantmentIds[i1] = -1;
 						if (this.enchantLevels[i1] < i1 + 1) {
 							this.enchantLevels[i1] = 0;
 						}
@@ -198,11 +198,11 @@ public class ContainerEnchantment extends Container {
 
 					for (int j1 = 0; j1 < 3; ++j1) {
 						if (this.enchantLevels[j1] > 0) {
-							List list = this.func_178148_a(itemstack, j1, this.enchantLevels[j1]);
+							List list = this.getEnchantmentList(itemstack, j1, this.enchantLevels[j1]);
 							if (list != null && !list.isEmpty()) {
 								EnchantmentData enchantmentdata = (EnchantmentData) list
 										.get(this.rand.nextInt(list.size()));
-								this.field_178151_h[j1] = enchantmentdata.enchantmentobj.effectId
+								this.enchantmentIds[j1] = enchantmentdata.enchantmentobj.effectId
 										| enchantmentdata.enchantmentLevel << 8;
 							}
 						}
@@ -213,7 +213,7 @@ public class ContainerEnchantment extends Container {
 			} else {
 				for (int i = 0; i < 3; ++i) {
 					this.enchantLevels[i] = 0;
-					this.field_178151_h[i] = -1;
+					this.enchantmentIds[i] = -1;
 				}
 			}
 		}
@@ -234,7 +234,7 @@ public class ContainerEnchantment extends Container {
 				&& (entityplayer.experienceLevel >= j && entityplayer.experienceLevel >= this.enchantLevels[i]
 						|| entityplayer.capabilities.isCreativeMode)) {
 			if (!this.worldPointer.isRemote) {
-				List list = this.func_178148_a(itemstack, i, this.enchantLevels[i]);
+				List list = this.getEnchantmentList(itemstack, i, this.enchantLevels[i]);
 				boolean flag = itemstack.getItem() == Items.book;
 				if (list != null) {
 					entityplayer.removeExperienceLevel(j);
@@ -271,7 +271,7 @@ public class ContainerEnchantment extends Container {
 		}
 	}
 
-	private List<EnchantmentData> func_178148_a(ItemStack stack, int parInt1, int parInt2) {
+	private List<EnchantmentData> getEnchantmentList(ItemStack stack, int parInt1, int parInt2) {
 		this.rand.setSeed((long) (this.xpSeed + parInt1));
 		List list = EnchantmentHelper.buildEnchantmentList(this.rand, stack, parInt2);
 		if (stack.getItem() == Items.book && list != null && list.size() > 1) {

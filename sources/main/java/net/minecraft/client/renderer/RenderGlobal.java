@@ -133,7 +133,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 	 * List of OpenGL lists for the current render pass
 	 */
 	private List<RenderGlobal.ContainerLocalRenderInformation> renderInfos = Lists.newArrayListWithCapacity(69696);
-	private final Set<TileEntity> field_181024_n = Sets.newHashSet();
+	private final Set<TileEntity> setTileEntities = Sets.newHashSet();
 	private ViewFrustum viewFrustum;
 	/**+
 	 * The star GL Call list
@@ -397,8 +397,8 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 			}
 
 			this.stopChunkUpdates();
-			synchronized (this.field_181024_n) {
-				this.field_181024_n.clear();
+			synchronized (this.setTileEntities) {
+				this.setTileEntities.clear();
 			}
 
 			this.viewFrustum = new ViewFrustum(this.theWorld, this.mc.gameSettings.renderDistanceChunks, this,
@@ -603,8 +603,8 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 				}
 			}
 
-			synchronized (this.field_181024_n) {
-				for (TileEntity tileentity : this.field_181024_n) {
+			synchronized (this.setTileEntities) {
+				for (TileEntity tileentity : this.setTileEntities) {
 					TileEntityRendererDispatcher.instance.renderTileEntity(tileentity, partialTicks, -1);
 				}
 			}
@@ -713,8 +713,8 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 				}
 			}
 
-			synchronized (this.field_181024_n) {
-				for (TileEntity tileentity : this.field_181024_n) {
+			synchronized (this.setTileEntities) {
+				for (TileEntity tileentity : this.setTileEntities) {
 					TileEntityRendererDispatcher.instance.renderTileEntity(tileentity, partialTicks, -1);
 					mc.entityRenderer.disableLightmap();
 					GlStateManager.disableShaderBlendAdd();
@@ -857,8 +857,8 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		this.theWorld.theProfiler.endStartSection("cull");
 		if (this.debugFixedClippingHelper != null) {
 			Frustum frustum = new Frustum(this.debugFixedClippingHelper);
-			frustum.setPosition(this.debugTerrainFrustumPosition.field_181059_a,
-					this.debugTerrainFrustumPosition.field_181060_b, this.debugTerrainFrustumPosition.field_181061_c);
+			frustum.setPosition(this.debugTerrainFrustumPosition.x,
+					this.debugTerrainFrustumPosition.y, this.debugTerrainFrustumPosition.z);
 			camera = frustum;
 		}
 
@@ -938,7 +938,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 				EnumFacing[] facings = EnumFacing._VALUES;
 				for (int i = 0; i < facings.length; ++i) {
 					EnumFacing enumfacing1 = facings[i];
-					RenderChunk renderchunk2 = this.func_181562_a(blockpos, renderchunk3, enumfacing1);
+					RenderChunk renderchunk2 = this.getRenderChunkOffset(blockpos, renderchunk3, enumfacing1);
 					if ((!flag1 || !renderglobal$containerlocalrenderinformation1.setFacing // TODO:
 							.contains(enumfacing1.getOpposite()))
 							&& (!flag1 || enumfacing2 == null
@@ -1012,15 +1012,15 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		for (BlockPos.MutableBlockPos blockpos$mutableblockpos : BlockPos.getAllInBoxMutable(blockpos,
 				blockpos.add(15, 15, 15))) {
 			if (chunk.getBlock(blockpos$mutableblockpos).isOpaqueCube()) {
-				visgraph.func_178606_a(blockpos$mutableblockpos);
+				visgraph.setOpaqueCube(blockpos$mutableblockpos);
 			}
 		}
 
-		return visgraph.func_178609_b(pos);
+		return visgraph.getVisibleFacings(pos);
 	}
 
-	private RenderChunk func_181562_a(BlockPos parBlockPos, RenderChunk parRenderChunk, EnumFacing parEnumFacing) {
-		BlockPos blockpos = parRenderChunk.func_181701_a(parEnumFacing);
+	private RenderChunk getRenderChunkOffset(BlockPos parBlockPos, RenderChunk parRenderChunk, EnumFacing parEnumFacing) {
+		BlockPos blockpos = parRenderChunk.getBlockPosOffset16(parEnumFacing);
 		return MathHelper
 				.abs_int(parBlockPos.getX() - blockpos.getX()) > this.renderDistanceChunks * 16
 						? null
@@ -1041,9 +1041,9 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		Matrix4f matrix4f2 = new Matrix4f();
 		Matrix4f.mul(matrix4f1, matrix4f, matrix4f2);
 		matrix4f2.invert();
-		this.debugTerrainFrustumPosition.field_181059_a = x;
-		this.debugTerrainFrustumPosition.field_181060_b = y;
-		this.debugTerrainFrustumPosition.field_181061_c = z;
+		this.debugTerrainFrustumPosition.x = x;
+		this.debugTerrainFrustumPosition.y = y;
+		this.debugTerrainFrustumPosition.z = z;
 		this.debugTerrainMatrix[0] = new Vector4f(-1.0F, -1.0F, -1.0F, 1.0F);
 		this.debugTerrainMatrix[1] = new Vector4f(1.0F, -1.0F, -1.0F, 1.0F);
 		this.debugTerrainMatrix[2] = new Vector4f(1.0F, 1.0F, -1.0F, 1.0F);
@@ -1459,7 +1459,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 
 	public void renderClouds(float partialTicks, int pass) {
 		if (this.mc.theWorld.provider.isSurfaceWorld()) {
-			if (this.mc.gameSettings.func_181147_e() == 2) {
+			if (this.mc.gameSettings.shouldRenderClouds() == 2) {
 				this.renderCloudsFancy(partialTicks, pass);
 			} else {
 				GlStateManager.disableCull();
@@ -2026,7 +2026,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 				double d0 = player.lastTickPosX + (player.posX - player.lastTickPosX) * (double) parFloat1;
 				double d1 = player.lastTickPosY + (player.posY - player.lastTickPosY) * (double) parFloat1;
 				double d2 = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * (double) parFloat1;
-				func_181561_a(block.getSelectedBoundingBox(this.theWorld, blockpos)
+				drawSelectionBoundingBox(block.getSelectedBoundingBox(this.theWorld, blockpos)
 						.expand(0.0020000000949949026D, 0.0020000000949949026D, 0.0020000000949949026D)
 						.offset(-d0, -d1, -d2));
 			}
@@ -2038,7 +2038,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 
 	}
 
-	public static void func_181561_a(AxisAlignedBB parAxisAlignedBB) {
+	public static void drawSelectionBoundingBox(AxisAlignedBB parAxisAlignedBB) {
 		Tessellator tessellator = Tessellator.getInstance();
 		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 		worldrenderer.begin(3, DefaultVertexFormats.POSITION);
@@ -2067,7 +2067,7 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		tessellator.draw();
 	}
 
-	public static void func_181563_a(AxisAlignedBB parAxisAlignedBB, int parInt1, int parInt2, int parInt3,
+	public static void drawOutlinedBoundingBox(AxisAlignedBB parAxisAlignedBB, int parInt1, int parInt2, int parInt3,
 			int parInt4) {
 		Tessellator tessellator = Tessellator.getInstance();
 		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
@@ -2497,10 +2497,10 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		this.displayListEntitiesDirty = true;
 	}
 
-	public void func_181023_a(Collection<TileEntity> parCollection, Collection<TileEntity> parCollection2) {
-		synchronized (this.field_181024_n) {
-			this.field_181024_n.removeAll(parCollection);
-			this.field_181024_n.addAll(parCollection2);
+	public void updateTileEntities(Collection<TileEntity> parCollection, Collection<TileEntity> parCollection2) {
+		synchronized (this.setTileEntities) {
+			this.setTileEntities.removeAll(parCollection);
+			this.setTileEntities.addAll(parCollection2);
 		}
 	}
 

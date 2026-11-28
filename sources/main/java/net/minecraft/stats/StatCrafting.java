@@ -25,19 +25,19 @@ import net.minecraft.util.IChatComponent;
  * 
  */
 public class StatCrafting extends StatBase {
-	private final Item field_150960_a;
+	private final Item item;
 
 	public StatCrafting(String parString1, String parString2, IChatComponent statNameIn, Item parItem) {
 		super(parString1 + parString2, statNameIn);
-		this.field_150960_a = parItem;
+		this.item = parItem;
 		int i = Item.getIdFromItem(parItem);
 		if (i != 0) {
-			IScoreObjectiveCriteria.INSTANCES.put(parString1 + i, this.func_150952_k());
+			IScoreObjectiveCriteria.INSTANCES.put(parString1 + i, this.getCriteria());
 		}
 
 	}
 
-	public Item func_150959_a() {
-		return this.field_150960_a;
+	public Item getItem() {
+		return this.item;
 	}
 }

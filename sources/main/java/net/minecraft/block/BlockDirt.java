@@ -57,7 +57,7 @@ public class BlockDirt extends Block {
 	 * Get the MapColor for this Block and the given BlockState
 	 */
 	public MapColor getMapColor(IBlockState iblockstate) {
-		return ((BlockDirt.DirtType) iblockstate.getValue(VARIANT)).func_181066_d();
+		return ((BlockDirt.DirtType) iblockstate.getValue(VARIANT)).getColor();
 	}
 
 	/**+
@@ -131,7 +131,7 @@ public class BlockDirt extends Block {
 		private final int metadata;
 		private final String name;
 		private final String unlocalizedName;
-		private final MapColor field_181067_h;
+		private final MapColor color;
 
 		private DirtType(int parInt2, String parString2, MapColor parMapColor) {
 			this(parInt2, parString2, parString2, parMapColor);
@@ -141,7 +141,7 @@ public class BlockDirt extends Block {
 			this.metadata = parInt2;
 			this.name = parString2;
 			this.unlocalizedName = parString3;
-			this.field_181067_h = parMapColor;
+			this.color = parMapColor;
 		}
 
 		public int getMetadata() {
@@ -152,8 +152,8 @@ public class BlockDirt extends Block {
 			return this.unlocalizedName;
 		}
 
-		public MapColor func_181066_d() {
-			return this.field_181067_h;
+		public MapColor getColor() {
+			return this.color;
 		}
 
 		public String toString() {

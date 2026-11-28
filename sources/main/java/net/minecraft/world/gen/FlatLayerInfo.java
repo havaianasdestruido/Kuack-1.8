@@ -25,8 +25,8 @@ import net.minecraft.util.ResourceLocation;
  * 
  */
 public class FlatLayerInfo {
-	private final int field_175902_a;
-	private IBlockState field_175901_b;
+	private final int version;
+	private IBlockState layerMaterial;
 	private int layerCount;
 	private int layerMinimumY;
 
@@ -36,14 +36,14 @@ public class FlatLayerInfo {
 
 	public FlatLayerInfo(int parInt1, int parInt2, Block parBlock) {
 		this.layerCount = 1;
-		this.field_175902_a = parInt1;
+		this.version = parInt1;
 		this.layerCount = parInt2;
-		this.field_175901_b = parBlock.getDefaultState();
+		this.layerMaterial = parBlock.getDefaultState();
 	}
 
 	public FlatLayerInfo(int parInt1, int parInt2, Block parBlock, int parInt3) {
 		this(parInt1, parInt2, parBlock);
-		this.field_175901_b = parBlock.getStateFromMeta(parInt3);
+		this.layerMaterial = parBlock.getStateFromMeta(parInt3);
 	}
 
 	/**+
@@ -53,19 +53,19 @@ public class FlatLayerInfo {
 		return this.layerCount;
 	}
 
-	public IBlockState func_175900_c() {
-		return this.field_175901_b;
+	public IBlockState getLayerMaterial() {
+		return this.layerMaterial;
 	}
 
-	private Block func_151536_b() {
-		return this.field_175901_b.getBlock();
+	private Block getLayerMaterialBlock() {
+		return this.layerMaterial.getBlock();
 	}
 
 	/**+
 	 * Return the block metadata used on this set of layers.
 	 */
 	private int getFillBlockMeta() {
-		return this.field_175901_b.getBlock().getMetaFromState(this.field_175901_b);
+		return this.layerMaterial.getBlock().getMetaFromState(this.layerMaterial);
 	}
 
 	/**+
@@ -85,15 +85,15 @@ public class FlatLayerInfo {
 
 	public String toString() {
 		String s;
-		if (this.field_175902_a >= 3) {
+		if (this.version >= 3) {
 			ResourceLocation resourcelocation = (ResourceLocation) Block.blockRegistry
-					.getNameForObject(this.func_151536_b());
+					.getNameForObject(this.getLayerMaterialBlock());
 			s = resourcelocation == null ? "null" : resourcelocation.toString();
 			if (this.layerCount > 1) {
 				s = this.layerCount + "*" + s;
 			}
 		} else {
-			s = Integer.toString(Block.getIdFromBlock(this.func_151536_b()));
+			s = Integer.toString(Block.getIdFromBlock(this.getLayerMaterialBlock()));
 			if (this.layerCount > 1) {
 				s = this.layerCount + "x" + s;
 			}

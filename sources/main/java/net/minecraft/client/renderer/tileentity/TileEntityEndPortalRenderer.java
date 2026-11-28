@@ -40,8 +40,8 @@ import net.minecraft.util.ResourceLocation;
 public class TileEntityEndPortalRenderer extends TileEntitySpecialRenderer<TileEntityEndPortal> {
 	private static final ResourceLocation END_SKY_TEXTURE = new ResourceLocation("textures/environment/end_sky.png");
 	private static final ResourceLocation END_PORTAL_TEXTURE = new ResourceLocation("textures/entity/end_portal.png");
-	private static final EaglercraftRandom field_147527_e = new EaglercraftRandom(31100L);
-	FloatBuffer field_147528_b = GLAllocation.createDirectFloatBuffer(16);
+	private static final EaglercraftRandom RANDOM = new EaglercraftRandom(31100L);
+	FloatBuffer buffer = GLAllocation.createDirectFloatBuffer(16);
 
 	public void renderTileEntityAt(TileEntityEndPortal var1, double d0, double d1, double d2, float var8, int var9) {
 		if (DeferredStateManager.isInDeferredPass()) {
@@ -76,7 +76,7 @@ public class TileEntityEndPortalRenderer extends TileEntitySpecialRenderer<TileE
 		float f1 = (float) this.rendererDispatcher.entityY;
 		float f2 = (float) this.rendererDispatcher.entityZ;
 		GlStateManager.disableLighting();
-		field_147527_e.setSeed(31100L);
+		RANDOM.setSeed(31100L);
 		float f3 = 0.75F;
 
 		for (int i = 0; i < 16; ++i) {
@@ -119,10 +119,10 @@ public class TileEntityEndPortalRenderer extends TileEntitySpecialRenderer<TileE
 			GlStateManager.texGen(GlStateManager.TexGen.T, GL_OBJECT_LINEAR);
 			GlStateManager.texGen(GlStateManager.TexGen.R, GL_OBJECT_LINEAR);
 			GlStateManager.texGen(GlStateManager.TexGen.Q, GL_EYE_LINEAR);
-			GlStateManager.func_179105_a(GlStateManager.TexGen.S, GL_OBJECT_PLANE, this.func_147525_a(1.0F, 0.0F, 0.0F, 0.0F));
-			GlStateManager.func_179105_a(GlStateManager.TexGen.T, GL_OBJECT_PLANE, this.func_147525_a(0.0F, 0.0F, 1.0F, 0.0F));
-			GlStateManager.func_179105_a(GlStateManager.TexGen.R, GL_OBJECT_PLANE, this.func_147525_a(0.0F, 0.0F, 0.0F, 1.0F));
-			GlStateManager.func_179105_a(GlStateManager.TexGen.Q, GL_EYE_PLANE, this.func_147525_a(0.0F, 1.0F, 0.0F, 0.0F));
+			GlStateManager.texGenPlane(GlStateManager.TexGen.S, GL_OBJECT_PLANE, this.getBuffer(1.0F, 0.0F, 0.0F, 0.0F));
+			GlStateManager.texGenPlane(GlStateManager.TexGen.T, GL_OBJECT_PLANE, this.getBuffer(0.0F, 0.0F, 1.0F, 0.0F));
+			GlStateManager.texGenPlane(GlStateManager.TexGen.R, GL_OBJECT_PLANE, this.getBuffer(0.0F, 0.0F, 0.0F, 1.0F));
+			GlStateManager.texGenPlane(GlStateManager.TexGen.Q, GL_EYE_PLANE, this.getBuffer(0.0F, 1.0F, 0.0F, 0.0F));
 			GlStateManager.enableTexGen();
 			GlStateManager.popMatrix();
 			GlStateManager.matrixMode(GL_TEXTURE);
@@ -140,9 +140,9 @@ public class TileEntityEndPortalRenderer extends TileEntitySpecialRenderer<TileE
 			Tessellator tessellator = Tessellator.getInstance();
 			WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 			worldrenderer.begin(7, DefaultVertexFormats.POSITION_COLOR);
-			float f11 = (field_147527_e.nextFloat() * 0.5F + 0.1F) * f6;
-			float f12 = (field_147527_e.nextFloat() * 0.5F + 0.4F) * f6;
-			float f13 = (field_147527_e.nextFloat() * 0.5F + 0.5F) * f6;
+			float f11 = (RANDOM.nextFloat() * 0.5F + 0.1F) * f6;
+			float f12 = (RANDOM.nextFloat() * 0.5F + 0.4F) * f6;
+			float f13 = (RANDOM.nextFloat() * 0.5F + 0.5F) * f6;
 			if (i == 0) {
 				f11 = f12 = f13 = 1.0F * f6;
 			}
@@ -161,10 +161,10 @@ public class TileEntityEndPortalRenderer extends TileEntitySpecialRenderer<TileE
 		GlStateManager.enableLighting();
 	}
 
-	private FloatBuffer func_147525_a(float parFloat1, float parFloat2, float parFloat3, float parFloat4) {
-		this.field_147528_b.clear();
-		this.field_147528_b.put(parFloat1).put(parFloat2).put(parFloat3).put(parFloat4);
-		this.field_147528_b.flip();
-		return this.field_147528_b;
+	private FloatBuffer getBuffer(float parFloat1, float parFloat2, float parFloat3, float parFloat4) {
+		this.buffer.clear();
+		this.buffer.put(parFloat1).put(parFloat2).put(parFloat3).put(parFloat4);
+		this.buffer.flip();
+		return this.buffer;
 	}
 }

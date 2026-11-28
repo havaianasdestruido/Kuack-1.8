@@ -67,7 +67,7 @@ public abstract class Render<T extends Entity> {
 			return true;
 		}
 		AxisAlignedBB axisalignedbb = livingEntity.getEntityBoundingBox();
-		if (axisalignedbb.func_181656_b() || axisalignedbb.getAverageEdgeLength() == 0.0D) {
+		if (axisalignedbb.hasNaN() || axisalignedbb.getAverageEdgeLength() == 0.0D) {
 			axisalignedbb = new AxisAlignedBB(livingEntity.posX - 2.0D, livingEntity.posY - 2.0D,
 					livingEntity.posZ - 2.0D, livingEntity.posX + 2.0D, livingEntity.posY + 2.0D,
 					livingEntity.posZ + 2.0D);
@@ -226,7 +226,7 @@ public abstract class Render<T extends Entity> {
 		for (BlockPos blockpos : BlockPos.getAllInBoxMutable(new BlockPos(i, k, i1), new BlockPos(j, l, j1))) {
 			Block block = world.getBlockState(blockpos.down()).getBlock();
 			if (block.getRenderType() != -1 && world.getLightFromNeighbors(blockpos) > 3) {
-				this.func_180549_a(block, x, y, z, blockpos, shadowAlpha, f, d2, d3, d4);
+				this.renderShadowBlock(block, x, y, z, blockpos, shadowAlpha, f, d2, d3, d4);
 			}
 		}
 
@@ -243,7 +243,7 @@ public abstract class Render<T extends Entity> {
 		return this.renderManager.worldObj;
 	}
 
-	private void func_180549_a(Block blockIn, double pos, double parDouble2, double parDouble3, BlockPos parBlockPos,
+	private void renderShadowBlock(Block blockIn, double pos, double parDouble2, double parDouble3, BlockPos parBlockPos,
 			float parFloat1, float parFloat2, double parDouble4, double parDouble5, double parDouble6) {
 		if (blockIn.isFullCube()) {
 			Tessellator tessellator = Tessellator.getInstance();
@@ -322,7 +322,7 @@ public abstract class Render<T extends Entity> {
 	 */
 	public void doRenderShadowAndFire(Entity entityIn, double x, double y, double z, float yaw, float partialTicks) {
 		if (this.renderManager.options != null) {
-			if (!DeferredStateManager.isInDeferredPass() && this.renderManager.options.field_181151_V
+			if (!DeferredStateManager.isInDeferredPass() && this.renderManager.options.entityShadows
 					&& this.shadowSize > 0.0F && !entityIn.isInvisible() && this.renderManager.isRenderShadow()) {
 				double d0 = this.renderManager.getDistanceToCamera(entityIn.posX, entityIn.posY, entityIn.posZ);
 				float f = (float) ((1.0D - d0 / 256.0D) * (double) this.shadowOpaque);

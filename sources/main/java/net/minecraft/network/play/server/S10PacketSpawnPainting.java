@@ -50,7 +50,7 @@ public class S10PacketSpawnPainting implements Packet<INetHandlerPlayClient> {
 	 */
 	public void readPacketData(PacketBuffer parPacketBuffer) throws IOException {
 		this.entityID = parPacketBuffer.readVarIntFromBuffer();
-		this.title = parPacketBuffer.readStringFromBuffer(EntityPainting.EnumArt.field_180001_A);
+		this.title = parPacketBuffer.readStringFromBuffer(EntityPainting.EnumArt.MAX_NAME_LENGTH);
 		this.position = parPacketBuffer.readBlockPos();
 		this.facing = EnumFacing.getHorizontal(parPacketBuffer.readUnsignedByte());
 	}

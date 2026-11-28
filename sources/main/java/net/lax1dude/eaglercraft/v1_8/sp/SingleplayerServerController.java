@@ -520,7 +520,7 @@ public class SingleplayerServerController implements ISaveFormat {
 	}
 
 	@Override
-	public boolean func_154335_d(String var1) {
+	public boolean isNewLevelIdAcceptable(String var1) {
 		return false;
 	}
 
@@ -544,7 +544,7 @@ public class SingleplayerServerController implements ISaveFormat {
 	}
 
 	@Override
-	public boolean func_154334_a(String var1) {
+	public boolean isConvertible(String var1) {
 		return false;
 	}
 

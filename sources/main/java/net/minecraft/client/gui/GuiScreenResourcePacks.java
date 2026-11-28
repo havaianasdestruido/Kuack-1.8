@@ -146,20 +146,20 @@ public class GuiScreenResourcePacks extends GuiScreen {
 					for (int i = 0, l = this.selectedResourcePacks.size(); i < l; ++i) {
 						ResourcePackListEntry resourcepacklistentry = this.selectedResourcePacks.get(i);
 						if (resourcepacklistentry instanceof ResourcePackListEntryFound) {
-							arraylist.add(((ResourcePackListEntryFound) resourcepacklistentry).func_148318_i());
+							arraylist.add(((ResourcePackListEntryFound) resourcepacklistentry).getResourcePackEntry());
 						}
 					}
 
 					Collections.reverse(arraylist);
 					this.mc.getResourcePackRepository().setRepositories(arraylist);
 					this.mc.gameSettings.resourcePacks.clear();
-					this.mc.gameSettings.field_183018_l.clear();
+					this.mc.gameSettings.incompatibleResourcePacks.clear();
 
 					for (int i = 0, l = arraylist.size(); i < l; ++i) {
 						ResourcePackRepository.Entry resourcepackrepository$entry = arraylist.get(i);
 						this.mc.gameSettings.resourcePacks.add(resourcepackrepository$entry.getResourcePackName());
-						if (resourcepackrepository$entry.func_183027_f() != 1) {
-							this.mc.gameSettings.field_183018_l.add(resourcepackrepository$entry.getResourcePackName());
+						if (resourcepackrepository$entry.getPackFormat() != 1) {
+							this.mc.gameSettings.incompatibleResourcePacks.add(resourcepackrepository$entry.getResourcePackName());
 						}
 					}
 
@@ -199,20 +199,20 @@ public class GuiScreenResourcePacks extends GuiScreen {
 		for (int i = 0, l = this.selectedResourcePacks.size(); i < l; ++i) {
 			ResourcePackListEntry resourcepacklistentry = this.selectedResourcePacks.get(i);
 			if (resourcepacklistentry instanceof ResourcePackListEntryFound) {
-				arraylist.add(((ResourcePackListEntryFound) resourcepacklistentry).func_148318_i());
+				arraylist.add(((ResourcePackListEntryFound) resourcepacklistentry).getResourcePackEntry());
 			}
 		}
 
 		Collections.reverse(arraylist);
 		this.mc.getResourcePackRepository().setRepositories(arraylist);
 		this.mc.gameSettings.resourcePacks.clear();
-		this.mc.gameSettings.field_183018_l.clear();
+		this.mc.gameSettings.incompatibleResourcePacks.clear();
 
 		for (int i = 0, l = arraylist.size(); i < l; ++i) {
 			ResourcePackRepository.Entry resourcepackrepository$entry = arraylist.get(i);
 			this.mc.gameSettings.resourcePacks.add(resourcepackrepository$entry.getResourcePackName());
-			if (resourcepackrepository$entry.func_183027_f() != 1) {
-				this.mc.gameSettings.field_183018_l.add(resourcepackrepository$entry.getResourcePackName());
+			if (resourcepackrepository$entry.getPackFormat() != 1) {
+				this.mc.gameSettings.incompatibleResourcePacks.add(resourcepackrepository$entry.getResourcePackName());
 			}
 		}
 

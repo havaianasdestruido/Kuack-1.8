@@ -44,11 +44,11 @@ public class GenLayerRiver extends GenLayer {
 
 		for (int i2 = 0; i2 < l; ++i2) {
 			for (int j2 = 0; j2 < k; ++j2) {
-				int k2 = this.func_151630_c(aint[j2 + 0 + (i2 + 1) * k1]);
-				int l2 = this.func_151630_c(aint[j2 + 2 + (i2 + 1) * k1]);
-				int i3 = this.func_151630_c(aint[j2 + 1 + (i2 + 0) * k1]);
-				int j3 = this.func_151630_c(aint[j2 + 1 + (i2 + 2) * k1]);
-				int k3 = this.func_151630_c(aint[j2 + 1 + (i2 + 1) * k1]);
+				int k2 = this.riverFilter(aint[j2 + 0 + (i2 + 1) * k1]);
+				int l2 = this.riverFilter(aint[j2 + 2 + (i2 + 1) * k1]);
+				int i3 = this.riverFilter(aint[j2 + 1 + (i2 + 0) * k1]);
+				int j3 = this.riverFilter(aint[j2 + 1 + (i2 + 2) * k1]);
+				int k3 = this.riverFilter(aint[j2 + 1 + (i2 + 1) * k1]);
 				if (k3 == k2 && k3 == i3 && k3 == l2 && k3 == j3) {
 					aint1[j2 + i2 * k] = -1;
 				} else {
@@ -60,7 +60,7 @@ public class GenLayerRiver extends GenLayer {
 		return aint1;
 	}
 
-	private int func_151630_c(int parInt1) {
+	private int riverFilter(int parInt1) {
 		return parInt1 >= 2 ? 2 + (parInt1 & 1) : parInt1;
 	}
 }

@@ -237,7 +237,7 @@ public class EntityTracker {
 
 	}
 
-	public void func_180245_a(EntityPlayerMP parEntityPlayerMP) {
+	public void updateVisibility(EntityPlayerMP parEntityPlayerMP) {
 		for (EntityTrackerEntry entitytrackerentry : this.trackedEntities) {
 			if (entitytrackerentry.trackedEntity == parEntityPlayerMP) {
 				entitytrackerentry.updatePlayerEntities(this.theWorld.playerEntities);
@@ -257,7 +257,7 @@ public class EntityTracker {
 
 	}
 
-	public void func_151248_b(Entity entityIn, Packet parPacket) {
+	public void sendToTrackingAndSelf(Entity entityIn, Packet parPacket) {
 		EntityTrackerEntry entitytrackerentry = (EntityTrackerEntry) this.trackedEntityHashTable
 				.lookup(entityIn.getEntityId());
 		if (entitytrackerentry != null) {
@@ -273,7 +273,7 @@ public class EntityTracker {
 
 	}
 
-	public void func_85172_a(EntityPlayerMP parEntityPlayerMP, Chunk parChunk) {
+	public void sendLeashedEntitiesInChunk(EntityPlayerMP parEntityPlayerMP, Chunk parChunk) {
 		for (EntityTrackerEntry entitytrackerentry : this.trackedEntities) {
 			if (entitytrackerentry.trackedEntity != parEntityPlayerMP
 					&& entitytrackerentry.trackedEntity.chunkCoordX == parChunk.xPosition

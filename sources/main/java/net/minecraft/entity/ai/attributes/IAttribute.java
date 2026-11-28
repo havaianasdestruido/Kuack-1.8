@@ -29,5 +29,5 @@ public interface IAttribute {
 
 	boolean getShouldWatch();
 
-	IAttribute func_180372_d();
+	IAttribute getParent();
 }

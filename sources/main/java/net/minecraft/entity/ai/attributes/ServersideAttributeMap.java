@@ -58,11 +58,11 @@ public class ServersideAttributeMap extends BaseAttributeMap {
 		return iattributeinstance;
 	}
 
-	protected IAttributeInstance func_180376_c(IAttribute iattribute) {
+	protected IAttributeInstance createInstance(IAttribute iattribute) {
 		return new ModifiableAttributeInstance(this, iattribute);
 	}
 
-	public void func_180794_a(IAttributeInstance iattributeinstance) {
+	public void onAttributeModified(IAttributeInstance iattributeinstance) {
 		if (iattributeinstance.getAttribute().getShouldWatch()) {
 			this.attributeInstanceSet.add(iattributeinstance);
 		}

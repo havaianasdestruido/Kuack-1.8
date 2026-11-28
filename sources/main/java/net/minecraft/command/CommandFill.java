@@ -202,8 +202,8 @@ public class CommandFill extends CommandBase {
 	public List<String> addTabCompletionOptions(ICommandSender var1, String[] astring, BlockPos blockpos) {
 		return astring.length > 0
 				&& astring.length <= 3
-						? func_175771_a(astring, 0, blockpos)
-						: (astring.length > 3 && astring.length <= 6 ? func_175771_a(astring, 3, blockpos)
+						? getTabCompletionCoordinate(astring, 0, blockpos)
+						: (astring.length > 3 && astring.length <= 6 ? getTabCompletionCoordinate(astring, 3, blockpos)
 								: (astring.length == 7
 										? getListOfStringsMatchingLastWord(astring, Block.blockRegistry.getKeys())
 										: (astring.length == 9

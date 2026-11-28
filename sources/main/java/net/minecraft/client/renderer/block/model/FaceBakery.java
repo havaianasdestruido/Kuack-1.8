@@ -33,8 +33,8 @@ import net.minecraft.util.Vec3i;
  * 
  */
 public class FaceBakery {
-	private static final float field_178418_a = 1.0F / (float) Math.cos(0.39269909262657166D) - 1.0F;
-	private static final float field_178417_b = 1.0F / (float) Math.cos(0.7853981852531433D) - 1.0F;
+	private static final float SCALE_ROTATION_22_5 = 1.0F / (float) Math.cos(0.39269909262657166D) - 1.0F;
+	private static final float SCALE_ROTATION_GENERAL = 1.0F / (float) Math.cos(0.7853981852531433D) - 1.0F;
 
 	private int stride = 7;
 
@@ -47,22 +47,22 @@ public class FaceBakery {
 		Vector3f calcNormal = getNormalFromVertexData(aint);
 		EnumFacing enumfacing = getFacingFromVertexData(calcNormal);
 		if (uvLocked) {
-			this.func_178409_a(aint, enumfacing, face.blockFaceUV, sprite);
+			this.lockUv(aint, enumfacing, face.blockFaceUV, sprite);
 		}
 
 		if (partRotation == null) {
-			this.func_178408_a(aint, enumfacing);
+			this.applyFacing(aint, enumfacing);
 		}
 
 		stride = 8;
 		int[] aint2 = this.makeQuadVertexData(face, sprite, facing, this.getPositionsDiv16(posFrom, posTo),
 				modelRotationIn, partRotation, uvLocked, shade, calcNormal);
 		if (uvLocked) {
-			this.func_178409_a(aint2, enumfacing, face.blockFaceUV, sprite);
+			this.lockUv(aint2, enumfacing, face.blockFaceUV, sprite);
 		}
 
 		if (partRotation == null) {
-			this.func_178408_a(aint2, enumfacing);
+			this.applyFacing(aint2, enumfacing);
 		}
 		stride = 7;
 
@@ -124,11 +124,11 @@ public class FaceBakery {
 				? this.getFaceShadeColor(enumfacing)
 				: -1;
 		EnumFaceDirection.VertexInformation enumfacedirection$vertexinformation = EnumFaceDirection.getFacing(facing)
-				.func_179025_a(vertexIndex);
-		Vector3f vector3f = new Vector3f(sprite[enumfacedirection$vertexinformation.field_179184_a],
-				sprite[enumfacedirection$vertexinformation.field_179182_b],
-				sprite[enumfacedirection$vertexinformation.field_179183_c]);
-		this.func_178407_a(vector3f, uvLocked);
+				.getVertexInformation(vertexIndex);
+		Vector3f vector3f = new Vector3f(sprite[enumfacedirection$vertexinformation.xIndex],
+				sprite[enumfacedirection$vertexinformation.yIndex],
+				sprite[enumfacedirection$vertexinformation.zIndex]);
+		this.rotatePart(vector3f, uvLocked);
 		int j = this.rotateVertex(vector3f, facing, vertexIndex, partRotation, shade);
 		this.storeVertexData(faceData, j, vertexIndex, vector3f, i, modelRotationIn, partFace.blockFaceUV, enumfacing,
 				calcNormal);
@@ -138,9 +138,9 @@ public class FaceBakery {
 			EaglerTextureAtlasSprite sprite, BlockFaceUV faceUV, EnumFacing facing, Vector3f calcNormal) {
 		int i = storeIndex * stride;
 		faceData[i + 3] = shadeColor;
-		faceData[i + 4] = Float.floatToRawIntBits(sprite.getInterpolatedU((double) faceUV.func_178348_a(vertexIndex)));
+		faceData[i + 4] = Float.floatToRawIntBits(sprite.getInterpolatedU((double) faceUV.getVertexU(vertexIndex)));
 		faceData[i + 4 + 1] = Float
-				.floatToRawIntBits(sprite.getInterpolatedV((double) faceUV.func_178346_b(vertexIndex)));
+				.floatToRawIntBits(sprite.getInterpolatedV((double) faceUV.getVertexV(vertexIndex)));
 		if (stride == 8) {
 			if (!Minecraft.getMinecraft().gameSettings.shaders) {
 				faceData[i] = Float.floatToRawIntBits(position.x);
@@ -172,7 +172,7 @@ public class FaceBakery {
 		}
 	}
 
-	private void func_178407_a(Vector3f partRotation, BlockPartRotation parBlockPartRotation) {
+	private void rotatePart(Vector3f partRotation, BlockPartRotation parBlockPartRotation) {
 		if (parBlockPartRotation != null) {
 			Matrix4f matrix4f = this.getMatrixIdentity();
 			Vector3f vector3f = new Vector3f(0.0F, 0.0F, 0.0F);
@@ -195,9 +195,9 @@ public class FaceBakery {
 
 			if (parBlockPartRotation.rescale) {
 				if (Math.abs(parBlockPartRotation.angle) == 22.5F) {
-					vector3f.scale(field_178418_a);
+					vector3f.scale(SCALE_ROTATION_22_5);
 				} else {
-					vector3f.scale(field_178417_b);
+					vector3f.scale(SCALE_ROTATION_GENERAL);
 				}
 
 				Vector3f.add(vector3f, new Vector3f(1.0F, 1.0F, 1.0F), vector3f);
@@ -280,15 +280,15 @@ public class FaceBakery {
 		}
 	}
 
-	public void func_178409_a(int[] facing, EnumFacing parEnumFacing, BlockFaceUV parBlockFaceUV,
+	public void lockUv(int[] facing, EnumFacing parEnumFacing, BlockFaceUV parBlockFaceUV,
 			EaglerTextureAtlasSprite parTextureAtlasSprite) {
 		for (int i = 0; i < 4; ++i) {
-			this.func_178401_a(i, facing, parEnumFacing, parBlockFaceUV, parTextureAtlasSprite);
+			this.lockVertexUv(i, facing, parEnumFacing, parBlockFaceUV, parTextureAtlasSprite);
 		}
 
 	}
 
-	private void func_178408_a(int[] parArrayOfInt, EnumFacing parEnumFacing) {
+	private void applyFacing(int[] parArrayOfInt, EnumFacing parEnumFacing) {
 		int[] aint = new int[parArrayOfInt.length];
 		System.arraycopy(parArrayOfInt, 0, aint, 0, parArrayOfInt.length);
 		float[] afloat = new float[EnumFacing._VALUES.length];
@@ -334,10 +334,10 @@ public class FaceBakery {
 		for (int i1 = 0; i1 < 4; ++i1) {
 			int j1 = stride * i1;
 			EnumFaceDirection.VertexInformation enumfacedirection$vertexinformation = enumfacedirection
-					.func_179025_a(i1);
-			float f8 = afloat[enumfacedirection$vertexinformation.field_179184_a];
-			float f3 = afloat[enumfacedirection$vertexinformation.field_179182_b];
-			float f4 = afloat[enumfacedirection$vertexinformation.field_179183_c];
+					.getVertexInformation(i1);
+			float f8 = afloat[enumfacedirection$vertexinformation.xIndex];
+			float f3 = afloat[enumfacedirection$vertexinformation.yIndex];
+			float f4 = afloat[enumfacedirection$vertexinformation.zIndex];
 			parArrayOfInt[j1] = Float.floatToRawIntBits(f8);
 			parArrayOfInt[j1 + 1] = Float.floatToRawIntBits(f3);
 			parArrayOfInt[j1 + 2] = Float.floatToRawIntBits(f4);
@@ -357,7 +357,7 @@ public class FaceBakery {
 
 	}
 
-	private void func_178401_a(int facing, int[] parArrayOfInt, EnumFacing parEnumFacing, BlockFaceUV parBlockFaceUV,
+	private void lockVertexUv(int facing, int[] parArrayOfInt, EnumFacing parEnumFacing, BlockFaceUV parBlockFaceUV,
 			EaglerTextureAtlasSprite parTextureAtlasSprite) {
 		int i = stride * facing;
 		float f = Float.intBitsToFloat(parArrayOfInt[i]);
@@ -403,7 +403,7 @@ public class FaceBakery {
 			f4 = (1.0F - f1) * 16.0F;
 		}
 
-		int j = parBlockFaceUV.func_178345_c(facing) * stride;
+		int j = parBlockFaceUV.getVertexRotatedRev(facing) * stride;
 		parArrayOfInt[j + 4] = Float.floatToRawIntBits(parTextureAtlasSprite.getInterpolatedU((double) f3));
 		parArrayOfInt[j + 4 + 1] = Float.floatToRawIntBits(parTextureAtlasSprite.getInterpolatedV((double) f4));
 	}

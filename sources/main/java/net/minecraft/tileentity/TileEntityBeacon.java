@@ -58,7 +58,7 @@ public class TileEntityBeacon extends TileEntityLockable implements ITickable, I
 	 */
 	private final List<TileEntityBeacon.BeamSegment> beamSegments = Lists.newArrayList();
 	private long beamRenderCounter;
-	private float field_146014_j;
+	private float beamRenderScale;
 	private boolean isComplete;
 	/**+
 	 * Level of this beacon's pyramid.
@@ -122,16 +122,16 @@ public class TileEntityBeacon extends TileEntityLockable implements ITickable, I
 		this.beamSegments.clear();
 		this.isComplete = true;
 		TileEntityBeacon.BeamSegment tileentitybeacon$beamsegment = new TileEntityBeacon.BeamSegment(
-				EntitySheep.func_175513_a(EnumDyeColor.WHITE));
+				EntitySheep.getDyeRgb(EnumDyeColor.WHITE));
 		this.beamSegments.add(tileentitybeacon$beamsegment);
 		boolean flag = true;
 		BlockPos.MutableBlockPos blockpos$mutableblockpos = new BlockPos.MutableBlockPos();
 
 		for (int i1 = k + 1; i1 < 256; ++i1) {
-			IBlockState iblockstate = this.worldObj.getBlockState(blockpos$mutableblockpos.func_181079_c(j, i1, l));
+			IBlockState iblockstate = this.worldObj.getBlockState(blockpos$mutableblockpos.setPos(j, i1, l));
 			float[] afloat;
 			if (iblockstate.getBlock() == Blocks.stained_glass) {
-				afloat = EntitySheep.func_175513_a((EnumDyeColor) iblockstate.getValue(BlockStainedGlass.COLOR));
+				afloat = EntitySheep.getDyeRgb((EnumDyeColor) iblockstate.getValue(BlockStainedGlass.COLOR));
 			} else {
 				if (iblockstate.getBlock() != Blocks.stained_glass_pane) {
 					if (iblockstate.getBlock().getLightOpacity() >= 15 && iblockstate.getBlock() != Blocks.bedrock) {
@@ -144,7 +144,7 @@ public class TileEntityBeacon extends TileEntityLockable implements ITickable, I
 					continue;
 				}
 
-				afloat = EntitySheep.func_175513_a((EnumDyeColor) iblockstate.getValue(BlockStainedGlassPane.COLOR));
+				afloat = EntitySheep.getDyeRgb((EnumDyeColor) iblockstate.getValue(BlockStainedGlassPane.COLOR));
 			}
 
 			if (!flag) {
@@ -215,18 +215,18 @@ public class TileEntityBeacon extends TileEntityLockable implements ITickable, I
 			int i = (int) (this.worldObj.getTotalWorldTime() - this.beamRenderCounter);
 			this.beamRenderCounter = this.worldObj.getTotalWorldTime();
 			if (i > 1) {
-				this.field_146014_j -= (float) i / 40.0F;
-				if (this.field_146014_j < 0.0F) {
-					this.field_146014_j = 0.0F;
+				this.beamRenderScale -= (float) i / 40.0F;
+				if (this.beamRenderScale < 0.0F) {
+					this.beamRenderScale = 0.0F;
 				}
 			}
 
-			this.field_146014_j += 0.025F;
-			if (this.field_146014_j > 1.0F) {
-				this.field_146014_j = 1.0F;
+			this.beamRenderScale += 0.025F;
+			if (this.beamRenderScale > 1.0F) {
+				this.beamRenderScale = 1.0F;
 			}
 
-			return this.field_146014_j;
+			return this.beamRenderScale;
 		}
 	}
 

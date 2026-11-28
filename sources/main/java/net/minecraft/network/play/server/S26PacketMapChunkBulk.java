@@ -46,7 +46,7 @@ public class S26PacketMapChunkBulk implements Packet<INetHandlerPlayClient> {
 
 		for (int j = 0; j < i; ++j) {
 			Chunk chunk = (Chunk) chunks.get(j);
-			S21PacketChunkData.Extracted s21packetchunkdata$extracted = S21PacketChunkData.func_179756_a(chunk, true,
+			S21PacketChunkData.Extracted s21packetchunkdata$extracted = S21PacketChunkData.getExtractedData(chunk, true,
 					this.isOverworld, '\uffff');
 			this.xPositions[j] = chunk.xPosition;
 			this.zPositions[j] = chunk.zPosition;

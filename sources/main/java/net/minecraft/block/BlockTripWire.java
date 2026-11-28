@@ -163,7 +163,7 @@ public class BlockTripWire extends Block {
 				IBlockState iblockstate = worldIn.getBlockState(blockpos);
 				if (iblockstate.getBlock() == Blocks.tripwire_hook) {
 					if (iblockstate.getValue(BlockTripWireHook.FACING) == enumfacing.getOpposite()) {
-						Blocks.tripwire_hook.func_176260_a(worldIn, blockpos, iblockstate, false, true, i, state);
+						Blocks.tripwire_hook.calculateState(worldIn, blockpos, iblockstate, false, true, i, state);
 					}
 					break;
 				}

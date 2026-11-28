@@ -201,7 +201,7 @@ public class EntitySkeleton extends EntityMob implements IRangedAttackMob {
 		} else if (damagesource.getEntity() instanceof EntityCreeper
 				&& ((EntityCreeper) damagesource.getEntity()).getPowered()
 				&& ((EntityCreeper) damagesource.getEntity()).isAIEnabled()) {
-			((EntityCreeper) damagesource.getEntity()).func_175493_co();
+			((EntityCreeper) damagesource.getEntity()).incrementDroppedSkulls();
 			this.entityDropItem(new ItemStack(Items.skull, 1, this.getSkeletonType() == 1 ? 1 : 0), 0.0F);
 		}
 

@@ -60,7 +60,7 @@ public class BiomeCache {
 		return biomecache$block;
 	}
 
-	public BiomeGenBase func_180284_a(int x, int z, BiomeGenBase parBiomeGenBase) {
+	public BiomeGenBase getBiome(int x, int z, BiomeGenBase parBiomeGenBase) {
 		BiomeGenBase biomegenbase = this.getBiomeCacheBlock(x, z).getBiomeGenAt(x, z);
 		return biomegenbase == null ? parBiomeGenBase : biomegenbase;
 	}

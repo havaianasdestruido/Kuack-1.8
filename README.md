@@ -90,6 +90,27 @@ If you would like to host your own relay, the JAR file and instructions can be d
 
 EaglercraftX 1.8 includes a deferred physically-based renderer modeled after the GTA V rendering engine with many new improvements and a novel raytracing technique for fast realistic reflections. It can be enabled in the "Shaders" menu in the game's options screen. Shader packs in EaglercraftX are just a component of resource packs, so any custom shaders you install will be in the form of a resource pack. EaglercraftX also comes with a very well optimized built-in PBR shader pack and also a built-in PBR material texture pack to give all blocks and items in the game realistic lighting and materials that looks better than most vanilla Minecraft shader packs. The default shader and texture packs were created from scratch by lax1dude, shaders packs made for vanilla Minecraft will not work in EaglercraftX and no shaders in EaglercraftX were taken from vanilla Minecraft shader packs.
 
+## Readable game sources
+
+The decompiled Minecraft 1.8 code under `sources/main/java/net/minecraft` used to carry the
+machine-generated MCP names (`func_181159_b`, `field_183018_l`, ...) for anything MCP 9.18 does
+not name. Those names are now the readable MCP names, and where no mapping exists the member got
+a reviewed name instead. For example `Minecraft.field_181542_y` is `Minecraft.frameTimer`,
+`MathHelper.func_181159_b` is `MathHelper.atan2` and `Entity.func_181015_d` is
+`Entity.setPortal`.
+
+ - `patches/minecraft/rename_map.json` is the authoritative map. `renamed` lists every symbol that
+   was renamed, `allowlist` lists the 279 symbols that keep their generated name together with the
+   reason (an interface method with implementations, a member that is declared in a class outside
+   this tree, or a symbol with no mapping at all).
+ - Only names changed. Comments were left alone except where they referred to a renamed member,
+   and a token-level comparison of the whole tree (comments excluded) confirms that nothing else
+   moved.
+ - `tests/test_readable_names.py` is the guard: a pull request that adds a `func_`/`field_`
+   symbol, or that lets the map go stale, fails the `Run unit tests` job. New patch code should
+   call the readable names; when a patch really needs a generated name it must be added to the
+   allowlist with a reason.
+
 ## Terrain renderer and Sodium port
 
 Eaglercraft uses its own Minecraft 1.8 renderer for the browser's WebGL/TeaVM runtime, so Sodium's Fabric mod cannot be loaded as a dependency. The compatible port is implemented in the native renderer instead: chunk mesh rebuilds are scheduled nearest-to-camera first, duplicate queued work is tracked per section, and the 16x16x16 mesh scan reuses a mutable block position to avoid per-block allocations. Existing section visibility traversal and WebGL mesh upload stay native to this client.

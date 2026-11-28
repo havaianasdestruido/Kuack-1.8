@@ -411,11 +411,11 @@ report('per-frame rotation batches');
 
 // ------------------------------------------- 5. sqrt / normalize replacements
 
-// MathHelper.func_181161_i: the engine's own fast reciprocal square root
+// MathHelper.fastInvSqrt: the engine's own fast reciprocal square root
 // (StrictMath-free version of the Quake rsqrt).
 const f64 = new Float64Array(1);
 const u32 = new Uint32Array(f64.buffer);
-function mcRsqrt(x) {          // func_181161_i
+function mcRsqrt(x) {          // fastInvSqrt
   const d0 = 0.5 * x;
   f64[0] = x;
   let hi = u32[1];
@@ -469,7 +469,7 @@ add(bench('1/sqrt+3 mul (Vec3.normalize shape)', N, (it) => {
   }
   sink += s;
 }));
-add(bench('func_181161_i rsqrt + 3 mul', N, (it) => {
+add(bench('fastInvSqrt + 3 mul', N, (it) => {
   let s = 0;
   for (let k = 0; k < it; ++k) {
     for (let i = 0; i < N; ++i) {
@@ -489,7 +489,7 @@ for (let i = 0; i < 1 << 18; ++i) {
   const x = 1e-3 + (i / (1 << 18)) * 100;
   er = Math.max(er, Math.abs(mcRsqrt(x) * Math.sqrt(x) - 1));
 }
-console.log('\nfunc_181161_i relative error after 1 Newton step: ' + er.toExponential(3));
+console.log('\nfastInvSqrt relative error after 1 Newton step: ' + er.toExponential(3));
 
 // --------------------------------------------- 6. cold-start table build cost
 

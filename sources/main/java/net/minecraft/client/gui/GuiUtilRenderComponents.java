@@ -31,13 +31,13 @@ import net.minecraft.util.IChatComponent;
  * 
  */
 public class GuiUtilRenderComponents {
-	public static String func_178909_a(String parString1, boolean parFlag) {
+	public static String removeTextColorsIfConfigured(String parString1, boolean parFlag) {
 		return !parFlag && !Minecraft.getMinecraft().gameSettings.chatColours
 				? EnumChatFormatting.getTextWithoutFormattingCodes(parString1)
 				: parString1;
 	}
 
-	public static List<IChatComponent> func_178908_a(IChatComponent parIChatComponent, int parInt1,
+	public static List<IChatComponent> splitText(IChatComponent parIChatComponent, int parInt1,
 			FontRenderer parFontRenderer, boolean parFlag, boolean parFlag2) {
 		int i = 0;
 		ChatComponentText chatcomponenttext = new ChatComponentText("");
@@ -58,7 +58,7 @@ public class GuiUtilRenderComponents {
 				flag = true;
 			}
 
-			String s4 = func_178909_a(ichatcomponent.getChatStyle().getFormattingCode() + s, parFlag2);
+			String s4 = removeTextColorsIfConfigured(ichatcomponent.getChatStyle().getFormattingCode() + s, parFlag2);
 			String s5 = s4.endsWith("\n") ? s4.substring(0, s4.length() - 1) : s4;
 			int i1 = parFontRenderer.getStringWidth(s5);
 			ChatComponentText chatcomponenttext2 = new ChatComponentText(s5);

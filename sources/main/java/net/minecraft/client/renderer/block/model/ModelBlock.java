@@ -149,20 +149,20 @@ public class ModelBlock {
 		return this.hasParent() ? this.parent.getRootModel() : this;
 	}
 
-	public ItemCameraTransforms func_181682_g() {
-		ItemTransformVec3f itemtransformvec3f = this.func_181681_a(ItemCameraTransforms.TransformType.THIRD_PERSON);
-		ItemTransformVec3f itemtransformvec3f1 = this.func_181681_a(ItemCameraTransforms.TransformType.FIRST_PERSON);
-		ItemTransformVec3f itemtransformvec3f2 = this.func_181681_a(ItemCameraTransforms.TransformType.HEAD);
-		ItemTransformVec3f itemtransformvec3f3 = this.func_181681_a(ItemCameraTransforms.TransformType.GUI);
-		ItemTransformVec3f itemtransformvec3f4 = this.func_181681_a(ItemCameraTransforms.TransformType.GROUND);
-		ItemTransformVec3f itemtransformvec3f5 = this.func_181681_a(ItemCameraTransforms.TransformType.FIXED);
+	public ItemCameraTransforms getAllTransforms() {
+		ItemTransformVec3f itemtransformvec3f = this.getTransform(ItemCameraTransforms.TransformType.THIRD_PERSON);
+		ItemTransformVec3f itemtransformvec3f1 = this.getTransform(ItemCameraTransforms.TransformType.FIRST_PERSON);
+		ItemTransformVec3f itemtransformvec3f2 = this.getTransform(ItemCameraTransforms.TransformType.HEAD);
+		ItemTransformVec3f itemtransformvec3f3 = this.getTransform(ItemCameraTransforms.TransformType.GUI);
+		ItemTransformVec3f itemtransformvec3f4 = this.getTransform(ItemCameraTransforms.TransformType.GROUND);
+		ItemTransformVec3f itemtransformvec3f5 = this.getTransform(ItemCameraTransforms.TransformType.FIXED);
 		return new ItemCameraTransforms(itemtransformvec3f, itemtransformvec3f1, itemtransformvec3f2,
 				itemtransformvec3f3, itemtransformvec3f4, itemtransformvec3f5);
 	}
 
-	private ItemTransformVec3f func_181681_a(ItemCameraTransforms.TransformType parTransformType) {
-		return this.parent != null && !this.cameraTransforms.func_181687_c(parTransformType)
-				? this.parent.func_181681_a(parTransformType)
+	private ItemTransformVec3f getTransform(ItemCameraTransforms.TransformType parTransformType) {
+		return this.parent != null && !this.cameraTransforms.hasCustomTransform(parTransformType)
+				? this.parent.getTransform(parTransformType)
 				: this.cameraTransforms.getTransform(parTransformType);
 	}
 

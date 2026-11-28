@@ -93,7 +93,7 @@ public class GuiBeacon extends GuiContainer {
 					if (l >= i) {
 						guibeacon$powerbutton.enabled = false;
 					} else if (l1 == j) {
-						guibeacon$powerbutton.func_146140_b(true);
+						guibeacon$powerbutton.setSelected(true);
 					}
 				}
 			}
@@ -110,7 +110,7 @@ public class GuiBeacon extends GuiContainer {
 				if (b0 >= i) {
 					guibeacon$powerbutton2.enabled = false;
 				} else if (l2 == k) {
-					guibeacon$powerbutton2.func_146140_b(true);
+					guibeacon$powerbutton2.setSelected(true);
 				}
 			}
 
@@ -121,7 +121,7 @@ public class GuiBeacon extends GuiContainer {
 				if (b0 >= i) {
 					guibeacon$powerbutton1.enabled = false;
 				} else if (j == k) {
-					guibeacon$powerbutton1.func_146140_b(true);
+					guibeacon$powerbutton1.setSelected(true);
 				}
 			}
 		}
@@ -144,7 +144,7 @@ public class GuiBeacon extends GuiContainer {
 			this.mc.getNetHandler().addToSendQueue(new C17PacketCustomPayload(s, packetbuffer));
 			this.mc.displayGuiScreen((GuiScreen) null);
 		} else if (parGuiButton instanceof GuiBeacon.PowerButton) {
-			if (((GuiBeacon.PowerButton) parGuiButton).func_146141_c()) {
+			if (((GuiBeacon.PowerButton) parGuiButton).isSelected()) {
 				return;
 			}
 
@@ -204,17 +204,17 @@ public class GuiBeacon extends GuiContainer {
 	}
 
 	static class Button extends GuiButton {
-		private final ResourceLocation field_146145_o;
-		private final int field_146144_p;
-		private final int field_146143_q;
-		private boolean field_146142_r;
+		private final ResourceLocation iconTexture;
+		private final int iconX;
+		private final int iconY;
+		private boolean selected;
 
 		protected Button(int parInt1, int parInt2, int parInt3, ResourceLocation parResourceLocation, int parInt4,
 				int parInt5) {
 			super(parInt1, parInt2, parInt3, 22, 22, "");
-			this.field_146145_o = parResourceLocation;
-			this.field_146144_p = parInt4;
-			this.field_146143_q = parInt5;
+			this.iconTexture = parResourceLocation;
+			this.iconX = parInt4;
+			this.iconY = parInt5;
 		}
 
 		public void drawButton(Minecraft minecraft, int i, int j) {
@@ -227,28 +227,28 @@ public class GuiBeacon extends GuiContainer {
 				int k = 0;
 				if (!this.enabled) {
 					k += this.width * 2;
-				} else if (this.field_146142_r) {
+				} else if (this.selected) {
 					k += this.width * 1;
 				} else if (this.hovered) {
 					k += this.width * 3;
 				}
 
 				this.drawTexturedModalRect(this.xPosition, this.yPosition, k, short1, this.width, this.height);
-				if (!GuiBeacon.beaconGuiTextures.equals(this.field_146145_o)) {
-					minecraft.getTextureManager().bindTexture(this.field_146145_o);
+				if (!GuiBeacon.beaconGuiTextures.equals(this.iconTexture)) {
+					minecraft.getTextureManager().bindTexture(this.iconTexture);
 				}
 
-				this.drawTexturedModalRect(this.xPosition + 2, this.yPosition + 2, this.field_146144_p,
-						this.field_146143_q, 18, 18);
+				this.drawTexturedModalRect(this.xPosition + 2, this.yPosition + 2, this.iconX,
+						this.iconY, 18, 18);
 			}
 		}
 
-		public boolean func_146141_c() {
-			return this.field_146142_r;
+		public boolean isSelected() {
+			return this.selected;
 		}
 
-		public void func_146140_b(boolean parFlag) {
-			this.field_146142_r = parFlag;
+		public void setSelected(boolean parFlag) {
+			this.selected = parFlag;
 		}
 	}
 
@@ -278,21 +278,21 @@ public class GuiBeacon extends GuiContainer {
 
 	class PowerButton extends GuiBeacon.Button {
 		private final int field_146149_p;
-		private final int field_146148_q;
+		private final int tier;
 
 		public PowerButton(int parInt1, int parInt2, int parInt3, int parInt4, int parInt5) {
 			super(parInt1, parInt2, parInt3, GuiContainer.inventoryBackground,
 					0 + Potion.potionTypes[parInt4].getStatusIconIndex() % 8 * 18,
 					198 + Potion.potionTypes[parInt4].getStatusIconIndex() / 8 * 18);
 			this.field_146149_p = parInt4;
-			this.field_146148_q = parInt5;
+			this.tier = parInt5;
 		}
 
 		public void drawButtonForegroundLayer(int i, int j) {
 			if (this.enabled)
 				Mouse.showCursor(EnumCursorType.HAND);
 			String s = I18n.format(Potion.potionTypes[this.field_146149_p].getName(), new Object[0]);
-			if (this.field_146148_q >= 3 && this.field_146149_p != Potion.regeneration.id) {
+			if (this.tier >= 3 && this.field_146149_p != Potion.regeneration.id) {
 				s = s + " II";
 			}
 

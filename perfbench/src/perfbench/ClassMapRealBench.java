@@ -8,7 +8,7 @@ import java.util.Set;
 
 /**
  * Benchmarks ClassInheritanceMultiMap.add / .remove, which iterate EVERY class key known to the
- * process-wide static field_181158_a and call isAssignableFrom on it, per entity operation.
+ * process-wide static KNOWN_CLASSES and call isAssignableFrom on it, per entity operation.
  *
  * addEntity/removeEntity on a chunk section does this for each of the 16 sections' maps, and the
  * known-key set only ever grows for the lifetime of the game session (every distinct

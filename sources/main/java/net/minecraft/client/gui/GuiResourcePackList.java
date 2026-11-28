@@ -29,13 +29,13 @@ import net.minecraft.util.EnumChatFormatting;
  */
 public abstract class GuiResourcePackList extends GuiListExtended {
 	protected final Minecraft mc;
-	protected final List<ResourcePackListEntry> field_148204_l;
+	protected final List<ResourcePackListEntry> resourcePackEntries;
 
 	public GuiResourcePackList(Minecraft mcIn, int parInt1, int parInt2, List<ResourcePackListEntry> parList) {
 		super(mcIn, parInt1, parInt2, 32, parInt2 - 55 + 4, 36);
 		this.mc = mcIn;
-		this.field_148204_l = parList;
-		this.field_148163_i = false;
+		this.resourcePackEntries = parList;
+		this.centerListVertically = false;
 		this.setHasListHeader(true, (int) ((float) mcIn.fontRendererObj.FONT_HEIGHT * 1.5F));
 	}
 
@@ -51,7 +51,7 @@ public abstract class GuiResourcePackList extends GuiListExtended {
 	protected abstract String getListHeader();
 
 	public List<ResourcePackListEntry> getList() {
-		return this.field_148204_l;
+		return this.resourcePackEntries;
 	}
 
 	protected int getSize() {

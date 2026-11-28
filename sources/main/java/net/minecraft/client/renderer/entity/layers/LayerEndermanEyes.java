@@ -34,7 +34,7 @@ import net.minecraft.util.ResourceLocation;
  * 
  */
 public class LayerEndermanEyes implements LayerRenderer<EntityEnderman> {
-	private static final ResourceLocation field_177203_a = new ResourceLocation(
+	private static final ResourceLocation RES_ENDERMAN_EYES = new ResourceLocation(
 			"textures/entity/enderman/enderman_eyes.png");
 	private final RenderEnderman endermanRenderer;
 
@@ -55,7 +55,7 @@ public class LayerEndermanEyes implements LayerRenderer<EntityEnderman> {
 							if (pass == PassType.MAIN) {
 								DeferredStateManager.reportForwardRenderObjectPosition2(x, y, z);
 							}
-							LayerEndermanEyes.this.endermanRenderer.bindTexture(field_177203_a);
+							LayerEndermanEyes.this.endermanRenderer.bindTexture(RES_ENDERMAN_EYES);
 							DeferredStateManager.setDefaultMaterialConstants();
 							DeferredStateManager.setRoughnessConstant(0.3f);
 							DeferredStateManager.setMetalnessConstant(0.1f);
@@ -82,7 +82,7 @@ public class LayerEndermanEyes implements LayerRenderer<EntityEnderman> {
 				}
 				return;
 			}
-			this.endermanRenderer.bindTexture(field_177203_a);
+			this.endermanRenderer.bindTexture(RES_ENDERMAN_EYES);
 			EntityRenderer.disableLightmapStatic();
 			DeferredStateManager.setEmissionConstant(0.9f);
 			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
@@ -94,7 +94,7 @@ public class LayerEndermanEyes implements LayerRenderer<EntityEnderman> {
 			EntityRenderer.enableLightmapStatic();
 			return;
 		}
-		this.endermanRenderer.bindTexture(field_177203_a);
+		this.endermanRenderer.bindTexture(RES_ENDERMAN_EYES);
 		GlStateManager.enableBlend();
 		GlStateManager.disableAlpha();
 		GlStateManager.blendFunc(GL_ONE, GL_ONE);
@@ -107,7 +107,7 @@ public class LayerEndermanEyes implements LayerRenderer<EntityEnderman> {
 		GlStateManager.enableLighting();
 		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 		this.endermanRenderer.getMainModel().render(entityenderman, f, f1, f3, f4, f5, f6);
-		this.endermanRenderer.func_177105_a(entityenderman, f2);
+		this.endermanRenderer.setLightmap(entityenderman, f2);
 		GlStateManager.depthMask(true);
 		GlStateManager.disableBlend();
 		GlStateManager.enableAlpha();

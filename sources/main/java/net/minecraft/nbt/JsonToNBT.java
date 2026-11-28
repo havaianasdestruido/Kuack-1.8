@@ -32,20 +32,20 @@ import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
  */
 public class JsonToNBT {
 	private static final Logger logger = LogManager.getLogger();
-	private static final Pattern field_179273_b = Pattern.compile("\\[[-+\\d|,\\s]+\\]");
+	private static final Pattern INT_ARRAY_MATCHER = Pattern.compile("\\[[-+\\d|,\\s]+\\]");
 
 	public static NBTTagCompound getTagFromJson(String jsonString) throws NBTException {
 		jsonString = jsonString.trim();
 		if (!jsonString.startsWith("{")) {
 			throw new NBTException("Invalid tag encountered, expected \'{\' as first char.");
-		} else if (func_150310_b(jsonString) != 1) {
+		} else if (topTagsCount(jsonString) != 1) {
 			throw new NBTException("Encountered multiple top tags, only one expected");
 		} else {
-			return (NBTTagCompound) func_150316_a("tag", jsonString).parse();
+			return (NBTTagCompound) nameValueToNBT("tag", jsonString).parse();
 		}
 	}
 
-	static int func_150310_b(String parString1) throws NBTException {
+	static int topTagsCount(String parString1) throws NBTException {
 		int i = 0;
 		boolean flag = false;
 		Stack stack = new Stack();
@@ -53,7 +53,7 @@ public class JsonToNBT {
 		for (int j = 0; j < parString1.length(); ++j) {
 			char c0 = parString1.charAt(j);
 			if (c0 == 34) {
-				if (func_179271_b(parString1, j)) {
+				if (isCharEscaped(parString1, j)) {
 					if (!flag) {
 						throw new NBTException("Illegal use of \\\": " + parString1);
 					}
@@ -92,11 +92,11 @@ public class JsonToNBT {
 		}
 	}
 
-	static JsonToNBT.Any func_179272_a(String... parArrayOfString) throws NBTException {
-		return func_150316_a(parArrayOfString[0], parArrayOfString[1]);
+	static JsonToNBT.Any joinStrToNBT(String... parArrayOfString) throws NBTException {
+		return nameValueToNBT(parArrayOfString[0], parArrayOfString[1]);
 	}
 
-	static JsonToNBT.Any func_150316_a(String parString1, String parString2) throws NBTException {
+	static JsonToNBT.Any nameValueToNBT(String parString1, String parString2) throws NBTException {
 		parString2 = parString2.trim();
 		if (parString2.startsWith("{")) {
 			parString2 = parString2.substring(1, parString2.length() - 1);
@@ -105,10 +105,10 @@ public class JsonToNBT {
 			String s1;
 			for (jsontonbt$compound = new JsonToNBT.Compound(parString1); parString2
 					.length() > 0; parString2 = parString2.substring(s1.length() + 1)) {
-				s1 = func_150314_a(parString2, true);
+				s1 = nextNameValuePair(parString2, true);
 				if (s1.length() > 0) {
 					boolean flag1 = false;
-					jsontonbt$compound.field_150491_b.add(func_179270_a(s1, flag1));
+					jsontonbt$compound.tagList.add(getTagFromNameValue(s1, flag1));
 				}
 
 				if (parString2.length() < s1.length() + 1) {
@@ -122,17 +122,17 @@ public class JsonToNBT {
 			}
 
 			return jsontonbt$compound;
-		} else if (parString2.startsWith("[") && !field_179273_b.matcher(parString2).matches()) {
+		} else if (parString2.startsWith("[") && !INT_ARRAY_MATCHER.matcher(parString2).matches()) {
 			parString2 = parString2.substring(1, parString2.length() - 1);
 
 			JsonToNBT.List jsontonbt$list;
 			String s;
 			for (jsontonbt$list = new JsonToNBT.List(parString1); parString2.length() > 0; parString2 = parString2
 					.substring(s.length() + 1)) {
-				s = func_150314_a(parString2, false);
+				s = nextNameValuePair(parString2, false);
 				if (s.length() > 0) {
 					boolean flag = true;
-					jsontonbt$list.field_150492_b.add(func_179270_a(s, flag));
+					jsontonbt$list.JsonToNBTTagList.add(getTagFromNameValue(s, flag));
 				}
 
 				if (parString2.length() < s.length() + 1) {
@@ -151,15 +151,15 @@ public class JsonToNBT {
 		}
 	}
 
-	private static JsonToNBT.Any func_179270_a(String parString1, boolean parFlag) throws NBTException {
-		String s = func_150313_b(parString1, parFlag);
-		String s1 = func_150311_c(parString1, parFlag);
-		return func_179272_a(new String[] { s, s1 });
+	private static JsonToNBT.Any getTagFromNameValue(String parString1, boolean parFlag) throws NBTException {
+		String s = locateName(parString1, parFlag);
+		String s1 = locateValue(parString1, parFlag);
+		return joinStrToNBT(new String[] { s, s1 });
 	}
 
-	private static String func_150314_a(String parString1, boolean parFlag) throws NBTException {
-		int i = func_150312_a(parString1, ':');
-		int j = func_150312_a(parString1, ',');
+	private static String nextNameValuePair(String parString1, boolean parFlag) throws NBTException {
+		int i = getNextCharIndex(parString1, ':');
+		int j = getNextCharIndex(parString1, ',');
 		if (parFlag) {
 			if (i == -1) {
 				throw new NBTException("Unable to locate name/value separator for string: " + parString1);
@@ -172,10 +172,10 @@ public class JsonToNBT {
 			i = -1;
 		}
 
-		return func_179269_a(parString1, i);
+		return locateValueAt(parString1, i);
 	}
 
-	private static String func_179269_a(String parString1, int parInt1) throws NBTException {
+	private static String locateValueAt(String parString1, int parInt1) throws NBTException {
 		Stack stack = new Stack();
 		int i = parInt1 + 1;
 		boolean flag = false;
@@ -185,7 +185,7 @@ public class JsonToNBT {
 		for (int j = 0; i < parString1.length(); ++i) {
 			char c0 = parString1.charAt(i);
 			if (c0 == 34) {
-				if (func_179271_b(parString1, i)) {
+				if (isCharEscaped(parString1, i)) {
 					if (!flag) {
 						throw new NBTException("Illegal use of \\\": " + parString1);
 					}
@@ -229,7 +229,7 @@ public class JsonToNBT {
 		return parString1.substring(0, i);
 	}
 
-	private static String func_150313_b(String parString1, boolean parFlag) throws NBTException {
+	private static String locateName(String parString1, boolean parFlag) throws NBTException {
 		if (parFlag) {
 			parString1 = parString1.trim();
 			if (parString1.startsWith("{") || parString1.startsWith("[")) {
@@ -237,7 +237,7 @@ public class JsonToNBT {
 			}
 		}
 
-		int i = func_150312_a(parString1, ':');
+		int i = getNextCharIndex(parString1, ':');
 		if (i == -1) {
 			if (parFlag) {
 				return "";
@@ -249,7 +249,7 @@ public class JsonToNBT {
 		}
 	}
 
-	private static String func_150311_c(String parString1, boolean parFlag) throws NBTException {
+	private static String locateValue(String parString1, boolean parFlag) throws NBTException {
 		if (parFlag) {
 			parString1 = parString1.trim();
 			if (parString1.startsWith("{") || parString1.startsWith("[")) {
@@ -257,7 +257,7 @@ public class JsonToNBT {
 			}
 		}
 
-		int i = func_150312_a(parString1, ':');
+		int i = getNextCharIndex(parString1, ':');
 		if (i == -1) {
 			if (parFlag) {
 				return parString1;
@@ -269,13 +269,13 @@ public class JsonToNBT {
 		}
 	}
 
-	private static int func_150312_a(String parString1, char parChar1) {
+	private static int getNextCharIndex(String parString1, char parChar1) {
 		int i = 0;
 
 		for (boolean flag = true; i < parString1.length(); ++i) {
 			char c0 = parString1.charAt(i);
 			if (c0 == 34) {
-				if (!func_179271_b(parString1, i)) {
+				if (!isCharEscaped(parString1, i)) {
 					flag = !flag;
 				}
 			} else if (flag) {
@@ -292,8 +292,8 @@ public class JsonToNBT {
 		return -1;
 	}
 
-	private static boolean func_179271_b(String parString1, int parInt1) {
-		return parInt1 > 0 && parString1.charAt(parInt1 - 1) == 92 && !func_179271_b(parString1, parInt1 - 1);
+	private static boolean isCharEscaped(String parString1, int parInt1) {
+		return parInt1 > 0 && parString1.charAt(parInt1 - 1) == 92 && !isCharEscaped(parString1, parInt1 - 1);
 	}
 
 	abstract static class Any {
@@ -303,7 +303,7 @@ public class JsonToNBT {
 	}
 
 	static class Compound extends JsonToNBT.Any {
-		protected java.util.List<JsonToNBT.Any> field_150491_b = Lists.newArrayList();
+		protected java.util.List<JsonToNBT.Any> tagList = Lists.newArrayList();
 
 		public Compound(String parString1) {
 			this.json = parString1;
@@ -312,8 +312,8 @@ public class JsonToNBT {
 		public NBTBase parse() throws NBTException {
 			NBTTagCompound nbttagcompound = new NBTTagCompound();
 
-			for (int i = 0, l = this.field_150491_b.size(); i < l; ++i) {
-				JsonToNBT.Any jsontonbt$any = this.field_150491_b.get(i);
+			for (int i = 0, l = this.tagList.size(); i < l; ++i) {
+				JsonToNBT.Any jsontonbt$any = this.tagList.get(i);
 				nbttagcompound.setTag(jsontonbt$any.json, jsontonbt$any.parse());
 			}
 
@@ -322,7 +322,7 @@ public class JsonToNBT {
 	}
 
 	static class List extends JsonToNBT.Any {
-		protected java.util.List<JsonToNBT.Any> field_150492_b = Lists.newArrayList();
+		protected java.util.List<JsonToNBT.Any> JsonToNBTTagList = Lists.newArrayList();
 
 		public List(String json) {
 			this.json = json;
@@ -331,8 +331,8 @@ public class JsonToNBT {
 		public NBTBase parse() throws NBTException {
 			NBTTagList nbttaglist = new NBTTagList();
 
-			for (int i = 0, l = this.field_150492_b.size(); i < l; ++i) {
-				nbttaglist.appendTag(this.field_150492_b.get(i).parse());
+			for (int i = 0, l = this.JsonToNBTTagList.size(); i < l; ++i) {
+				nbttaglist.appendTag(this.JsonToNBTTagList.get(i).parse());
 			}
 
 			return nbttaglist;

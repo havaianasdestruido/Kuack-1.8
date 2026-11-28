@@ -354,7 +354,7 @@ public class BlockFire extends Block {
 	}
 
 	public void onBlockAdded(World world, BlockPos blockpos, IBlockState var3) {
-		if (world.provider.getDimensionId() > 0 || !Blocks.portal.func_176548_d(world, blockpos)) {
+		if (world.provider.getDimensionId() > 0 || !Blocks.portal.trySpawnPortal(world, blockpos)) {
 			if (!World.doesBlockHaveSolidTopSurface(world, blockpos.down())
 					&& !this.canNeighborCatchFire(world, blockpos)) {
 				world.setBlockToAir(blockpos);

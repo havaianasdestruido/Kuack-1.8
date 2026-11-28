@@ -32,7 +32,7 @@ import net.minecraft.world.World;
  * 
  */
 public class EntityEnderPearl extends EntityThrowable {
-	private EntityLivingBase field_181555_c;
+	private EntityLivingBase thrower;
 
 	public EntityEnderPearl(World parWorld) {
 		super(parWorld);
@@ -40,7 +40,7 @@ public class EntityEnderPearl extends EntityThrowable {
 
 	public EntityEnderPearl(World worldIn, EntityLivingBase parEntityLivingBase) {
 		super(worldIn, parEntityLivingBase);
-		this.field_181555_c = parEntityLivingBase;
+		this.thrower = parEntityLivingBase;
 	}
 
 	public EntityEnderPearl(World worldIn, double parDouble1, double parDouble2, double parDouble3) {
@@ -53,7 +53,7 @@ public class EntityEnderPearl extends EntityThrowable {
 	protected void onImpact(MovingObjectPosition movingobjectposition) {
 		EntityLivingBase entitylivingbase = this.getThrower();
 		if (movingobjectposition.entityHit != null) {
-			if (movingobjectposition.entityHit == this.field_181555_c) {
+			if (movingobjectposition.entityHit == this.thrower) {
 				return;
 			}
 

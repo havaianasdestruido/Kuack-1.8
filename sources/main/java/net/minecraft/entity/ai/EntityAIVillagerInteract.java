@@ -43,7 +43,7 @@ public class EntityAIVillagerInteract extends EntityAIWatchClosest2 {
 	public void startExecuting() {
 		super.startExecuting();
 		if (this.villager.canAbondonItems() && this.closestEntity instanceof EntityVillager
-				&& ((EntityVillager) this.closestEntity).func_175557_cr()) {
+				&& ((EntityVillager) this.closestEntity).wantsMoreFood()) {
 			this.interactionDelay = 10;
 		} else {
 			this.interactionDelay = 0;

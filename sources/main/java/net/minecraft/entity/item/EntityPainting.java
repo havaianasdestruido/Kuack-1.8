@@ -160,7 +160,7 @@ public class EntityPainting extends EntityHanging {
 
 		public static final EnumArt[] _VALUES = values();
 
-		public static final int field_180001_A = "SkullAndRoses".length();
+		public static final int MAX_NAME_LENGTH = "SkullAndRoses".length();
 		public final String title;
 		public final int sizeX;
 		public final int sizeY;

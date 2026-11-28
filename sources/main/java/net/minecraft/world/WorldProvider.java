@@ -86,7 +86,7 @@ public abstract class WorldProvider {
 			FlatGeneratorInfo flatgeneratorinfo = FlatGeneratorInfo
 					.createFlatGeneratorFromString(this.worldObj.getWorldInfo().getGeneratorOptions());
 			this.worldChunkMgr = new WorldChunkManagerHell(
-					BiomeGenBase.getBiomeFromBiomeList(flatgeneratorinfo.getBiome(), BiomeGenBase.field_180279_ad),
+					BiomeGenBase.getBiomeFromBiomeList(flatgeneratorinfo.getBiome(), BiomeGenBase.DEFAULT),
 					0.5F);
 		} else if (worldtype == WorldType.DEBUG_WORLD) {
 			this.worldChunkMgr = new WorldChunkManagerHell(BiomeGenBase.plains, 0.0F);
@@ -218,7 +218,7 @@ public abstract class WorldProvider {
 	}
 
 	public int getAverageGroundLevel() {
-		return this.terrainType == WorldType.FLAT ? 4 : this.worldObj.func_181545_F() + 1;
+		return this.terrainType == WorldType.FLAT ? 4 : this.worldObj.getSeaLevel() + 1;
 	}
 
 	/**+

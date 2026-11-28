@@ -23,8 +23,8 @@ import net.minecraft.util.IProgressUpdate;
  * 
  */
 public class GuiScreenWorking extends GuiScreen implements IProgressUpdate {
-	private String field_146591_a = "";
-	private String field_146589_f = "";
+	private String title = "";
+	private String stage = "";
 	private int progress;
 	private boolean doneWorking;
 
@@ -41,7 +41,7 @@ public class GuiScreenWorking extends GuiScreen implements IProgressUpdate {
 	 * and the WorkingString to "working...".
 	 */
 	public void resetProgressAndMessage(String s) {
-		this.field_146591_a = s;
+		this.title = s;
 		this.displayLoadingString("Working...");
 	}
 
@@ -50,7 +50,7 @@ public class GuiScreenWorking extends GuiScreen implements IProgressUpdate {
 	 * what is being done currently.
 	 */
 	public void displayLoadingString(String s) {
-		this.field_146589_f = s;
+		this.stage = s;
 		this.setLoadingProgress(0);
 	}
 
@@ -72,14 +72,14 @@ public class GuiScreenWorking extends GuiScreen implements IProgressUpdate {
 	 */
 	public void drawScreen(int i, int j, float f) {
 		if (this.doneWorking) {
-			if (!this.mc.func_181540_al()) {
+			if (!this.mc.isConnectedToRealms()) {
 				this.mc.displayGuiScreen((GuiScreen) null);
 			}
 
 		} else {
 			this.drawDefaultBackground();
-			this.drawCenteredString(this.fontRendererObj, this.field_146591_a, this.width / 2, 70, 16777215);
-			this.drawCenteredString(this.fontRendererObj, this.field_146589_f + " " + this.progress + "%",
+			this.drawCenteredString(this.fontRendererObj, this.title, this.width / 2, 70, 16777215);
+			this.drawCenteredString(this.fontRendererObj, this.stage + " " + this.progress + "%",
 					this.width / 2, 90, 16777215);
 			super.drawScreen(i, j, f);
 		}

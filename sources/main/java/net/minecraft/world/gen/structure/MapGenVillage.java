@@ -37,13 +37,13 @@ public class MapGenVillage extends MapGenStructure {
 	public static final List<BiomeGenBase> villageSpawnBiomes = Arrays
 			.asList(new BiomeGenBase[] { BiomeGenBase.plains, BiomeGenBase.desert, BiomeGenBase.savanna });
 	private int terrainType;
-	private int field_82665_g;
-	private int field_82666_h;
+	private int distance;
+	private int minTownSeparation;
 
 	public MapGenVillage(boolean scramble) {
 		super(scramble);
-		this.field_82665_g = 32;
-		this.field_82666_h = 8;
+		this.distance = 32;
+		this.minTownSeparation = 8;
 	}
 
 	public MapGenVillage(Map<String, String> parMap, boolean scramble) {
@@ -53,8 +53,8 @@ public class MapGenVillage extends MapGenStructure {
 			if (((String) entry.getKey()).equals("size")) {
 				this.terrainType = MathHelper.parseIntWithDefaultAndMax((String) entry.getValue(), this.terrainType, 0);
 			} else if (((String) entry.getKey()).equals("distance")) {
-				this.field_82665_g = MathHelper.parseIntWithDefaultAndMax((String) entry.getValue(), this.field_82665_g,
-						this.field_82666_h + 1);
+				this.distance = MathHelper.parseIntWithDefaultAndMax((String) entry.getValue(), this.distance,
+						this.minTownSeparation + 1);
 			}
 		}
 
@@ -68,20 +68,20 @@ public class MapGenVillage extends MapGenStructure {
 		int k = i;
 		int l = j;
 		if (i < 0) {
-			i -= this.field_82665_g - 1;
+			i -= this.distance - 1;
 		}
 
 		if (j < 0) {
-			j -= this.field_82665_g - 1;
+			j -= this.distance - 1;
 		}
 
-		int i1 = i / this.field_82665_g;
-		int j1 = j / this.field_82665_g;
+		int i1 = i / this.distance;
+		int j1 = j / this.distance;
 		EaglercraftRandom random = this.worldObj.setRandomSeed(i1, j1, 10387312);
-		i1 = i1 * this.field_82665_g;
-		j1 = j1 * this.field_82665_g;
-		i1 = i1 + random.nextInt(this.field_82665_g - this.field_82666_h);
-		j1 = j1 + random.nextInt(this.field_82665_g - this.field_82666_h);
+		i1 = i1 * this.distance;
+		j1 = j1 * this.distance;
+		i1 = i1 + random.nextInt(this.distance - this.minTownSeparation);
+		j1 = j1 + random.nextInt(this.distance - this.minTownSeparation);
 		if (k == i1 && l == j1) {
 			boolean flag = this.worldObj.getWorldChunkManager().areBiomesViable(k * 16 + 8, l * 16 + 8, 0,
 					villageSpawnBiomes);
@@ -110,8 +110,8 @@ public class MapGenVillage extends MapGenStructure {
 					worldIn.getWorldChunkManager(), 0, rand, (x << 4) + 2, (z << 4) + 2, list, parInt1);
 			this.components.add(structurevillagepieces$start);
 			structurevillagepieces$start.buildComponent(structurevillagepieces$start, this.components, rand);
-			List list1 = structurevillagepieces$start.field_74930_j;
-			List list2 = structurevillagepieces$start.field_74932_i;
+			List list1 = structurevillagepieces$start.pendingRoads;
+			List list2 = structurevillagepieces$start.pendingHouses;
 
 			while (!list1.isEmpty() || !list2.isEmpty()) {
 				if (list1.isEmpty()) {

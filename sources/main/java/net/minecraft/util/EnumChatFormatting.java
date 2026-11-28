@@ -52,7 +52,7 @@ public enum EnumChatFormatting {
 	private final String controlString;
 	private final int colorIndex;
 
-	private static String func_175745_c(String parString1) {
+	private static String lowercaseAlpha(String parString1) {
 		return parString1.toLowerCase().replaceAll("[^a-z]", "");
 	}
 
@@ -119,10 +119,10 @@ public enum EnumChatFormatting {
 	 * does not map to a defined value.
 	 */
 	public static EnumChatFormatting getValueByName(String friendlyName) {
-		return friendlyName == null ? null : (EnumChatFormatting) nameMapping.get(func_175745_c(friendlyName));
+		return friendlyName == null ? null : (EnumChatFormatting) nameMapping.get(lowercaseAlpha(friendlyName));
 	}
 
-	public static EnumChatFormatting func_175744_a(int parInt1) {
+	public static EnumChatFormatting fromColorIndex(int parInt1) {
 		if (parInt1 < 0) {
 			return RESET;
 		} else {
@@ -161,7 +161,7 @@ public enum EnumChatFormatting {
 	static {
 		EnumChatFormatting[] types = _VALUES;
 		for (int i = 0; i < types.length; ++i) {
-			nameMapping.put(func_175745_c(types[i].name), types[i]);
+			nameMapping.put(lowercaseAlpha(types[i].name), types[i]);
 		}
 
 	}

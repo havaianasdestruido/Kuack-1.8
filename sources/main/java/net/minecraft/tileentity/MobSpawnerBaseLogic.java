@@ -240,7 +240,7 @@ public abstract class MobSpawnerBaseLogic {
 					.getRandomItem(this.getSpawnerWorld().rand, this.minecartToSpawn));
 		}
 
-		this.func_98267_a(1);
+		this.broadcastEvent(1);
 	}
 
 	public void readFromNBT(NBTTagCompound nbt) {
@@ -349,7 +349,7 @@ public abstract class MobSpawnerBaseLogic {
 		this.randomEntity = parWeightedRandomMinecart;
 	}
 
-	public abstract void func_98267_a(int var1);
+	public abstract void broadcastEvent(int var1);
 
 	public abstract World getSpawnerWorld();
 

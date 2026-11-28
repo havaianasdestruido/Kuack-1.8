@@ -37,11 +37,11 @@ public class WorldChunkManager {
 	private GenLayer biomeIndexLayer;
 	private BiomeCache biomeCache;
 	private List<BiomeGenBase> biomesToSpawnIn;
-	private String field_180301_f;
+	private String generatorOptions;
 
 	protected WorldChunkManager() {
 		this.biomeCache = new BiomeCache(this);
-		this.field_180301_f = "";
+		this.generatorOptions = "";
 		this.biomesToSpawnIn = Lists.newArrayList();
 		this.biomesToSpawnIn.add(BiomeGenBase.forest);
 		this.biomesToSpawnIn.add(BiomeGenBase.plains);
@@ -54,7 +54,7 @@ public class WorldChunkManager {
 
 	public WorldChunkManager(long seed, WorldType parWorldType, String parString1) {
 		this();
-		this.field_180301_f = parString1;
+		this.generatorOptions = parString1;
 		GenLayer[] agenlayer = GenLayer.initializeAllBiomeGenerators(seed, parWorldType, parString1);
 		this.genBiomes = agenlayer[0];
 		this.biomeIndexLayer = agenlayer[1];
@@ -82,7 +82,7 @@ public class WorldChunkManager {
 	 * Returns the biome generator
 	 */
 	public BiomeGenBase getBiomeGenerator(BlockPos pos, BiomeGenBase biomeGenBaseIn) {
-		return this.biomeCache.func_180284_a(pos.getX(), pos.getZ(), biomeGenBaseIn);
+		return this.biomeCache.getBiome(pos.getX(), pos.getZ(), biomeGenBaseIn);
 	}
 
 	/**+
@@ -99,7 +99,7 @@ public class WorldChunkManager {
 
 		for (int i = 0; i < width * length; ++i) {
 			try {
-				float f = (float) BiomeGenBase.getBiomeFromBiomeList(aint[i], BiomeGenBase.field_180279_ad)
+				float f = (float) BiomeGenBase.getBiomeFromBiomeList(aint[i], BiomeGenBase.DEFAULT)
 						.getIntRainfall() / 65536.0F;
 				if (f > 1.0F) {
 					f = 1.0F;
@@ -143,7 +143,7 @@ public class WorldChunkManager {
 
 		try {
 			for (int i = 0; i < width * height; ++i) {
-				biomes[i] = BiomeGenBase.getBiomeFromBiomeList(aint[i], BiomeGenBase.field_180279_ad);
+				biomes[i] = BiomeGenBase.getBiomeFromBiomeList(aint[i], BiomeGenBase.DEFAULT);
 			}
 
 			return biomes;
@@ -188,7 +188,7 @@ public class WorldChunkManager {
 			int[] aint = this.biomeIndexLayer.getInts(x, z, width, length);
 
 			for (int i = 0; i < width * length; ++i) {
-				listToReuse[i] = BiomeGenBase.getBiomeFromBiomeList(aint[i], BiomeGenBase.field_180279_ad);
+				listToReuse[i] = BiomeGenBase.getBiomeFromBiomeList(aint[i], BiomeGenBase.DEFAULT);
 			}
 
 			return listToReuse;

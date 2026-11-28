@@ -108,27 +108,27 @@ public class CommandSpreadPlayers extends CommandBase {
 						new ChatComponentTranslation("commands.spreadplayers.spreading." + (flag ? "teams" : "players"),
 								new Object[] { Integer.valueOf(arraylist.size()), Double.valueOf(d3),
 										Double.valueOf(d0), Double.valueOf(d1), Double.valueOf(d2) }));
-				this.func_110669_a(parICommandSender, arraylist, new CommandSpreadPlayers.Position(d0, d1), d2, d3,
+				this.spread(parICommandSender, arraylist, new CommandSpreadPlayers.Position(d0, d1), d2, d3,
 						((Entity) arraylist.get(0)).worldObj, flag);
 			}
 		}
 	}
 
-	private void func_110669_a(ICommandSender worldIn, List<Entity> parList, CommandSpreadPlayers.Position parPosition,
+	private void spread(ICommandSender worldIn, List<Entity> parList, CommandSpreadPlayers.Position parPosition,
 			double parDouble1, double parDouble2, World parWorld, boolean parFlag) throws CommandException {
 		EaglercraftRandom random = ThreadLocalRandom.current();
-		double d0 = parPosition.field_111101_a - parDouble2;
-		double d1 = parPosition.field_111100_b - parDouble2;
-		double d2 = parPosition.field_111101_a + parDouble2;
-		double d3 = parPosition.field_111100_b + parDouble2;
-		CommandSpreadPlayers.Position[] acommandspreadplayers$position = this.func_110670_a(random,
-				parFlag ? this.func_110667_a(parList) : parList.size(), d0, d1, d2, d3);
-		int i = this.func_110668_a(parPosition, parDouble1, parWorld, random, d0, d1, d2, d3,
+		double d0 = parPosition.x - parDouble2;
+		double d1 = parPosition.z - parDouble2;
+		double d2 = parPosition.x + parDouble2;
+		double d3 = parPosition.z + parDouble2;
+		CommandSpreadPlayers.Position[] acommandspreadplayers$position = this.createInitialPositions(random,
+				parFlag ? this.getNumberOfTeams(parList) : parList.size(), d0, d1, d2, d3);
+		int i = this.spreadPositions(parPosition, parDouble1, parWorld, random, d0, d1, d2, d3,
 				acommandspreadplayers$position, parFlag);
-		double d4 = this.func_110671_a(parList, parWorld, acommandspreadplayers$position, parFlag);
+		double d4 = this.setPlayerPositions(parList, parWorld, acommandspreadplayers$position, parFlag);
 		notifyOperators(worldIn, this, "commands.spreadplayers.success." + (parFlag ? "teams" : "players"),
 				new Object[] { Integer.valueOf(acommandspreadplayers$position.length),
-						Double.valueOf(parPosition.field_111101_a), Double.valueOf(parPosition.field_111100_b) });
+						Double.valueOf(parPosition.x), Double.valueOf(parPosition.z) });
 		if (acommandspreadplayers$position.length > 1) {
 			worldIn.addChatMessage(new ChatComponentTranslation(
 					"commands.spreadplayers.info." + (parFlag ? "teams" : "players"),
@@ -137,7 +137,7 @@ public class CommandSpreadPlayers extends CommandBase {
 
 	}
 
-	private int func_110667_a(List<Entity> parList) {
+	private int getNumberOfTeams(List<Entity> parList) {
 		HashSet hashset = Sets.newHashSet();
 
 		for (int i = 0, l = parList.size(); i < l; ++i) {
@@ -152,7 +152,7 @@ public class CommandSpreadPlayers extends CommandBase {
 		return hashset.size();
 	}
 
-	private int func_110668_a(CommandSpreadPlayers.Position worldIn, double parDouble1, World parWorld,
+	private int spreadPositions(CommandSpreadPlayers.Position worldIn, double parDouble1, World parWorld,
 			EaglercraftRandom parRandom, double parDouble2, double parDouble3, double parDouble4, double parDouble5,
 			CommandSpreadPlayers.Position[] parArrayOfPosition, boolean parFlag) throws CommandException {
 		boolean flag = true;
@@ -171,42 +171,42 @@ public class CommandSpreadPlayers extends CommandBase {
 				for (int l = 0; l < parArrayOfPosition.length; ++l) {
 					if (j != l) {
 						CommandSpreadPlayers.Position commandspreadplayers$position2 = parArrayOfPosition[l];
-						double d1 = commandspreadplayers$position.func_111099_a(commandspreadplayers$position2);
+						double d1 = commandspreadplayers$position.dist(commandspreadplayers$position2);
 						d0 = Math.min(d1, d0);
 						if (d1 < parDouble1) {
 							++k;
-							commandspreadplayers$position1.field_111101_a += commandspreadplayers$position2.field_111101_a
-									- commandspreadplayers$position.field_111101_a;
-							commandspreadplayers$position1.field_111100_b += commandspreadplayers$position2.field_111100_b
-									- commandspreadplayers$position.field_111100_b;
+							commandspreadplayers$position1.x += commandspreadplayers$position2.x
+									- commandspreadplayers$position.x;
+							commandspreadplayers$position1.z += commandspreadplayers$position2.z
+									- commandspreadplayers$position.z;
 						}
 					}
 				}
 
 				if (k > 0) {
-					commandspreadplayers$position1.field_111101_a /= (double) k;
-					commandspreadplayers$position1.field_111100_b /= (double) k;
-					double d2 = (double) commandspreadplayers$position1.func_111096_b();
+					commandspreadplayers$position1.x /= (double) k;
+					commandspreadplayers$position1.z /= (double) k;
+					double d2 = (double) commandspreadplayers$position1.getLength();
 					if (d2 > 0.0D) {
-						commandspreadplayers$position1.func_111095_a();
-						commandspreadplayers$position.func_111094_b(commandspreadplayers$position1);
+						commandspreadplayers$position1.normalize();
+						commandspreadplayers$position.moveAway(commandspreadplayers$position1);
 					} else {
-						commandspreadplayers$position.func_111097_a(parRandom, parDouble2, parDouble3, parDouble4,
+						commandspreadplayers$position.randomize(parRandom, parDouble2, parDouble3, parDouble4,
 								parDouble5);
 					}
 
 					flag = true;
 				}
 
-				if (commandspreadplayers$position.func_111093_a(parDouble2, parDouble3, parDouble4, parDouble5)) {
+				if (commandspreadplayers$position.clamp(parDouble2, parDouble3, parDouble4, parDouble5)) {
 					flag = true;
 				}
 			}
 
 			if (!flag) {
 				for (int k = 0; k < parArrayOfPosition.length; ++k) {
-					if (!parArrayOfPosition[k].func_111098_b(parWorld)) {
-						parArrayOfPosition[k].func_111097_a(parRandom, parDouble2, parDouble3, parDouble4, parDouble5);
+					if (!parArrayOfPosition[k].isSafe(parWorld)) {
+						parArrayOfPosition[k].randomize(parRandom, parDouble2, parDouble3, parDouble4, parDouble5);
 						flag = true;
 					}
 				}
@@ -215,15 +215,15 @@ public class CommandSpreadPlayers extends CommandBase {
 
 		if (i >= 10000) {
 			throw new CommandException("commands.spreadplayers.failure." + (parFlag ? "teams" : "players"),
-					new Object[] { Integer.valueOf(parArrayOfPosition.length), Double.valueOf(worldIn.field_111101_a),
-							Double.valueOf(worldIn.field_111100_b),
+					new Object[] { Integer.valueOf(parArrayOfPosition.length), Double.valueOf(worldIn.x),
+							Double.valueOf(worldIn.z),
 							HString.format("%.2f", new Object[] { Double.valueOf(d0) }) });
 		} else {
 			return i;
 		}
 	}
 
-	private double func_110671_a(List<Entity> worldIn, World parWorld,
+	private double setPlayerPositions(List<Entity> worldIn, World parWorld,
 			CommandSpreadPlayers.Position[] parArrayOfPosition, boolean parFlag) {
 		double d0 = 0.0D;
 		int i = 0;
@@ -244,14 +244,14 @@ public class CommandSpreadPlayers extends CommandBase {
 			}
 
 			entity.setPositionAndUpdate(
-					(double) ((float) MathHelper.floor_double(commandspreadplayers$position.field_111101_a) + 0.5F),
-					(double) commandspreadplayers$position.func_111092_a(parWorld),
-					(double) MathHelper.floor_double(commandspreadplayers$position.field_111100_b) + 0.5D);
+					(double) ((float) MathHelper.floor_double(commandspreadplayers$position.x) + 0.5F),
+					(double) commandspreadplayers$position.getSpawnY(parWorld),
+					(double) MathHelper.floor_double(commandspreadplayers$position.z) + 0.5D);
 			double d2 = Double.MAX_VALUE;
 
 			for (int k = 0; k < parArrayOfPosition.length; ++k) {
 				if (commandspreadplayers$position != parArrayOfPosition[k]) {
-					double d1 = commandspreadplayers$position.func_111099_a(parArrayOfPosition[k]);
+					double d1 = commandspreadplayers$position.dist(parArrayOfPosition[k]);
 					d2 = Math.min(d1, d2);
 				}
 			}
@@ -263,13 +263,13 @@ public class CommandSpreadPlayers extends CommandBase {
 		return d0;
 	}
 
-	private CommandSpreadPlayers.Position[] func_110670_a(EaglercraftRandom parRandom, int parInt1, double parDouble1,
+	private CommandSpreadPlayers.Position[] createInitialPositions(EaglercraftRandom parRandom, int parInt1, double parDouble1,
 			double parDouble2, double parDouble3, double parDouble4) {
 		CommandSpreadPlayers.Position[] acommandspreadplayers$position = new CommandSpreadPlayers.Position[parInt1];
 
 		for (int i = 0; i < acommandspreadplayers$position.length; ++i) {
 			CommandSpreadPlayers.Position commandspreadplayers$position = new CommandSpreadPlayers.Position();
-			commandspreadplayers$position.func_111097_a(parRandom, parDouble1, parDouble2, parDouble3, parDouble4);
+			commandspreadplayers$position.randomize(parRandom, parDouble1, parDouble2, parDouble3, parDouble4);
 			acommandspreadplayers$position[i] = commandspreadplayers$position;
 		}
 
@@ -280,66 +280,66 @@ public class CommandSpreadPlayers extends CommandBase {
 	 * Return a list of options when the user types TAB
 	 */
 	public List<String> addTabCompletionOptions(ICommandSender var1, String[] astring, BlockPos blockpos) {
-		return astring.length >= 1 && astring.length <= 2 ? func_181043_b(astring, 0, blockpos) : null;
+		return astring.length >= 1 && astring.length <= 2 ? getTabCompletionCoordinateXZ(astring, 0, blockpos) : null;
 	}
 
 	static class Position {
-		double field_111101_a;
-		double field_111100_b;
+		double x;
+		double z;
 
 		Position() {
 		}
 
 		Position(double parDouble1, double parDouble2) {
-			this.field_111101_a = parDouble1;
-			this.field_111100_b = parDouble2;
+			this.x = parDouble1;
+			this.z = parDouble2;
 		}
 
-		double func_111099_a(CommandSpreadPlayers.Position parPosition) {
-			double d0 = this.field_111101_a - parPosition.field_111101_a;
-			double d1 = this.field_111100_b - parPosition.field_111100_b;
+		double dist(CommandSpreadPlayers.Position parPosition) {
+			double d0 = this.x - parPosition.x;
+			double d1 = this.z - parPosition.z;
 			return Math.sqrt(d0 * d0 + d1 * d1);
 		}
 
-		void func_111095_a() {
-			double d0 = (double) this.func_111096_b();
-			this.field_111101_a /= d0;
-			this.field_111100_b /= d0;
+		void normalize() {
+			double d0 = (double) this.getLength();
+			this.x /= d0;
+			this.z /= d0;
 		}
 
-		float func_111096_b() {
+		float getLength() {
 			return MathHelper
-					.sqrt_double(this.field_111101_a * this.field_111101_a + this.field_111100_b * this.field_111100_b);
+					.sqrt_double(this.x * this.x + this.z * this.z);
 		}
 
-		public void func_111094_b(CommandSpreadPlayers.Position parPosition) {
-			this.field_111101_a -= parPosition.field_111101_a;
-			this.field_111100_b -= parPosition.field_111100_b;
+		public void moveAway(CommandSpreadPlayers.Position parPosition) {
+			this.x -= parPosition.x;
+			this.z -= parPosition.z;
 		}
 
-		public boolean func_111093_a(double parDouble1, double parDouble2, double parDouble3, double parDouble4) {
+		public boolean clamp(double parDouble1, double parDouble2, double parDouble3, double parDouble4) {
 			boolean flag = false;
-			if (this.field_111101_a < parDouble1) {
-				this.field_111101_a = parDouble1;
+			if (this.x < parDouble1) {
+				this.x = parDouble1;
 				flag = true;
-			} else if (this.field_111101_a > parDouble3) {
-				this.field_111101_a = parDouble3;
+			} else if (this.x > parDouble3) {
+				this.x = parDouble3;
 				flag = true;
 			}
 
-			if (this.field_111100_b < parDouble2) {
-				this.field_111100_b = parDouble2;
+			if (this.z < parDouble2) {
+				this.z = parDouble2;
 				flag = true;
-			} else if (this.field_111100_b > parDouble4) {
-				this.field_111100_b = parDouble4;
+			} else if (this.z > parDouble4) {
+				this.z = parDouble4;
 				flag = true;
 			}
 
 			return flag;
 		}
 
-		public int func_111092_a(World worldIn) {
-			BlockPos blockpos = new BlockPos(this.field_111101_a, 256.0D, this.field_111100_b);
+		public int getSpawnY(World worldIn) {
+			BlockPos blockpos = new BlockPos(this.x, 256.0D, this.z);
 
 			while (blockpos.getY() > 0) {
 				blockpos = blockpos.down();
@@ -351,8 +351,8 @@ public class CommandSpreadPlayers extends CommandBase {
 			return 257;
 		}
 
-		public boolean func_111098_b(World worldIn) {
-			BlockPos blockpos = new BlockPos(this.field_111101_a, 256.0D, this.field_111100_b);
+		public boolean isSafe(World worldIn) {
+			BlockPos blockpos = new BlockPos(this.x, 256.0D, this.z);
 
 			while (blockpos.getY() > 0) {
 				blockpos = blockpos.down();
@@ -365,10 +365,10 @@ public class CommandSpreadPlayers extends CommandBase {
 			return false;
 		}
 
-		public void func_111097_a(EaglercraftRandom parRandom, double parDouble1, double parDouble2, double parDouble3,
+		public void randomize(EaglercraftRandom parRandom, double parDouble1, double parDouble2, double parDouble3,
 				double parDouble4) {
-			this.field_111101_a = MathHelper.getRandomDoubleInRange(parRandom, parDouble1, parDouble3);
-			this.field_111100_b = MathHelper.getRandomDoubleInRange(parRandom, parDouble2, parDouble4);
+			this.x = MathHelper.getRandomDoubleInRange(parRandom, parDouble1, parDouble3);
+			this.z = MathHelper.getRandomDoubleInRange(parRandom, parDouble2, parDouble4);
 		}
 	}
 }

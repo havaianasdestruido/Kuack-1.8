@@ -37,8 +37,8 @@ public class GuiCommandBlock extends GuiScreen {
 	private final CommandBlockLogic localCommandBlock;
 	private GuiButton doneBtn;
 	private GuiButton cancelBtn;
-	private GuiButton field_175390_s;
-	private boolean field_175389_t;
+	private GuiButton outputBtn;
+	private boolean trackOutput;
 
 	public GuiCommandBlock(CommandBlockLogic parCommandBlockLogic) {
 		this.localCommandBlock = parCommandBlockLogic;
@@ -63,7 +63,7 @@ public class GuiCommandBlock extends GuiScreen {
 				20, I18n.format("gui.done", new Object[0])));
 		this.buttonList.add(this.cancelBtn = new GuiButton(1, this.width / 2 + 4, this.height / 4 + 120 + 12, 150, 20,
 				I18n.format("gui.cancel", new Object[0])));
-		this.buttonList.add(this.field_175390_s = new GuiButton(4, this.width / 2 + 150 - 20, 150, 20, 20, "O"));
+		this.buttonList.add(this.outputBtn = new GuiButton(4, this.width / 2 + 150 - 20, 150, 20, 20, "O"));
 		this.commandTextField = new GuiTextField(2, this.fontRendererObj, this.width / 2 - 150, 50, 300, 20);
 		this.commandTextField.setMaxStringLength(32767);
 		this.commandTextField.setFocused(true);
@@ -72,8 +72,8 @@ public class GuiCommandBlock extends GuiScreen {
 		this.previousOutputTextField.setMaxStringLength(32767);
 		this.previousOutputTextField.setEnabled(false);
 		this.previousOutputTextField.setText("-");
-		this.field_175389_t = this.localCommandBlock.shouldTrackOutput();
-		this.func_175388_a();
+		this.trackOutput = this.localCommandBlock.shouldTrackOutput();
+		this.updateCmdOutput();
 		this.doneBtn.enabled = this.commandTextField.getText().trim().length() > 0;
 	}
 
@@ -92,12 +92,12 @@ public class GuiCommandBlock extends GuiScreen {
 	protected void actionPerformed(GuiButton parGuiButton) {
 		if (parGuiButton.enabled) {
 			if (parGuiButton.id == 1) {
-				this.localCommandBlock.setTrackOutput(this.field_175389_t);
+				this.localCommandBlock.setTrackOutput(this.trackOutput);
 				this.mc.displayGuiScreen((GuiScreen) null);
 			} else if (parGuiButton.id == 0) {
 				PacketBuffer packetbuffer = new PacketBuffer(Unpooled.buffer());
-				packetbuffer.writeByte(this.localCommandBlock.func_145751_f());
-				this.localCommandBlock.func_145757_a(packetbuffer);
+				packetbuffer.writeByte(this.localCommandBlock.getCommandBlockType());
+				this.localCommandBlock.fillInInfo(packetbuffer);
 				packetbuffer.writeString(this.commandTextField.getText());
 				packetbuffer.writeBoolean(this.localCommandBlock.shouldTrackOutput());
 				this.mc.getNetHandler().addToSendQueue(new C17PacketCustomPayload("MC|AdvCdm", packetbuffer));
@@ -108,7 +108,7 @@ public class GuiCommandBlock extends GuiScreen {
 				this.mc.displayGuiScreen((GuiScreen) null);
 			} else if (parGuiButton.id == 4) {
 				this.localCommandBlock.setTrackOutput(!this.localCommandBlock.shouldTrackOutput());
-				this.func_175388_a();
+				this.updateCmdOutput();
 			}
 
 		}
@@ -177,14 +177,14 @@ public class GuiCommandBlock extends GuiScreen {
 		super.drawScreen(i, j, f);
 	}
 
-	private void func_175388_a() {
+	private void updateCmdOutput() {
 		if (this.localCommandBlock.shouldTrackOutput()) {
-			this.field_175390_s.displayString = "O";
+			this.outputBtn.displayString = "O";
 			if (this.localCommandBlock.getLastOutput() != null) {
 				this.previousOutputTextField.setText(this.localCommandBlock.getLastOutput().getUnformattedText());
 			}
 		} else {
-			this.field_175390_s.displayString = "X";
+			this.outputBtn.displayString = "X";
 			this.previousOutputTextField.setText("-");
 		}
 

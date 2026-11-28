@@ -41,13 +41,13 @@ public class Score {
 	private final String scorePlayerName;
 	private int scorePoints;
 	private boolean locked;
-	private boolean field_178818_g;
+	private boolean forceUpdate;
 
 	public Score(Scoreboard theScoreboardIn, ScoreObjective theScoreObjectiveIn, String scorePlayerNameIn) {
 		this.theScoreboard = theScoreboardIn;
 		this.theScoreObjective = theScoreObjectiveIn;
 		this.scorePlayerName = scorePlayerNameIn;
-		this.field_178818_g = true;
+		this.forceUpdate = true;
 	}
 
 	public void increseScore(int amount) {
@@ -66,7 +66,7 @@ public class Score {
 		}
 	}
 
-	public void func_96648_a() {
+	public void incrementScore() {
 		if (this.theScoreObjective.getCriteria().isReadOnly()) {
 			throw new IllegalStateException("Cannot modify read-only score");
 		} else {
@@ -81,8 +81,8 @@ public class Score {
 	public void setScorePoints(int points) {
 		int i = this.scorePoints;
 		this.scorePoints = points;
-		if (i != points || this.field_178818_g) {
-			this.field_178818_g = false;
+		if (i != points || this.forceUpdate) {
+			this.forceUpdate = false;
 			this.getScoreScoreboard().func_96536_a(this);
 		}
 
@@ -111,7 +111,7 @@ public class Score {
 		this.locked = locked;
 	}
 
-	public void func_96651_a(List<EntityPlayer> parList) {
+	public void updateForList(List<EntityPlayer> parList) {
 		this.setScorePoints(this.theScoreObjective.getCriteria().func_96635_a(parList));
 	}
 }

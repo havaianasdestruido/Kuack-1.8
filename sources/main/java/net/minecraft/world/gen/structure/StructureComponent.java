@@ -143,12 +143,12 @@ public abstract class StructureComponent {
 
 		for (int k1 = i; k1 <= l; ++k1) {
 			for (int l1 = k; l1 <= j1; ++l1) {
-				if (worldIn.getBlockState(blockpos$mutableblockpos.func_181079_c(k1, j, l1)).getBlock().getMaterial()
+				if (worldIn.getBlockState(blockpos$mutableblockpos.setPos(k1, j, l1)).getBlock().getMaterial()
 						.isLiquid()) {
 					return true;
 				}
 
-				if (worldIn.getBlockState(blockpos$mutableblockpos.func_181079_c(k1, i1, l1)).getBlock().getMaterial()
+				if (worldIn.getBlockState(blockpos$mutableblockpos.setPos(k1, i1, l1)).getBlock().getMaterial()
 						.isLiquid()) {
 					return true;
 				}
@@ -157,12 +157,12 @@ public abstract class StructureComponent {
 
 		for (int i2 = i; i2 <= l; ++i2) {
 			for (int k2 = j; k2 <= i1; ++k2) {
-				if (worldIn.getBlockState(blockpos$mutableblockpos.func_181079_c(i2, k2, k)).getBlock().getMaterial()
+				if (worldIn.getBlockState(blockpos$mutableblockpos.setPos(i2, k2, k)).getBlock().getMaterial()
 						.isLiquid()) {
 					return true;
 				}
 
-				if (worldIn.getBlockState(blockpos$mutableblockpos.func_181079_c(i2, k2, j1)).getBlock().getMaterial()
+				if (worldIn.getBlockState(blockpos$mutableblockpos.setPos(i2, k2, j1)).getBlock().getMaterial()
 						.isLiquid()) {
 					return true;
 				}
@@ -171,12 +171,12 @@ public abstract class StructureComponent {
 
 		for (int j2 = k; j2 <= j1; ++j2) {
 			for (int l2 = j; l2 <= i1; ++l2) {
-				if (worldIn.getBlockState(blockpos$mutableblockpos.func_181079_c(i, l2, j2)).getBlock().getMaterial()
+				if (worldIn.getBlockState(blockpos$mutableblockpos.setPos(i, l2, j2)).getBlock().getMaterial()
 						.isLiquid()) {
 					return true;
 				}
 
-				if (worldIn.getBlockState(blockpos$mutableblockpos.func_181079_c(l, l2, j2)).getBlock().getMaterial()
+				if (worldIn.getBlockState(blockpos$mutableblockpos.setPos(l, l2, j2)).getBlock().getMaterial()
 						.isLiquid()) {
 					return true;
 				}
@@ -549,7 +549,7 @@ public abstract class StructureComponent {
 
 	}
 
-	protected void func_175805_a(World worldIn, StructureBoundingBox boundingboxIn, EaglercraftRandom rand,
+	protected void fillWithBlocksRandomly(World worldIn, StructureBoundingBox boundingboxIn, EaglercraftRandom rand,
 			float chance, int minX, int minY, int minZ, int maxX, int maxY, int maxZ, IBlockState blockstate1,
 			IBlockState blockstate2, boolean parFlag) {
 		for (int i = minY; i <= maxY; ++i) {
@@ -689,7 +689,7 @@ public abstract class StructureComponent {
 
 	}
 
-	public void func_181138_a(int i, int j, int k) {
+	public void offset(int i, int j, int k) {
 		this.boundingBox.offset(i, j, k);
 	}
 

@@ -27,7 +27,7 @@ import net.minecraft.network.play.INetHandlerPlayClient;
  * 
  */
 public class S1FPacketSetExperience implements Packet<INetHandlerPlayClient> {
-	private float field_149401_a;
+	private float experienceBar;
 	private int totalExperience;
 	private int level;
 
@@ -35,7 +35,7 @@ public class S1FPacketSetExperience implements Packet<INetHandlerPlayClient> {
 	}
 
 	public S1FPacketSetExperience(float parFloat1, int totalExperienceIn, int levelIn) {
-		this.field_149401_a = parFloat1;
+		this.experienceBar = parFloat1;
 		this.totalExperience = totalExperienceIn;
 		this.level = levelIn;
 	}
@@ -44,7 +44,7 @@ public class S1FPacketSetExperience implements Packet<INetHandlerPlayClient> {
 	 * Reads the raw packet data from the data stream.
 	 */
 	public void readPacketData(PacketBuffer parPacketBuffer) throws IOException {
-		this.field_149401_a = parPacketBuffer.readFloat();
+		this.experienceBar = parPacketBuffer.readFloat();
 		this.level = parPacketBuffer.readVarIntFromBuffer();
 		this.totalExperience = parPacketBuffer.readVarIntFromBuffer();
 	}
@@ -53,7 +53,7 @@ public class S1FPacketSetExperience implements Packet<INetHandlerPlayClient> {
 	 * Writes the raw packet data to the data stream.
 	 */
 	public void writePacketData(PacketBuffer parPacketBuffer) throws IOException {
-		parPacketBuffer.writeFloat(this.field_149401_a);
+		parPacketBuffer.writeFloat(this.experienceBar);
 		parPacketBuffer.writeVarIntToBuffer(this.level);
 		parPacketBuffer.writeVarIntToBuffer(this.totalExperience);
 	}
@@ -65,8 +65,8 @@ public class S1FPacketSetExperience implements Packet<INetHandlerPlayClient> {
 		inethandlerplayclient.handleSetExperience(this);
 	}
 
-	public float func_149397_c() {
-		return this.field_149401_a;
+	public float getExperienceBar() {
+		return this.experienceBar;
 	}
 
 	public int getTotalExperience() {

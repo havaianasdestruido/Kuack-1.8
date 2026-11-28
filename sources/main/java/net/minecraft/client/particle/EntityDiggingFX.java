@@ -33,13 +33,13 @@ import net.minecraft.world.World;
  * 
  */
 public class EntityDiggingFX extends EntityFX {
-	private IBlockState field_174847_a;
-	private BlockPos field_181019_az;
+	private IBlockState sourceState;
+	private BlockPos sourcePos;
 
 	protected EntityDiggingFX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double xSpeedIn,
 			double ySpeedIn, double zSpeedIn, IBlockState state) {
 		super(worldIn, xCoordIn, yCoordIn, zCoordIn, xSpeedIn, ySpeedIn, zSpeedIn);
-		this.field_174847_a = state;
+		this.sourceState = state;
 		this.setParticleIcon(
 				Minecraft.getMinecraft().getBlockRendererDispatcher().getBlockModelShapes().getTexture(state));
 		this.particleGravity = state.getBlock().blockParticleGravity;
@@ -48,12 +48,12 @@ public class EntityDiggingFX extends EntityFX {
 		this.particleAlpha = state.getBlock().getBlockLayer() == EnumWorldBlockLayer.TRANSLUCENT ? 0.999f : 1.0f;
 	}
 
-	public EntityDiggingFX func_174846_a(BlockPos pos) {
-		this.field_181019_az = pos;
-		if (this.field_174847_a.getBlock() == Blocks.grass) {
+	public EntityDiggingFX setBlockPos(BlockPos pos) {
+		this.sourcePos = pos;
+		if (this.sourceState.getBlock() == Blocks.grass) {
 			return this;
 		} else {
-			int i = this.field_174847_a.getBlock().colorMultiplier(this.worldObj, pos);
+			int i = this.sourceState.getBlock().colorMultiplier(this.worldObj, pos);
 			this.particleRed *= (float) (i >> 16 & 255) / 255.0F;
 			this.particleGreen *= (float) (i >> 8 & 255) / 255.0F;
 			this.particleBlue *= (float) (i & 255) / 255.0F;
@@ -61,13 +61,13 @@ public class EntityDiggingFX extends EntityFX {
 		}
 	}
 
-	public EntityDiggingFX func_174845_l() {
-		this.field_181019_az = new BlockPos(this.posX, this.posY, this.posZ);
-		Block block = this.field_174847_a.getBlock();
+	public EntityDiggingFX init() {
+		this.sourcePos = new BlockPos(this.posX, this.posY, this.posZ);
+		Block block = this.sourceState.getBlock();
 		if (block == Blocks.grass) {
 			return this;
 		} else {
-			int i = block.getRenderColor(this.field_174847_a);
+			int i = block.getRenderColor(this.sourceState);
 			this.particleRed *= (float) (i >> 16 & 255) / 255.0F;
 			this.particleGreen *= (float) (i >> 8 & 255) / 255.0F;
 			this.particleBlue *= (float) (i & 255) / 255.0F;
@@ -140,8 +140,8 @@ public class EntityDiggingFX extends EntityFX {
 	public int getBrightnessForRender(float f) {
 		int i = super.getBrightnessForRender(f);
 		int j = 0;
-		if (this.worldObj.isBlockLoaded(this.field_181019_az)) {
-			j = this.worldObj.getCombinedLight(this.field_181019_az, 0);
+		if (this.worldObj.isBlockLoaded(this.sourcePos)) {
+			j = this.worldObj.getCombinedLight(this.sourcePos, 0);
 		}
 
 		return i == 0 ? j : i;
@@ -150,7 +150,7 @@ public class EntityDiggingFX extends EntityFX {
 	public static class Factory implements IParticleFactory {
 		public EntityFX getEntityFX(int var1, World world, double d0, double d1, double d2, double d3, double d4,
 				double d5, int... aint) {
-			return (new EntityDiggingFX(world, d0, d1, d2, d3, d4, d5, Block.getStateById(aint[0]))).func_174845_l();
+			return (new EntityDiggingFX(world, d0, d1, d2, d3, d4, d5, Block.getStateById(aint[0]))).init();
 		}
 	}
 }

@@ -140,7 +140,7 @@ public class TileEntitySign extends TileEntity {
 		return new S33PacketUpdateSign(this.worldObj, this.pos, aichatcomponent);
 	}
 
-	public boolean func_183000_F() {
+	public boolean onlyOpsCanSetNbt() {
 		return true;
 	}
 
@@ -206,7 +206,7 @@ public class TileEntitySign extends TileEntity {
 			}
 
 			public void setCommandStat(CommandResultStats.Type commandresultstats$type, int j) {
-				TileEntitySign.this.stats.func_179672_a(this, commandresultstats$type, j);
+				TileEntitySign.this.stats.setCommandStatScore(this, commandresultstats$type, j);
 			}
 		};
 

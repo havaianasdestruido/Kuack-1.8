@@ -89,7 +89,7 @@ public class CommandAchievement extends CommandBase {
 						} else if (flag1) {
 							List<Achievement> ach = Lists.reverse(AchievementList.achievementList);
 							for (int i = 0, l = ach.size(); i < l; ++i) {
-								entityplayermp.func_175145_a(ach.get(i));
+								entityplayermp.takeStat(ach.get(i));
 							}
 
 							notifyOperators(parICommandSender, this, "commands.achievement.take.success.all",
@@ -102,7 +102,7 @@ public class CommandAchievement extends CommandBase {
 							if (flag) {
 								if (entityplayermp.getStatFile().hasAchievementUnlocked(achievement)) {
 									throw new CommandException("commands.achievement.alreadyHave",
-											new Object[] { entityplayermp.getName(), statbase.func_150955_j() });
+											new Object[] { entityplayermp.getName(), statbase.createChatComponent() });
 								}
 
 								ArrayList arraylist;
@@ -119,7 +119,7 @@ public class CommandAchievement extends CommandBase {
 							} else if (flag1) {
 								if (!entityplayermp.getStatFile().hasAchievementUnlocked(achievement)) {
 									throw new CommandException("commands.achievement.dontHave",
-											new Object[] { entityplayermp.getName(), statbase.func_150955_j() });
+											new Object[] { entityplayermp.getName(), statbase.createChatComponent() });
 								}
 
 								ArrayList arraylist1 = Lists.newArrayList(Iterators.filter(
@@ -150,7 +150,7 @@ public class CommandAchievement extends CommandBase {
 								}
 
 								for (int i = 0, l = arraylist2.size(); i < l; ++i) {
-									entityplayermp.func_175145_a((Achievement) arraylist2.get(i));
+									entityplayermp.takeStat((Achievement) arraylist2.get(i));
 								}
 							}
 						}
@@ -158,11 +158,11 @@ public class CommandAchievement extends CommandBase {
 						if (flag) {
 							entityplayermp.triggerAchievement(statbase);
 							notifyOperators(parICommandSender, this, "commands.achievement.give.success.one",
-									new Object[] { entityplayermp.getName(), statbase.func_150955_j() });
+									new Object[] { entityplayermp.getName(), statbase.createChatComponent() });
 						} else if (flag1) {
-							entityplayermp.func_175145_a(statbase);
+							entityplayermp.takeStat(statbase);
 							notifyOperators(parICommandSender, this, "commands.achievement.take.success.one",
-									new Object[] { statbase.func_150955_j(), entityplayermp.getName() });
+									new Object[] { statbase.createChatComponent(), entityplayermp.getName() });
 						}
 
 					}

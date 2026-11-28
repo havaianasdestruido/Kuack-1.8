@@ -39,7 +39,7 @@ public abstract class BehaviorProjectileDispense extends BehaviorDefaultDispense
 		IProjectile iprojectile = this.getProjectileEntity(world, iposition);
 		iprojectile.setThrowableHeading((double) enumfacing.getFrontOffsetX(),
 				(double) ((float) enumfacing.getFrontOffsetY() + 0.1F), (double) enumfacing.getFrontOffsetZ(),
-				this.func_82500_b(), this.func_82498_a());
+				this.func_82500_b(), this.getProjectileInaccuracy());
 		world.spawnEntityInWorld((Entity) iprojectile);
 		itemstack.splitStack(1);
 		return itemstack;
@@ -54,7 +54,7 @@ public abstract class BehaviorProjectileDispense extends BehaviorDefaultDispense
 
 	protected abstract IProjectile getProjectileEntity(World var1, IPosition var2);
 
-	protected float func_82498_a() {
+	protected float getProjectileInaccuracy() {
 		return 6.0F;
 	}
 

@@ -125,7 +125,7 @@ public class CommandTestForBlock extends CommandBase {
 
 							NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 							tileentity.writeToNBT(nbttagcompound1);
-							if (!NBTUtil.func_181123_a(nbttagcompound, nbttagcompound1, true)) {
+							if (!NBTUtil.areNBTEquals(nbttagcompound, nbttagcompound1, true)) {
 								throw new CommandException("commands.testforblock.failed.nbt",
 										new Object[] { Integer.valueOf(blockpos.getX()),
 												Integer.valueOf(blockpos.getY()), Integer.valueOf(blockpos.getZ()) });
@@ -146,7 +146,7 @@ public class CommandTestForBlock extends CommandBase {
 	 * Return a list of options when the user types TAB
 	 */
 	public List<String> addTabCompletionOptions(ICommandSender var1, String[] astring, BlockPos blockpos) {
-		return astring.length > 0 && astring.length <= 3 ? func_175771_a(astring, 0, blockpos)
+		return astring.length > 0 && astring.length <= 3 ? getTabCompletionCoordinate(astring, 0, blockpos)
 				: (astring.length == 4 ? getListOfStringsMatchingLastWord(astring, Block.blockRegistry.getKeys())
 						: null);
 	}

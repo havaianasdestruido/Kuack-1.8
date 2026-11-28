@@ -39,14 +39,14 @@ public class LayeredColorMaskTexture extends AbstractTexture {
 	 */
 	private static final Logger LOG = LogManager.getLogger();
 	private final ResourceLocation textureLocation;
-	private final List<String> field_174949_h;
-	private final List<EnumDyeColor> field_174950_i;
+	private final List<String> listTextures;
+	private final List<EnumDyeColor> listDyeColors;
 
 	public LayeredColorMaskTexture(ResourceLocation textureLocationIn, List<String> parList,
 			List<EnumDyeColor> parList2) {
 		this.textureLocation = textureLocationIn;
-		this.field_174949_h = parList;
-		this.field_174950_i = parList2;
+		this.listTextures = parList;
+		this.listDyeColors = parList2;
 	}
 
 	public void loadTexture(IResourceManager parIResourceManager) throws IOException {
@@ -61,9 +61,9 @@ public class LayeredColorMaskTexture extends AbstractTexture {
 			bufferedimage.drawLayer(bufferedimage1, 0, 0, bufferedimage1.width, bufferedimage1.height, 0, 0,
 					bufferedimage1.width, bufferedimage1.height);
 
-			for (int j = 0; j < 17 && j < this.field_174949_h.size() && j < this.field_174950_i.size(); ++j) {
-				String s = (String) this.field_174949_h.get(j);
-				MapColor mapcolor = ((EnumDyeColor) this.field_174950_i.get(j)).getMapColor();
+			for (int j = 0; j < 17 && j < this.listTextures.size() && j < this.listDyeColors.size(); ++j) {
+				String s = (String) this.listTextures.get(j);
+				MapColor mapcolor = ((EnumDyeColor) this.listDyeColors.get(j)).getMapColor();
 				if (s != null) {
 					InputStream inputstream = parIResourceManager.getResource(new ResourceLocation(s)).getInputStream();
 					ImageData bufferedimage2 = TextureUtil.readBufferedImage(inputstream);
@@ -74,7 +74,7 @@ public class LayeredColorMaskTexture extends AbstractTexture {
 								if ((i1 & -16777216) != 0) {
 									int j1 = (i1 & 16711680) << 8 & -16777216;
 									int k1 = bufferedimage1.pixels[k * bufferedimage1.width + l];
-									int l1 = MathHelper.func_180188_d(k1, ImageData.swapRB(mapcolor.colorValue))
+									int l1 = MathHelper.multiplyColor(k1, ImageData.swapRB(mapcolor.colorValue))
 											& 16777215;
 									bufferedimage2.pixels[k * bufferedimage2.width + l] = j1 | l1;
 								}

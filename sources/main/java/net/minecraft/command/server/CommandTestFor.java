@@ -63,7 +63,7 @@ public class CommandTestFor extends CommandBase {
 		if (parArrayOfString.length < 1) {
 			throw new WrongUsageException("commands.testfor.usage", new Object[0]);
 		} else {
-			Entity entity = func_175768_b(parICommandSender, parArrayOfString[0]);
+			Entity entity = CommandBaseGetEntity(parICommandSender, parArrayOfString[0]);
 			NBTTagCompound nbttagcompound = null;
 			if (parArrayOfString.length >= 2) {
 				try {
@@ -76,7 +76,7 @@ public class CommandTestFor extends CommandBase {
 			if (nbttagcompound != null) {
 				NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 				entity.writeToNBT(nbttagcompound1);
-				if (!NBTUtil.func_181123_a(nbttagcompound, nbttagcompound1, true)) {
+				if (!NBTUtil.areNBTEquals(nbttagcompound, nbttagcompound1, true)) {
 					throw new CommandException("commands.testfor.failure", new Object[] { entity.getName() });
 				}
 			}

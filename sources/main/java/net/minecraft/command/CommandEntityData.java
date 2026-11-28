@@ -56,7 +56,7 @@ public class CommandEntityData extends CommandBase {
 		if (parArrayOfString.length < 2) {
 			throw new WrongUsageException("commands.entitydata.usage", new Object[0]);
 		} else {
-			Entity entity = func_175768_b(parICommandSender, parArrayOfString[0]);
+			Entity entity = CommandBaseGetEntity(parICommandSender, parArrayOfString[0]);
 			if (entity instanceof EntityPlayer) {
 				throw new CommandException("commands.entitydata.noPlayers", new Object[] { entity.getDisplayName() });
 			} else {

@@ -97,7 +97,7 @@ public class BlockSapling extends BlockBush implements IGrowable {
 		case SPRUCE:
 			label114: for (i = 0; i >= -1; --i) {
 				for (j = 0; j >= -1; --j) {
-					if (this.func_181624_a(worldIn, pos, i, j, BlockPlanks.EnumType.SPRUCE)) {
+					if (this.isTwoByTwoOfType(worldIn, pos, i, j, BlockPlanks.EnumType.SPRUCE)) {
 						object = new WorldGenMegaPineTree(false, rand.nextBoolean());
 						flag = true;
 						break label114;
@@ -123,7 +123,7 @@ public class BlockSapling extends BlockBush implements IGrowable {
 
 			label269: for (i = 0; i >= -1; --i) {
 				for (j = 0; j >= -1; --j) {
-					if (this.func_181624_a(worldIn, pos, i, j, BlockPlanks.EnumType.JUNGLE)) {
+					if (this.isTwoByTwoOfType(worldIn, pos, i, j, BlockPlanks.EnumType.JUNGLE)) {
 						object = new WorldGenMegaJungle(true, 10, 20, iblockstate, iblockstate1);
 						flag = true;
 						break label269;
@@ -143,7 +143,7 @@ public class BlockSapling extends BlockBush implements IGrowable {
 		case DARK_OAK:
 			label390: for (i = 0; i >= -1; --i) {
 				for (j = 0; j >= -1; --j) {
-					if (this.func_181624_a(worldIn, pos, i, j, BlockPlanks.EnumType.DARK_OAK)) {
+					if (this.isTwoByTwoOfType(worldIn, pos, i, j, BlockPlanks.EnumType.DARK_OAK)) {
 						object = new WorldGenCanopyTree(true);
 						flag = true;
 						break label390;
@@ -180,7 +180,7 @@ public class BlockSapling extends BlockBush implements IGrowable {
 
 	}
 
-	private boolean func_181624_a(World parWorld, BlockPos parBlockPos, int parInt1, int parInt2,
+	private boolean isTwoByTwoOfType(World parWorld, BlockPos parBlockPos, int parInt1, int parInt2,
 			BlockPlanks.EnumType parEnumType) {
 		return this.isTypeAt(parWorld, parBlockPos.add(parInt1, 0, parInt2), parEnumType)
 				&& this.isTypeAt(parWorld, parBlockPos.add(parInt1 + 1, 0, parInt2), parEnumType)

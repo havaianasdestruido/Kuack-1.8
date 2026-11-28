@@ -33,7 +33,7 @@ public class EntityMinecartMobSpawner extends EntityMinecart {
 	 * Mob spawner logic for this spawner minecart.
 	 */
 	private final MobSpawnerBaseLogic mobSpawnerLogic = new MobSpawnerBaseLogic() {
-		public void func_98267_a(int i) {
+		public void broadcastEvent(int i) {
 			EntityMinecartMobSpawner.this.worldObj.setEntityState(EntityMinecartMobSpawner.this, (byte) i);
 		}
 

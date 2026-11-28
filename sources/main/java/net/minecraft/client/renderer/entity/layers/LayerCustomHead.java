@@ -42,10 +42,10 @@ import net.minecraft.util.StringUtils;
  * 
  */
 public class LayerCustomHead implements LayerRenderer<EntityLivingBase> {
-	private final ModelRenderer field_177209_a;
+	private final ModelRenderer modelRenderer;
 
 	public LayerCustomHead(ModelRenderer parModelRenderer) {
-		this.field_177209_a = parModelRenderer;
+		this.modelRenderer = parModelRenderer;
 	}
 
 	public void doRenderLayer(EntityLivingBase entitylivingbase, float var2, float var3, float var4, float var5,
@@ -68,7 +68,7 @@ public class LayerCustomHead implements LayerRenderer<EntityLivingBase> {
 				GlStateManager.translate(0.0F, 16.0F * f, 0.0F);
 			}
 
-			this.field_177209_a.postRender(0.0625F);
+			this.modelRenderer.postRender(0.0625F);
 			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 			if (item instanceof ItemBlock) {
 				float f3 = 0.625F;

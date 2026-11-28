@@ -58,7 +58,7 @@ public class GuiScreenNameWorldImport extends GuiScreen {
 		}
 		if(definetlyTimeToImport && !isImporting) {
 			isImporting = true;
-			SingleplayerServerController.importWorld(GuiCreateWorld.func_146317_a(mc.getSaveLoader(), this.theGuiTextField.getText().trim()), world.fileData, importFormat, (byte) ((loadSpawnChunks ? 2 : 0) | (enhancedGameRules ? 1 : 0)));
+			SingleplayerServerController.importWorld(GuiCreateWorld.getUncollidingSaveDirName(mc.getSaveLoader(), this.theGuiTextField.getText().trim()), world.fileData, importFormat, (byte) ((loadSpawnChunks ? 2 : 0) | (enhancedGameRules ? 1 : 0)));
 			mc.displayGuiScreen(new GuiScreenIntegratedServerBusy(parentGuiScreen, "singleplayer.busy.importing." + (importFormat + 1), "singleplayer.failed.importing." + (importFormat + 1), SingleplayerServerController::isReady));
 		}
 	}

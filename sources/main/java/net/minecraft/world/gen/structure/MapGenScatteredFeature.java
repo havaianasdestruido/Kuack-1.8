@@ -103,8 +103,8 @@ public class MapGenScatteredFeature extends MapGenStructure {
 		return new MapGenScatteredFeature.Start(this.worldObj, this.rand, i, j);
 	}
 
-	public boolean func_175798_a(BlockPos parBlockPos) {
-		StructureStart structurestart = this.func_175797_c(parBlockPos);
+	public boolean isSwampHut(BlockPos parBlockPos) {
+		StructureStart structurestart = this.getStructureAt(parBlockPos);
 		if (structurestart != null && structurestart instanceof MapGenScatteredFeature.Start
 				&& !structurestart.components.isEmpty()) {
 			StructureComponent structurecomponent = (StructureComponent) structurestart.components.getFirst();

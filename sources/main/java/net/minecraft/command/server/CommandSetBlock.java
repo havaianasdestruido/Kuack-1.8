@@ -140,7 +140,7 @@ public class CommandSetBlock extends CommandBase {
 	 * Return a list of options when the user types TAB
 	 */
 	public List<String> addTabCompletionOptions(ICommandSender var1, String[] astring, BlockPos blockpos) {
-		return astring.length > 0 && astring.length <= 3 ? func_175771_a(astring, 0, blockpos)
+		return astring.length > 0 && astring.length <= 3 ? getTabCompletionCoordinate(astring, 0, blockpos)
 				: (astring.length == 4 ? getListOfStringsMatchingLastWord(astring, Block.blockRegistry.getKeys())
 						: (astring.length == 6
 								? getListOfStringsMatchingLastWord(astring,

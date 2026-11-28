@@ -30,7 +30,7 @@ import net.minecraft.util.ResourceLocation;
 public class RenderBiped<T extends EntityLiving> extends RenderLiving<T> {
 	private static final ResourceLocation DEFAULT_RES_LOC = new ResourceLocation("textures/entity/steve.png");
 	protected ModelBiped modelBipedMain;
-	protected float field_77070_b;
+	protected float scale;
 
 	public RenderBiped(RenderManager renderManagerIn, ModelBiped modelBipedIn, float shadowSize) {
 		this(renderManagerIn, modelBipedIn, shadowSize, 1.0F);
@@ -40,7 +40,7 @@ public class RenderBiped<T extends EntityLiving> extends RenderLiving<T> {
 	public RenderBiped(RenderManager renderManagerIn, ModelBiped modelBipedIn, float shadowSize, float parFloat1) {
 		super(renderManagerIn, modelBipedIn, shadowSize);
 		this.modelBipedMain = modelBipedIn;
-		this.field_77070_b = parFloat1;
+		this.scale = parFloat1;
 		this.addLayer(new LayerCustomHead(modelBipedIn.bipedHead));
 	}
 

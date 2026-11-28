@@ -39,7 +39,7 @@ public class EntityAIAvoidEntity<T extends Entity> extends EntityAIBase {
 	private float avoidDistance;
 	private PathEntity entityPathEntity;
 	private PathNavigate entityPathNavigate;
-	private Class<T> field_181064_i;
+	private Class<T> classToAvoid;
 	private Predicate<? super T> avoidTargetSelector;
 
 	public EntityAIAvoidEntity(EntityCreature parEntityCreature, Class<T> parClass1, float parFloat1, double parDouble1,
@@ -55,7 +55,7 @@ public class EntityAIAvoidEntity<T extends Entity> extends EntityAIBase {
 			}
 		};
 		this.theEntity = parEntityCreature;
-		this.field_181064_i = parClass1;
+		this.classToAvoid = parClass1;
 		this.avoidTargetSelector = parPredicate;
 		this.avoidDistance = parFloat1;
 		this.farSpeed = parDouble1;
@@ -68,7 +68,7 @@ public class EntityAIAvoidEntity<T extends Entity> extends EntityAIBase {
 	 * Returns whether the EntityAIBase should begin execution.
 	 */
 	public boolean shouldExecute() {
-		List list = this.theEntity.worldObj.getEntitiesWithinAABB(this.field_181064_i,
+		List list = this.theEntity.worldObj.getEntitiesWithinAABB(this.classToAvoid,
 				this.theEntity.getEntityBoundingBox().expand((double) this.avoidDistance, 3.0D,
 						(double) this.avoidDistance),
 				Predicates.and(new Predicate[] { EntitySelectors.NOT_SPECTATING, this.canBeSeenSelector,

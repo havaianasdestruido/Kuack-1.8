@@ -67,7 +67,7 @@ public class VerifyChunkUnload {
                             System.out.println("MISMATCH snapshot order at trial " + trial);
                         }
                         break;
-                    case 3: // func_152380_a()-style copy
+                    case 3: // unloadAllChunks-style copy
                         ++checks;
                         if (list.size() != set.size()) {
                             ++failures;

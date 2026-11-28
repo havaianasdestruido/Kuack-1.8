@@ -66,8 +66,8 @@ public class GuiTextField extends Gui {
 	 * True if this textbox is visible
 	 */
 	private boolean visible = true;
-	private GuiPageButtonList.GuiResponder field_175210_x;
-	private Predicate<String> field_175209_y = Predicates.alwaysTrue();
+	private GuiPageButtonList.GuiResponder guiResponder;
+	private Predicate<String> validator = Predicates.alwaysTrue();
 
 	public GuiTextField(int componentId, FontRenderer fontrendererObj, int x, int y, int par5Width, int par6Height) {
 		this.id = componentId;
@@ -78,8 +78,8 @@ public class GuiTextField extends Gui {
 		this.height = par6Height;
 	}
 
-	public void func_175207_a(GuiPageButtonList.GuiResponder parGuiResponder) {
-		this.field_175210_x = parGuiResponder;
+	public void setGuiResponder(GuiPageButtonList.GuiResponder parGuiResponder) {
+		this.guiResponder = parGuiResponder;
 	}
 
 	/**+
@@ -93,7 +93,7 @@ public class GuiTextField extends Gui {
 	 * Sets the text of the textbox
 	 */
 	public void setText(String parString1) {
-		if (this.field_175209_y.apply(parString1)) {
+		if (this.validator.apply(parString1)) {
 			if (parString1.length() > this.maxStringLength) {
 				this.text = parString1.substring(0, this.maxStringLength);
 			} else {
@@ -105,7 +105,7 @@ public class GuiTextField extends Gui {
 	}
 
 	public void updateText(String parString1) {
-		if (this.field_175209_y.apply(parString1)) {
+		if (this.validator.apply(parString1)) {
 			if (parString1.length() > this.maxStringLength) {
 				this.text = parString1.substring(0, this.maxStringLength);
 			} else {
@@ -132,8 +132,8 @@ public class GuiTextField extends Gui {
 		return this.text.substring(i, j);
 	}
 
-	public void func_175205_a(Predicate<String> parPredicate) {
-		this.field_175209_y = parPredicate;
+	public void setValidator(Predicate<String> parPredicate) {
+		this.validator = parPredicate;
 	}
 
 	/**+
@@ -163,11 +163,11 @@ public class GuiTextField extends Gui {
 			s = s + this.text.substring(j);
 		}
 
-		if (this.field_175209_y.apply(s)) {
+		if (this.validator.apply(s)) {
 			this.text = s;
 			this.moveCursorBy(i - this.selectionEnd + l);
-			if (this.field_175210_x != null) {
-				this.field_175210_x.func_175319_a(this.id, this.text);
+			if (this.guiResponder != null) {
+				this.guiResponder.setEntryValue(this.id, this.text);
 			}
 
 		}
@@ -209,14 +209,14 @@ public class GuiTextField extends Gui {
 					s = s + this.text.substring(j);
 				}
 
-				if (this.field_175209_y.apply(s)) {
+				if (this.validator.apply(s)) {
 					this.text = s;
 					if (flag) {
 						this.moveCursorBy(parInt1);
 					}
 
-					if (this.field_175210_x != null) {
-						this.field_175210_x.func_175319_a(this.id, this.text);
+					if (this.guiResponder != null) {
+						this.guiResponder.setEntryValue(this.id, this.text);
 					}
 
 				}
@@ -240,10 +240,10 @@ public class GuiTextField extends Gui {
 	 * looks backwards. params: N, position
 	 */
 	public int getNthWordFromPos(int parInt1, int parInt2) {
-		return this.func_146197_a(parInt1, parInt2, true);
+		return this.getNthWordFromPosWS(parInt1, parInt2, true);
 	}
 
-	public int func_146197_a(int parInt1, int parInt2, boolean parFlag) {
+	public int getNthWordFromPosWS(int parInt1, int parInt2, boolean parFlag) {
 		int i = parInt2;
 		boolean flag = parInt1 < 0;
 		int j = Math.abs(parInt1);

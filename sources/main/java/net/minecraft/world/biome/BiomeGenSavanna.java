@@ -33,7 +33,7 @@ import net.minecraft.world.gen.feature.WorldGenSavannaTree;
  */
 public class BiomeGenSavanna extends BiomeGenBase {
 
-	private static final WorldGenSavannaTree field_150627_aC = new WorldGenSavannaTree(false);
+	private static final WorldGenSavannaTree SAVANNA_TREE = new WorldGenSavannaTree(false);
 
 	protected BiomeGenSavanna(int parInt1) {
 		super(parInt1);
@@ -44,7 +44,7 @@ public class BiomeGenSavanna extends BiomeGenBase {
 	}
 
 	public WorldGenAbstractTree genBigTreeChance(EaglercraftRandom random) {
-		return (WorldGenAbstractTree) (random.nextInt(5) > 0 ? field_150627_aC : this.worldGeneratorTrees);
+		return (WorldGenAbstractTree) (random.nextInt(5) > 0 ? SAVANNA_TREE : this.worldGeneratorTrees);
 	}
 
 	protected BiomeGenBase createMutatedBiome(int i) {

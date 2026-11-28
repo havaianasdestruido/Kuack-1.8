@@ -51,7 +51,7 @@ public class EntityCreeper extends EntityMob {
 	 * Explosion radius for this creeper.
 	 */
 	private int explosionRadius = 3;
-	private int field_175494_bm = 0;
+	private int droppedSkulls = 0;
 
 	public EntityCreeper(World worldIn) {
 		super(worldIn);
@@ -187,7 +187,7 @@ public class EntityCreeper extends EntityMob {
 		} else if (damagesource.getEntity() instanceof EntityCreeper && damagesource.getEntity() != this
 				&& ((EntityCreeper) damagesource.getEntity()).getPowered()
 				&& ((EntityCreeper) damagesource.getEntity()).isAIEnabled()) {
-			((EntityCreeper) damagesource.getEntity()).func_175493_co();
+			((EntityCreeper) damagesource.getEntity()).incrementDroppedSkulls();
 			this.entityDropItem(new ItemStack(Items.skull, 1, 4), 0.0F);
 		}
 
@@ -287,11 +287,11 @@ public class EntityCreeper extends EntityMob {
 	 * Returns true if the newer Entity AI code should be run
 	 */
 	public boolean isAIEnabled() {
-		return this.field_175494_bm < 1 && this.worldObj.getGameRules().getBoolean("doMobLoot");
+		return this.droppedSkulls < 1 && this.worldObj.getGameRules().getBoolean("doMobLoot");
 	}
 
-	public void func_175493_co() {
-		++this.field_175494_bm;
+	public void incrementDroppedSkulls() {
+		++this.droppedSkulls;
 	}
 
 	protected void renderDynamicLightsEaglerAt(double entityX, double entityY, double entityZ, double renderX,

@@ -80,10 +80,10 @@ public class ViewFrustum {
 		int k = this.countChunksX * 16;
 
 		for (int l = 0; l < this.countChunksX; ++l) {
-			int i1 = this.func_178157_a(i, k, l);
+			int i1 = this.getBaseCoordinate(i, k, l);
 
 			for (int j1 = 0; j1 < this.countChunksZ; ++j1) {
-				int k1 = this.func_178157_a(j, k, j1);
+				int k1 = this.getBaseCoordinate(j, k, j1);
 
 				for (int l1 = 0; l1 < this.countChunksY; ++l1) {
 					int i2 = l1 * 16;
@@ -98,7 +98,7 @@ public class ViewFrustum {
 
 	}
 
-	private int func_178157_a(int parInt1, int parInt2, int parInt3) {
+	private int getBaseCoordinate(int parInt1, int parInt2, int parInt3) {
 		int i = parInt3 * 16;
 		int j = i - parInt1 + parInt2 / 2;
 		if (j < 0) {

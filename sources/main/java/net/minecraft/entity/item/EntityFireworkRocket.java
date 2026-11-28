@@ -79,9 +79,9 @@ public class EntityFireworkRocket extends Entity {
 		this.motionZ = d2;
 		if (this.prevRotationPitch == 0.0F && this.prevRotationYaw == 0.0F) {
 			float f = MathHelper.sqrt_double(d0 * d0 + d2 * d2);
-			this.prevRotationYaw = this.rotationYaw = (float) (MathHelper.func_181159_b(d0, d2) * 180.0D
+			this.prevRotationYaw = this.rotationYaw = (float) (MathHelper.atan2(d0, d2) * 180.0D
 					/ 3.1415927410125732D);
-			this.prevRotationPitch = this.rotationPitch = (float) (MathHelper.func_181159_b(d1, (double) f) * 180.0D
+			this.prevRotationPitch = this.rotationPitch = (float) (MathHelper.atan2(d1, (double) f) * 180.0D
 					/ 3.1415927410125732D);
 		}
 
@@ -100,10 +100,10 @@ public class EntityFireworkRocket extends Entity {
 		this.motionY += 0.04D;
 		this.moveEntity(this.motionX, this.motionY, this.motionZ);
 		float f = MathHelper.sqrt_double(this.motionX * this.motionX + this.motionZ * this.motionZ);
-		this.rotationYaw = (float) (MathHelper.func_181159_b(this.motionX, this.motionZ) * 180.0D
+		this.rotationYaw = (float) (MathHelper.atan2(this.motionX, this.motionZ) * 180.0D
 				/ 3.1415927410125732D);
 
-		for (this.rotationPitch = (float) (MathHelper.func_181159_b(this.motionY, (double) f) * 180.0D
+		for (this.rotationPitch = (float) (MathHelper.atan2(this.motionY, (double) f) * 180.0D
 				/ 3.1415927410125732D); this.rotationPitch
 						- this.prevRotationPitch < -180.0F; this.prevRotationPitch -= 360.0F) {
 			;

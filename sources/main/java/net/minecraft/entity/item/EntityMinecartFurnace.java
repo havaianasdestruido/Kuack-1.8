@@ -92,8 +92,8 @@ public class EntityMinecartFurnace extends EntityMinecart {
 
 	}
 
-	protected void func_180460_a(BlockPos blockpos, IBlockState iblockstate) {
-		super.func_180460_a(blockpos, iblockstate);
+	protected void moveAlongTrack(BlockPos blockpos, IBlockState iblockstate) {
+		super.moveAlongTrack(blockpos, iblockstate);
 		double d0 = this.pushX * this.pushX + this.pushZ * this.pushZ;
 		if (d0 > 1.0E-4D && this.motionX * this.motionX + this.motionZ * this.motionZ > 0.001D) {
 			d0 = (double) MathHelper.sqrt_double(d0);

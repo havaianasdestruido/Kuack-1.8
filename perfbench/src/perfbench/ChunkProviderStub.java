@@ -85,7 +85,7 @@ public class ChunkProviderStub implements IChunkProvider {
     public void populate(IChunkProvider chunkProviderIn, int x, int z) {
     }
 
-    public boolean func_177460_a(IChunkProvider p_177460_1_, Chunk p_177460_2_, int p_177460_3_, int p_177460_4_) {
+    public boolean populateChunk(IChunkProvider p_177460_1_, Chunk p_177460_2_, int p_177460_3_, int p_177460_4_) {
         return false;
     }
 

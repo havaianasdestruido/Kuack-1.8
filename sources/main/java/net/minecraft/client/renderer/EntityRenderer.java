@@ -214,7 +214,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 		return false;
 	}
 
-	public void func_181022_b() {
+	public void stopUseShader() {
 	}
 
 	public void switchUseShader() {
@@ -882,7 +882,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 		return i > 200 ? 1.0F : 0.7F + MathHelper.sin(((float) i - partialTicks) * 3.1415927F * 0.2F) * 0.3F;
 	}
 
-	public void func_181560_a(float parFloat1, long parLong1) {
+	public void updateCameraAndRender(float parFloat1, long parLong1) {
 		boolean flag = Display.isActive();
 		if (!flag && this.mc.gameSettings.pauseOnLostFocus
 				&& (!this.mc.gameSettings.touchscreen || !Mouse.isButtonDown(1))) {
@@ -1078,9 +1078,9 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 			GlStateManager.loadIdentity();
 			this.orientCamera(partialTicks);
 			GlStateManager.translate(0.0F, entity.getEyeHeight(), 0.0F);
-			RenderGlobal.func_181563_a(new AxisAlignedBB(0.0D, 0.0D, 0.0D, 0.005D, 1.0E-4D, 1.0E-4D), 255, 0, 0, 255);
-			RenderGlobal.func_181563_a(new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0E-4D, 1.0E-4D, 0.005D), 0, 0, 255, 255);
-			RenderGlobal.func_181563_a(new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0E-4D, 0.0033D, 1.0E-4D), 0, 255, 0, 255);
+			RenderGlobal.drawOutlinedBoundingBox(new AxisAlignedBB(0.0D, 0.0D, 0.0D, 0.005D, 1.0E-4D, 1.0E-4D), 255, 0, 0, 255);
+			RenderGlobal.drawOutlinedBoundingBox(new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0E-4D, 1.0E-4D, 0.005D), 0, 0, 255, 255);
+			RenderGlobal.drawOutlinedBoundingBox(new AxisAlignedBB(0.0D, 0.0D, 0.0D, 1.0E-4D, 0.0033D, 1.0E-4D), 0, 255, 0, 255);
 			GlStateManager.popMatrix();
 			GlStateManager.depthMask(true);
 			GlStateManager.enableTexture2D();
@@ -1360,7 +1360,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 	}
 
 	private void renderCloudsCheck(RenderGlobal renderGlobalIn, float partialTicks, int pass) {
-		if (this.mc.gameSettings.func_181147_e() != 0) {
+		if (this.mc.gameSettings.shouldRenderClouds() != 0) {
 			this.mc.mcProfiler.endStartSection("clouds");
 			GlStateManager.matrixMode(GL_PROJECTION);
 			GlStateManager.loadIdentity();
@@ -1509,7 +1509,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 					int k1 = (i1 - k + 16) * 32 + j1 - i + 16;
 					double d3 = (double) this.rainXCoords[k1] * 0.5D;
 					double d4 = (double) this.rainYCoords[k1] * 0.5D;
-					blockpos$mutableblockpos.func_181079_c(j1, 0, i1);
+					blockpos$mutableblockpos.setPos(j1, 0, i1);
 					BiomeGenBase biomegenbase = worldclient.getBiomeGenForCoords(blockpos$mutableblockpos);
 					if (biomegenbase.canSpawnLightningBolt() || biomegenbase.getEnableSnow()) {
 						int l1 = worldclient.getPrecipitationHeight(blockpos$mutableblockpos).getY();
@@ -1531,7 +1531,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 						if (i2 != j2) {
 							this.random
 									.setSeed((long) (j1 * j1 * 3121 + j1 * 45238971 ^ i1 * i1 * 418711 + i1 * 13761));
-							blockpos$mutableblockpos.func_181079_c(j1, i2, i1);
+							blockpos$mutableblockpos.setPos(j1, i2, i1);
 							float f2 = biomegenbase.getFloatTemperature(blockpos$mutableblockpos);
 							if (f2 >= 0.15F) {
 								if (b1 != 0) {
@@ -1559,7 +1559,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 								double d7 = (double) ((float) i1 + 0.5F) - entity.posZ;
 								float f3 = MathHelper.sqrt_double(d6 * d6 + d7 * d7) / (float) b0;
 								float f4 = ((1.0F - f3 * f3) * 0.5F + 0.5F) * f;
-								blockpos$mutableblockpos.func_181079_c(j1, k2, i1);
+								blockpos$mutableblockpos.setPos(j1, k2, i1);
 								int l2 = worldclient.getCombinedLight(blockpos$mutableblockpos, 0);
 								int i3 = l2 >> 16 & '\uffff';
 								int j3 = l2 & '\uffff';
@@ -1602,7 +1602,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 								double d12 = (double) ((float) i1 + 0.5F) - entity.posZ;
 								float f6 = MathHelper.sqrt_double(d11 * d11 + d12 * d12) / (float) b0;
 								float f5 = ((1.0F - f6 * f6) * 0.3F + 0.5F) * f;
-								blockpos$mutableblockpos.func_181079_c(j1, k2, i1);
+								blockpos$mutableblockpos.setPos(j1, k2, i1);
 								int k3 = (worldclient.getCombinedLight(blockpos$mutableblockpos, 0) * 3 + 15728880) / 4;
 								int l3 = k3 >> 16 & '\uffff';
 								int i4 = k3 & '\uffff';
@@ -2160,7 +2160,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 					return b;
 				} else {
 					AxisAlignedBB aabbEntity = renderEntity.getEntityBoundingBox();
-					if (aabbEntity.func_181656_b() || aabbEntity.getAverageEdgeLength() == 0.0) {
+					if (aabbEntity.hasNaN() || aabbEntity.getAverageEdgeLength() == 0.0) {
 						aabbEntity = new AxisAlignedBB(d0 - 2.0, d1 - 2.0, d2 - 2.0, d0 + 2.0, d1 + 2.0, d2 + 2.0);
 					}
 					if (shadowLOD0Frustrum.testAab((float) (aabbEntity.minX - d0),
@@ -2294,7 +2294,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 						return b;
 					} else {
 						AxisAlignedBB aabbEntity = renderEntity.getEntityBoundingBox();
-						if (aabbEntity.func_181656_b() || aabbEntity.getAverageEdgeLength() == 0.0) {
+						if (aabbEntity.hasNaN() || aabbEntity.getAverageEdgeLength() == 0.0) {
 							aabbEntity = new AxisAlignedBB(d0 - 2.0, d1 - 2.0, d2 - 2.0, d0 + 2.0, d1 + 2.0, d2 + 2.0);
 						}
 						if (shadowLOD1Frustrum.testAab((float) (aabbEntity.minX - d0),

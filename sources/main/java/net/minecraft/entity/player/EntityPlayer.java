@@ -154,7 +154,7 @@ public abstract class EntityPlayer extends EntityLivingBase implements ICommandS
 		BlockPos blockpos = worldIn.getSpawnPoint();
 		this.setLocationAndAngles((double) blockpos.getX() + 0.5D, (double) (blockpos.getY() + 1),
 				(double) blockpos.getZ() + 0.5D, 0.0F, 0.0F);
-		this.field_70741_aB = 180.0F;
+		this.unused180 = 180.0F;
 		this.fireResistance = 20;
 	}
 
@@ -611,7 +611,7 @@ public abstract class EntityPlayer extends EntityLivingBase implements ICommandS
 		}
 
 		this.triggerAchievement(StatList.deathsStat);
-		this.func_175145_a(StatList.timeSinceDeathStat);
+		this.takeStat(StatList.timeSinceDeathStat);
 	}
 
 	/**+
@@ -641,27 +641,27 @@ public abstract class EntityPlayer extends EntityLivingBase implements ICommandS
 			this.triggerAchievement(StatList.playerKillsStat);
 			collection.addAll(
 					this.getWorldScoreboard().getObjectivesFromCriteria(IScoreObjectiveCriteria.playerKillCount));
-			collection.addAll(this.func_175137_e(entity));
+			collection.addAll(this.giveTeamKillScores(entity));
 		} else {
 			this.triggerAchievement(StatList.mobKillsStat);
 		}
 
 		for (ScoreObjective scoreobjective : collection) {
 			Score score = this.getWorldScoreboard().getValueFromObjective(this.getName(), scoreobjective);
-			score.func_96648_a();
+			score.incrementScore();
 		}
 
 	}
 
-	private Collection<ScoreObjective> func_175137_e(Entity parEntity) {
+	private Collection<ScoreObjective> giveTeamKillScores(Entity parEntity) {
 		ScorePlayerTeam scoreplayerteam = this.getWorldScoreboard().getPlayersTeam(this.getName());
 		if (scoreplayerteam != null) {
 			int i = scoreplayerteam.getChatFormat().getColorIndex();
-			if (i >= 0 && i < IScoreObjectiveCriteria.field_178793_i.length) {
+			if (i >= 0 && i < IScoreObjectiveCriteria.KILLED_BY_TEAM.length) {
 				for (ScoreObjective scoreobjective : this.getWorldScoreboard()
-						.getObjectivesFromCriteria(IScoreObjectiveCriteria.field_178793_i[i])) {
+						.getObjectivesFromCriteria(IScoreObjectiveCriteria.KILLED_BY_TEAM[i])) {
 					Score score = this.getWorldScoreboard().getValueFromObjective(parEntity.getName(), scoreobjective);
-					score.func_96648_a();
+					score.incrementScore();
 				}
 			}
 		}
@@ -669,8 +669,8 @@ public abstract class EntityPlayer extends EntityLivingBase implements ICommandS
 		ScorePlayerTeam scoreplayerteam1 = this.getWorldScoreboard().getPlayersTeam(parEntity.getName());
 		if (scoreplayerteam1 != null) {
 			int j = scoreplayerteam1.getChatFormat().getColorIndex();
-			if (j >= 0 && j < IScoreObjectiveCriteria.field_178792_h.length) {
-				return this.getWorldScoreboard().getObjectivesFromCriteria(IScoreObjectiveCriteria.field_178792_h[j]);
+			if (j >= 0 && j < IScoreObjectiveCriteria.TEAM_KILL.length) {
+				return this.getWorldScoreboard().getObjectivesFromCriteria(IScoreObjectiveCriteria.TEAM_KILL[j]);
 			}
 		}
 
@@ -1097,10 +1097,10 @@ public abstract class EntityPlayer extends EntityLivingBase implements ICommandS
 				int i = 0;
 				float f1 = 0.0F;
 				if (entity instanceof EntityLivingBase) {
-					f1 = EnchantmentHelper.func_152377_a(this.getHeldItem(),
+					f1 = EnchantmentHelper.getModifierForCreature(this.getHeldItem(),
 							((EntityLivingBase) entity).getCreatureAttribute());
 				} else {
-					f1 = EnchantmentHelper.func_152377_a(this.getHeldItem(), EnumCreatureAttribute.UNDEFINED);
+					f1 = EnchantmentHelper.getModifierForCreature(this.getHeldItem(), EnumCreatureAttribute.UNDEFINED);
 				}
 
 				i = i + EnchantmentHelper.getKnockbackModifier(this);
@@ -1302,7 +1302,7 @@ public abstract class EntityPlayer extends EntityLivingBase implements ICommandS
 				f = 0.9F;
 			}
 
-			this.func_175139_a(enumfacing);
+			this.setRenderOffsetForSleep(enumfacing);
 			this.setPosition((double) ((float) blockpos.getX() + f), (double) ((float) blockpos.getY() + 0.6875F),
 					(double) ((float) blockpos.getZ() + f1));
 		} else {
@@ -1321,7 +1321,7 @@ public abstract class EntityPlayer extends EntityLivingBase implements ICommandS
 		return EntityPlayer.EnumStatus.OK;
 	}
 
-	private void func_175139_a(EnumFacing parEnumFacing) {
+	private void setRenderOffsetForSleep(EnumFacing parEnumFacing) {
 		this.renderOffsetX = 0.0F;
 		this.renderOffsetZ = 0.0F;
 		switch (parEnumFacing) {
@@ -1383,8 +1383,8 @@ public abstract class EntityPlayer extends EntityLivingBase implements ICommandS
 			if (!forceSpawn) {
 				return null;
 			} else {
-				boolean flag = block.func_181623_g();
-				boolean flag1 = worldIn.getBlockState(bedLocation.up()).getBlock().func_181623_g();
+				boolean flag = block.canSpawnInBlock();
+				boolean flag1 = worldIn.getBlockState(bedLocation.up()).getBlock().canSpawnInBlock();
 				return flag && flag1 ? bedLocation : null;
 			}
 		} else {
@@ -1468,7 +1468,7 @@ public abstract class EntityPlayer extends EntityLivingBase implements ICommandS
 	public void addStat(StatBase var1, int var2) {
 	}
 
-	public void func_175145_a(StatBase var1) {
+	public void takeStat(StatBase var1) {
 	}
 
 	/**+
@@ -1629,7 +1629,7 @@ public abstract class EntityPlayer extends EntityLivingBase implements ICommandS
 		EntityList.EntityEggInfo entitylist$entityegginfo = (EntityList.EntityEggInfo) EntityList.entityEggs
 				.get(Integer.valueOf(EntityList.getEntityID(entitylivingbase)));
 		if (entitylist$entityegginfo != null) {
-			this.triggerAchievement(entitylist$entityegginfo.field_151512_d);
+			this.triggerAchievement(entitylist$entityegginfo.killEntityStatistic);
 		}
 
 	}
@@ -1809,9 +1809,9 @@ public abstract class EntityPlayer extends EntityLivingBase implements ICommandS
 			this.experienceTotal = entityplayer.experienceTotal;
 			this.experience = entityplayer.experience;
 			this.setScore(entityplayer.getScore());
-			this.field_181016_an = entityplayer.field_181016_an;
-			this.field_181017_ao = entityplayer.field_181017_ao;
-			this.field_181018_ap = entityplayer.field_181018_ap;
+			this.lastPortalPos = entityplayer.lastPortalPos;
+			this.lastPortalVec = entityplayer.lastPortalVec;
+			this.teleportDirection = entityplayer.teleportDirection;
 		} else if (this.worldObj.getGameRules().getBoolean("keepInventory")) {
 			this.inventory.copyInventory(entityplayer.inventory);
 			this.experienceLevel = entityplayer.experienceLevel;

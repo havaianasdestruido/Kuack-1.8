@@ -70,21 +70,21 @@ public class GuiEnchantment extends GuiContainer {
 	 */
 	private EaglercraftRandom random = new EaglercraftRandom();
 	private ContainerEnchantment container;
-	public int field_147073_u;
-	public float field_147071_v;
-	public float field_147069_w;
-	public float field_147082_x;
-	public float field_147081_y;
-	public float field_147080_z;
-	public float field_147076_A;
-	ItemStack field_147077_B;
-	private final IWorldNameable field_175380_I;
+	public int ticks;
+	public float flip;
+	public float oFlip;
+	public float flipT;
+	public float flipA;
+	public float open;
+	public float oOpen;
+	ItemStack last;
+	private final IWorldNameable nameable;
 
 	public GuiEnchantment(InventoryPlayer inventory, World worldIn, IWorldNameable parIWorldNameable) {
 		super(new ContainerEnchantment(inventory, worldIn));
 		this.playerInventory = inventory;
 		this.container = (ContainerEnchantment) this.inventorySlots;
-		this.field_175380_I = parIWorldNameable;
+		this.nameable = parIWorldNameable;
 	}
 
 	/**+
@@ -92,7 +92,7 @@ public class GuiEnchantment extends GuiContainer {
 	 * front of the items). Args : mouseX, mouseY
 	 */
 	protected void drawGuiContainerForegroundLayer(int var1, int var2) {
-		this.fontRendererObj.drawString(this.field_175380_I.getDisplayName().getUnformattedText(), 12, 5, 4210752);
+		this.fontRendererObj.drawString(this.nameable.getDisplayName().getUnformattedText(), 12, 5, 4210752);
 		this.fontRendererObj.drawString(this.playerInventory.getDisplayName().getUnformattedText(), 8,
 				this.ySize - 96 + 2, 4210752);
 	}
@@ -102,7 +102,7 @@ public class GuiEnchantment extends GuiContainer {
 	 */
 	public void updateScreen() {
 		super.updateScreen();
-		this.func_147068_g();
+		this.tickBook();
 	}
 
 	/**+
@@ -154,12 +154,12 @@ public class GuiEnchantment extends GuiContainer {
 		GlStateManager.rotate(180.0F, 0.0F, 0.0F, 1.0F);
 		this.mc.getTextureManager().bindTexture(ENCHANTMENT_TABLE_BOOK_TEXTURE);
 		GlStateManager.rotate(20.0F, 1.0F, 0.0F, 0.0F);
-		float f3 = this.field_147076_A + (this.field_147080_z - this.field_147076_A) * f;
+		float f3 = this.oOpen + (this.open - this.oOpen) * f;
 		GlStateManager.translate((1.0F - f3) * 0.2F, (1.0F - f3) * 0.1F, (1.0F - f3) * 0.25F);
 		GlStateManager.rotate(-(1.0F - f3) * 90.0F - 90.0F, 0.0F, 1.0F, 0.0F);
 		GlStateManager.rotate(180.0F, 1.0F, 0.0F, 0.0F);
-		float f4 = this.field_147069_w + (this.field_147071_v - this.field_147069_w) * f + 0.25F;
-		float f5 = this.field_147069_w + (this.field_147071_v - this.field_147069_w) * f + 0.75F;
+		float f4 = this.oFlip + (this.flip - this.oFlip) * f + 0.25F;
+		float f5 = this.oFlip + (this.flip - this.oFlip) * f + 0.75F;
 		f4 = (f4 - (float) MathHelper.truncateDoubleToInt((double) f4)) * 1.6F - 0.3F;
 		f5 = (f5 - (float) MathHelper.truncateDoubleToInt((double) f5)) * 1.6F - 0.3F;
 		if (f4 < 0.0F) {
@@ -249,7 +249,7 @@ public class GuiEnchantment extends GuiContainer {
 
 		for (int l = 0; l < 3; ++l) {
 			int i1 = this.container.enchantLevels[l];
-			int j1 = this.container.field_178151_h[l];
+			int j1 = this.container.enchantmentIds[l];
 			int k1 = l + 1;
 			if (this.isPointInRegion(60, 14 + 19 * l, 108, 17, i, j) && i1 > 0 && j1 >= 0) {
 				ArrayList arraylist = Lists.newArrayList();
@@ -299,23 +299,23 @@ public class GuiEnchantment extends GuiContainer {
 
 	}
 
-	public void func_147068_g() {
+	public void tickBook() {
 		ItemStack itemstack = this.inventorySlots.getSlot(0).getStack();
-		if (!ItemStack.areItemStacksEqual(itemstack, this.field_147077_B)) {
-			this.field_147077_B = itemstack;
+		if (!ItemStack.areItemStacksEqual(itemstack, this.last)) {
+			this.last = itemstack;
 
 			while (true) {
-				this.field_147082_x += (float) (this.random.nextInt(4) - this.random.nextInt(4));
-				if (this.field_147071_v > this.field_147082_x + 1.0F
-						|| this.field_147071_v < this.field_147082_x - 1.0F) {
+				this.flipT += (float) (this.random.nextInt(4) - this.random.nextInt(4));
+				if (this.flip > this.flipT + 1.0F
+						|| this.flip < this.flipT - 1.0F) {
 					break;
 				}
 			}
 		}
 
-		++this.field_147073_u;
-		this.field_147069_w = this.field_147071_v;
-		this.field_147076_A = this.field_147080_z;
+		++this.ticks;
+		this.oFlip = this.flip;
+		this.oOpen = this.open;
 		boolean flag = false;
 
 		for (int i = 0; i < 3; ++i) {
@@ -325,16 +325,16 @@ public class GuiEnchantment extends GuiContainer {
 		}
 
 		if (flag) {
-			this.field_147080_z += 0.2F;
+			this.open += 0.2F;
 		} else {
-			this.field_147080_z -= 0.2F;
+			this.open -= 0.2F;
 		}
 
-		this.field_147080_z = MathHelper.clamp_float(this.field_147080_z, 0.0F, 1.0F);
-		float f1 = (this.field_147082_x - this.field_147071_v) * 0.4F;
+		this.open = MathHelper.clamp_float(this.open, 0.0F, 1.0F);
+		float f1 = (this.flipT - this.flip) * 0.4F;
 		float f = 0.2F;
 		f1 = MathHelper.clamp_float(f1, -f, f);
-		this.field_147081_y += (f1 - this.field_147081_y) * 0.9F;
-		this.field_147071_v += this.field_147081_y;
+		this.flipA += (f1 - this.flipA) * 0.9F;
+		this.flip += this.flipA;
 	}
 }

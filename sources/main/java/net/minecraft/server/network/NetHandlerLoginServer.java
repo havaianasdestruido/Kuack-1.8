@@ -55,7 +55,7 @@ public class NetHandlerLoginServer implements INetHandlerLoginServer, ITickable 
 	private byte[] loginSkinPacket;
 	private byte[] loginCapePacket;
 	private String serverId = "";
-	private EntityPlayerMP field_181025_l;
+	private EntityPlayerMP player;
 
 	public NetHandlerLoginServer(MinecraftServer parMinecraftServer,
 			IntegratedServerPlayerNetworkManager parNetworkManager) {
@@ -76,18 +76,18 @@ public class NetHandlerLoginServer implements INetHandlerLoginServer, ITickable 
 			if (entityplayermp == null) {
 				this.currentLoginState = NetHandlerLoginServer.LoginState.READY_TO_ACCEPT;
 				this.server.getConfigurationManager().initializeConnectionToPlayer(this.networkManager,
-						this.field_181025_l);
-				((EaglerMinecraftServer) field_181025_l.mcServer).getSkinService()
-						.processLoginPacket(this.loginSkinPacket, field_181025_l);
+						this.player);
+				((EaglerMinecraftServer) player.mcServer).getSkinService()
+						.processLoginPacket(this.loginSkinPacket, player);
 				if (this.loginCapePacket != null) {
-					((EaglerMinecraftServer) field_181025_l.mcServer).getCapeService()
-							.processLoginPacket(this.loginCapePacket, field_181025_l);
+					((EaglerMinecraftServer) player.mcServer).getCapeService()
+							.processLoginPacket(this.loginCapePacket, player);
 				}
-				IntegratedVoiceService svc = ((EaglerMinecraftServer) field_181025_l.mcServer).getVoiceService();
+				IntegratedVoiceService svc = ((EaglerMinecraftServer) player.mcServer).getVoiceService();
 				if (svc != null) {
 					svc.handlePlayerLoggedIn(entityplayermp);
 				}
-				this.field_181025_l = null;
+				this.player = null;
 			}
 		}
 
@@ -121,7 +121,7 @@ public class NetHandlerLoginServer implements INetHandlerLoginServer, ITickable 
 					.getPlayerByUUID(this.loginGameProfile.getId());
 			if (entityplayermp != null) {
 				this.currentLoginState = NetHandlerLoginServer.LoginState.DELAY_ACCEPT;
-				this.field_181025_l = this.server.getConfigurationManager().createPlayerForUser(this.loginGameProfile);
+				this.player = this.server.getConfigurationManager().createPlayerForUser(this.loginGameProfile);
 			} else {
 				entityplayermp = this.server.getConfigurationManager().createPlayerForUser(this.loginGameProfile);
 				this.server.getConfigurationManager().initializeConnectionToPlayer(this.networkManager, entityplayermp);

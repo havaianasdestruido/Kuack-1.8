@@ -155,7 +155,7 @@ public class RenderItemFrame extends Render<EntityItemFrame> {
 
 				GlStateManager.pushLightCoords();
 				RenderHelper.enableStandardItemLighting();
-				this.itemRenderer.func_181564_a(entityitem.getEntityItem(), ItemCameraTransforms.TransformType.FIXED);
+				this.itemRenderer.RenderItemRenderItem(entityitem.getEntityItem(), ItemCameraTransforms.TransformType.FIXED);
 				RenderHelper.disableStandardItemLighting();
 				GlStateManager.popLightCoords();
 				if (emissive) {

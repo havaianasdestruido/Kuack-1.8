@@ -3,13 +3,13 @@ package perfbench;
 import java.util.Random;
 
 /**
- * Models BiomeColorHelper.func_180285_a: 3x3 biome sampling per rendered quad for grass/foliage.
+ * Models BiomeColorHelper.resolveColorAtPos: 3x3 biome sampling per rendered quad for grass/foliage.
  * Each sample calls BiomeGenBase.getGrassColorAtPos -> getFloatTemperature -> Perlin noise
- * (temperatureNoise.func_151601_a) whenever y > 64, plus ColorizerGrass lookup.
+ * (temperatureNoise.getValue) whenever y > 64, plus ColorizerGrass lookup.
  */
 public class BiomeColorBench {
 
-    /** Stand-in for NoiseGeneratorPerlin.func_151601_a (gradient noise, ~8 dot products). */
+    /** Stand-in for NoiseGeneratorPerlin.getValue (gradient noise, ~8 dot products). */
     static final class Perlin {
         final int[] perm = new int[512];
 
@@ -92,7 +92,7 @@ public class BiomeColorBench {
         return colorizerGrass(d0, d1);
     }
 
-    /** Vanilla func_180285_a: 3x3 neighbourhood average. */
+    /** Vanilla resolveColorAtPos: 3x3 neighbourhood average. */
     static int vanillaBiomeColor(float biomeTemp, int x, int y, int z) {
         int i = 0, j = 0, k = 0;
         for (int dz = -1; dz <= 1; ++dz) {

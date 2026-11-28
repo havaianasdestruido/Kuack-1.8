@@ -41,7 +41,7 @@ public class BlockFenceGate extends BlockDirectional {
 	public static final PropertyBool IN_WALL = PropertyBool.create("in_wall");
 
 	public BlockFenceGate(BlockPlanks.EnumType parEnumType) {
-		super(Material.wood, parEnumType.func_181070_c());
+		super(Material.wood, parEnumType.BlockPlanksGetMapColor());
 		this.setDefaultState(this.blockState.getBaseState().withProperty(OPEN, Boolean.valueOf(false))
 				.withProperty(POWERED, Boolean.valueOf(false)).withProperty(IN_WALL, Boolean.valueOf(false)));
 		this.setCreativeTab(CreativeTabs.tabRedstone);

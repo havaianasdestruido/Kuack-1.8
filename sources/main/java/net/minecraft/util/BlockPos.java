@@ -428,7 +428,7 @@ public class BlockPos extends Vec3i {
 			return this.z;
 		}
 
-		public BlockPos.MutableBlockPos func_181079_c(int parInt1, int parInt2, int parInt3) {
+		public BlockPos.MutableBlockPos setPos(int parInt1, int parInt2, int parInt3) {
 			this.x = parInt1;
 			this.y = parInt2;
 			this.z = parInt3;

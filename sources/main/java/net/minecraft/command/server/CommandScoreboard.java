@@ -391,7 +391,7 @@ public class CommandScoreboard extends CommandBase {
 						throw new WrongUsageException("commands.scoreboard.teams.option.usage", new Object[0]);
 					} else {
 						throw new WrongUsageException("commands.scoreboard.teams.option.noValue",
-								new Object[] { s, joinNiceString(Team.EnumVisible.func_178825_a()) });
+								new Object[] { s, joinNiceString(Team.EnumVisible.getNames()) });
 					}
 				} else {
 					throw new WrongUsageException("commands.scoreboard.teams.option.noValue", new Object[] { s,
@@ -424,18 +424,18 @@ public class CommandScoreboard extends CommandBase {
 
 					scoreplayerteam.setSeeFriendlyInvisiblesEnabled(s1.equalsIgnoreCase("true"));
 				} else if (s.equalsIgnoreCase("nametagVisibility")) {
-					Team.EnumVisible team$enumvisible = Team.EnumVisible.func_178824_a(s1);
+					Team.EnumVisible team$enumvisible = Team.EnumVisible.getByName(s1);
 					if (team$enumvisible == null) {
 						throw new WrongUsageException("commands.scoreboard.teams.option.noValue",
-								new Object[] { s, joinNiceString(Team.EnumVisible.func_178825_a()) });
+								new Object[] { s, joinNiceString(Team.EnumVisible.getNames()) });
 					}
 
 					scoreplayerteam.setNameTagVisibility(team$enumvisible);
 				} else if (s.equalsIgnoreCase("deathMessageVisibility")) {
-					Team.EnumVisible team$enumvisible1 = Team.EnumVisible.func_178824_a(s1);
+					Team.EnumVisible team$enumvisible1 = Team.EnumVisible.getByName(s1);
 					if (team$enumvisible1 == null) {
 						throw new WrongUsageException("commands.scoreboard.teams.option.noValue",
-								new Object[] { s, joinNiceString(Team.EnumVisible.func_178825_a()) });
+								new Object[] { s, joinNiceString(Team.EnumVisible.getNames()) });
 					}
 
 					scoreplayerteam.setDeathMessageVisibility(team$enumvisible1);
@@ -726,13 +726,13 @@ public class CommandScoreboard extends CommandBase {
 			int j = s.equalsIgnoreCase("set") ? parseInt(parArrayOfString[parInt1++])
 					: parseInt(parArrayOfString[parInt1++], 0);
 			if (parArrayOfString.length > parInt1) {
-				Entity entity = func_175768_b(parICommandSender, parArrayOfString[i]);
+				Entity entity = CommandBaseGetEntity(parICommandSender, parArrayOfString[i]);
 
 				try {
 					NBTTagCompound nbttagcompound = JsonToNBT.getTagFromJson(buildString(parArrayOfString, parInt1));
 					NBTTagCompound nbttagcompound1 = new NBTTagCompound();
 					entity.writeToNBT(nbttagcompound1);
-					if (!NBTUtil.func_181123_a(nbttagcompound, nbttagcompound1, true)) {
+					if (!NBTUtil.areNBTEquals(nbttagcompound, nbttagcompound1, true)) {
 						throw new CommandException("commands.scoreboard.players.set.tagMismatch", new Object[] { s1 });
 					}
 				} catch (NBTException nbtexception) {
@@ -1011,7 +1011,7 @@ public class CommandScoreboard extends CommandBase {
 
 								if (astring[3].equalsIgnoreCase("nametagVisibility")
 										|| astring[3].equalsIgnoreCase("deathMessageVisibility")) {
-									return getListOfStringsMatchingLastWord(astring, Team.EnumVisible.func_178825_a());
+									return getListOfStringsMatchingLastWord(astring, Team.EnumVisible.getNames());
 								}
 
 								if (astring[3].equalsIgnoreCase("friendlyfire")

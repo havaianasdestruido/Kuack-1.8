@@ -140,7 +140,7 @@ public class CommandStats extends CommandBase {
 						commandresultstats = ((TileEntitySign) tileentity).getStats();
 					}
 				} else {
-					Entity entity = func_175768_b(parICommandSender, parArrayOfString[1]);
+					Entity entity = CommandBaseGetEntity(parICommandSender, parArrayOfString[1]);
 					commandresultstats = entity.getCommandStats();
 				}
 
@@ -151,11 +151,11 @@ public class CommandStats extends CommandBase {
 						throw new CommandException("commands.stats.failed", new Object[0]);
 					}
 
-					CommandResultStats.func_179667_a(commandresultstats, commandresultstats$type, s1, s2);
+					CommandResultStats.setScoreBoardStat(commandresultstats, commandresultstats$type, s1, s2);
 					notifyOperators(parICommandSender, this, "commands.stats.success",
 							new Object[] { commandresultstats$type.getTypeName(), s2, s1 });
 				} else if ("clear".equals(s)) {
-					CommandResultStats.func_179667_a(commandresultstats, commandresultstats$type, (String) null,
+					CommandResultStats.setScoreBoardStat(commandresultstats, commandresultstats$type, (String) null,
 							(String) null);
 					notifyOperators(parICommandSender, this, "commands.stats.cleared",
 							new Object[] { commandresultstats$type.getTypeName() });
@@ -179,7 +179,7 @@ public class CommandStats extends CommandBase {
 				: (astring.length == 2 && astring[0].equals("entity")
 						? getListOfStringsMatchingLastWord(astring, this.func_175776_d())
 						: (astring.length >= 2 && astring.length <= 4 && astring[0].equals("block")
-								? func_175771_a(astring, 1, blockpos)
+								? getTabCompletionCoordinate(astring, 1, blockpos)
 								: ((astring.length != 3 || !astring[0].equals("entity"))
 										&& (astring.length != 5 || !astring[0].equals("block"))
 												? ((astring.length != 4 || !astring[0].equals("entity"))

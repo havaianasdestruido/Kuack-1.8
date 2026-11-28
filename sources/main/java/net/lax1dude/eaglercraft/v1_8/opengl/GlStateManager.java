@@ -538,7 +538,7 @@ public class GlStateManager {
 		++stateTexGenSerial;
 	}
 
-	public static final void func_179105_a(GlStateManager.TexGen coord, int plane, FloatBuffer vector) {
+	public static final void texGenPlane(GlStateManager.TexGen coord, int plane, FloatBuffer vector) {
 		coord.plane = plane;
 		coord.vector.load(vector);
 		if(plane == GL_EYE_PLANE) {

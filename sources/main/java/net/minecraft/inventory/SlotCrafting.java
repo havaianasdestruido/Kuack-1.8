@@ -133,7 +133,7 @@ public class SlotCrafting extends Slot {
 
 	public void onPickupFromSlot(EntityPlayer entityplayer, ItemStack itemstack) {
 		this.onCrafting(itemstack);
-		ItemStack[] aitemstack = CraftingManager.getInstance().func_180303_b(this.craftMatrix, entityplayer.worldObj);
+		ItemStack[] aitemstack = CraftingManager.getInstance().getRemainingItems(this.craftMatrix, entityplayer.worldObj);
 
 		for (int i = 0; i < aitemstack.length; ++i) {
 			ItemStack itemstack1 = this.craftMatrix.getStackInSlot(i);

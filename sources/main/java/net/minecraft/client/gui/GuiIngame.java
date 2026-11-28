@@ -93,12 +93,12 @@ public class GuiIngame extends Gui {
 	public final GuiOverlayDebug overlayDebug;
 	private final GuiSpectator spectatorGui;
 	private final GuiPlayerTabOverlay overlayPlayerList;
-	private int field_175195_w;
-	private String field_175201_x = "";
-	private String field_175200_y = "";
-	private int field_175199_z;
-	private int field_175192_A;
-	private int field_175193_B;
+	private int titlesTimer;
+	private String displayedTitle = "";
+	private String displayedSubTitle = "";
+	private int titleFadeIn;
+	private int titleDisplayTime;
+	private int titleFadeOut;
 	private int playerHealth = 0;
 	private int lastPlayerHealth = 0;
 	/**+
@@ -117,13 +117,13 @@ public class GuiIngame extends Gui {
 		this.spectatorGui = new GuiSpectator(mcIn);
 		this.persistantChatGUI = new GuiNewChat(mcIn);
 		this.overlayPlayerList = new GuiPlayerTabOverlay(mcIn, this);
-		this.func_175177_a();
+		this.setDefaultTitlesTimes();
 	}
 
-	public void func_175177_a() {
-		this.field_175199_z = 10;
-		this.field_175192_A = 70;
-		this.field_175193_B = 20;
+	public void setDefaultTitlesTimes() {
+		this.titleFadeIn = 10;
+		this.titleDisplayTime = 70;
+		this.titleFadeOut = 20;
 	}
 
 	public void renderGameOverlay(float partialTicks) {
@@ -146,7 +146,7 @@ public class GuiIngame extends Gui {
 			float f = this.mc.thePlayer.prevTimeInPortal
 					+ (this.mc.thePlayer.timeInPortal - this.mc.thePlayer.prevTimeInPortal) * partialTicks;
 			if (f > 0.0F) {
-				this.func_180474_b(f, scaledresolution);
+				this.renderPortal(f, scaledresolution);
 			}
 		}
 
@@ -192,9 +192,9 @@ public class GuiIngame extends Gui {
 		}
 
 		if (this.mc.gameSettings.heldItemTooltips && !this.mc.playerController.isSpectator()) {
-			this.func_181551_a(scaledresolution);
+			this.renderSelectedItem(scaledresolution);
 		} else if (this.mc.thePlayer.isSpectator()) {
-			this.spectatorGui.func_175263_a(scaledresolution);
+			this.spectatorGui.renderSelectedItem(scaledresolution);
 		}
 
 		if (this.mc.isDemo()) {
@@ -218,7 +218,7 @@ public class GuiIngame extends Gui {
 				GlStateManager.tryBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
 				int l = 16777215;
 				if (this.recordIsPlaying) {
-					l = MathHelper.func_181758_c(f2 / 50.0F, 0.7F, 0.6F) & 16777215;
+					l = MathHelper.hsvToRGB(f2 / 50.0F, 0.7F, 0.6F) & 16777215;
 				}
 
 				this.getFontRenderer().drawString(this.recordPlaying,
@@ -230,17 +230,17 @@ public class GuiIngame extends Gui {
 			this.mc.mcProfiler.endSection();
 		}
 
-		if (this.field_175195_w > 0) {
+		if (this.titlesTimer > 0) {
 			this.mc.mcProfiler.startSection("titleAndSubtitle");
-			float f3 = (float) this.field_175195_w - partialTicks;
+			float f3 = (float) this.titlesTimer - partialTicks;
 			int i2 = 255;
-			if (this.field_175195_w > this.field_175193_B + this.field_175192_A) {
-				float f4 = (float) (this.field_175199_z + this.field_175192_A + this.field_175193_B) - f3;
-				i2 = (int) (f4 * 255.0F / (float) this.field_175199_z);
+			if (this.titlesTimer > this.titleFadeOut + this.titleDisplayTime) {
+				float f4 = (float) (this.titleFadeIn + this.titleDisplayTime + this.titleFadeOut) - f3;
+				i2 = (int) (f4 * 255.0F / (float) this.titleFadeIn);
 			}
 
-			if (this.field_175195_w <= this.field_175193_B) {
-				i2 = (int) (f3 * 255.0F / (float) this.field_175193_B);
+			if (this.titlesTimer <= this.titleFadeOut) {
+				i2 = (int) (f3 * 255.0F / (float) this.titleFadeOut);
 			}
 
 			i2 = MathHelper.clamp_int(i2, 0, 255);
@@ -252,14 +252,14 @@ public class GuiIngame extends Gui {
 				GlStateManager.pushMatrix();
 				GlStateManager.scale(4.0F, 4.0F, 4.0F);
 				int j2 = i2 << 24 & -16777216;
-				this.getFontRenderer().drawString(this.field_175201_x,
-						(float) (-this.getFontRenderer().getStringWidth(this.field_175201_x) / 2), -10.0F,
+				this.getFontRenderer().drawString(this.displayedTitle,
+						(float) (-this.getFontRenderer().getStringWidth(this.displayedTitle) / 2), -10.0F,
 						16777215 | j2, true);
 				GlStateManager.popMatrix();
 				GlStateManager.pushMatrix();
 				GlStateManager.scale(2.0F, 2.0F, 2.0F);
-				this.getFontRenderer().drawString(this.field_175200_y,
-						(float) (-this.getFontRenderer().getStringWidth(this.field_175200_y) / 2), 5.0F, 16777215 | j2,
+				this.getFontRenderer().drawString(this.displayedSubTitle,
+						(float) (-this.getFontRenderer().getStringWidth(this.displayedSubTitle) / 2), 5.0F, 16777215 | j2,
 						true);
 				GlStateManager.popMatrix();
 				GlStateManager.disableBlend();
@@ -402,7 +402,7 @@ public class GuiIngame extends Gui {
 
 	}
 
-	public void func_181551_a(ScaledResolution parScaledResolution) {
+	public void renderSelectedItem(ScaledResolution parScaledResolution) {
 		this.mc.mcProfiler.startSection("selectedItemName");
 		if (this.remainingHighlightTicks > 0 && this.highlightingItemStack != null) {
 			String s = this.highlightingItemStack.getDisplayName();
@@ -844,7 +844,7 @@ public class GuiIngame extends Gui {
 		GlStateManager.tryBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
 	}
 
-	private void func_180474_b(float parFloat1, ScaledResolution parScaledResolution) {
+	private void renderPortal(float parFloat1, ScaledResolution parScaledResolution) {
 		if (parFloat1 < 1.0F) {
 			parFloat1 = parFloat1 * parFloat1;
 			parFloat1 = parFloat1 * parFloat1;
@@ -909,11 +909,11 @@ public class GuiIngame extends Gui {
 			--this.recordPlayingUpFor;
 		}
 
-		if (this.field_175195_w > 0) {
-			--this.field_175195_w;
-			if (this.field_175195_w <= 0) {
-				this.field_175201_x = "";
-				this.field_175200_y = "";
+		if (this.titlesTimer > 0) {
+			--this.titlesTimer;
+			if (this.titlesTimer <= 0) {
+				this.displayedTitle = "";
+				this.displayedSubTitle = "";
 			}
 		}
 
@@ -950,29 +950,29 @@ public class GuiIngame extends Gui {
 
 	public void displayTitle(String parString1, String parString2, int parInt1, int parInt2, int parInt3) {
 		if (parString1 == null && parString2 == null && parInt1 < 0 && parInt2 < 0 && parInt3 < 0) {
-			this.field_175201_x = "";
-			this.field_175200_y = "";
-			this.field_175195_w = 0;
+			this.displayedTitle = "";
+			this.displayedSubTitle = "";
+			this.titlesTimer = 0;
 		} else if (parString1 != null) {
-			this.field_175201_x = parString1;
-			this.field_175195_w = this.field_175199_z + this.field_175192_A + this.field_175193_B;
+			this.displayedTitle = parString1;
+			this.titlesTimer = this.titleFadeIn + this.titleDisplayTime + this.titleFadeOut;
 		} else if (parString2 != null) {
-			this.field_175200_y = parString2;
+			this.displayedSubTitle = parString2;
 		} else {
 			if (parInt1 >= 0) {
-				this.field_175199_z = parInt1;
+				this.titleFadeIn = parInt1;
 			}
 
 			if (parInt2 >= 0) {
-				this.field_175192_A = parInt2;
+				this.titleDisplayTime = parInt2;
 			}
 
 			if (parInt3 >= 0) {
-				this.field_175193_B = parInt3;
+				this.titleFadeOut = parInt3;
 			}
 
-			if (this.field_175195_w > 0) {
-				this.field_175195_w = this.field_175199_z + this.field_175192_A + this.field_175193_B;
+			if (this.titlesTimer > 0) {
+				this.titlesTimer = this.titleFadeIn + this.titleDisplayTime + this.titleFadeOut;
 			}
 
 		}
@@ -1059,7 +1059,7 @@ public class GuiIngame extends Gui {
 		return this.overlayPlayerList;
 	}
 
-	public void func_181029_i() {
-		this.overlayPlayerList.func_181030_a();
+	public void resetPlayersOverlayFooterHeader() {
+		this.overlayPlayerList.resetFooterHeader();
 	}
 }

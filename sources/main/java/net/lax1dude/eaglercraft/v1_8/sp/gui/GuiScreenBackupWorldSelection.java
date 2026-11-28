@@ -93,7 +93,7 @@ public class GuiScreenBackupWorldSelection extends GuiScreen {
 		}else if(par1GuiButton.id == 1) {
 			GuiCreateWorld cw = new GuiCreateWorld(selectWorld);
 			WorldInfo inf = new WorldInfo(this.levelDat.getCompoundTag("Data"));
-			cw.func_146318_a(inf);
+			cw.recreateFromExistingWorld(inf);
 			if(inf.isOldEaglercraftRandom()) {
 				this.mc.displayGuiScreen(new GuiScreenOldSeedWarning(cw));
 			}else {

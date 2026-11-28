@@ -8,7 +8,7 @@ import java.util.Set;
 
 /**
  * Same as ClassMapRealBench but with the key set grown the way a real session grows it: each
- * distinct entity class that is ever queried gets registered in the static field_181158_a set, and
+ * distinct entity class that is ever queried gets registered in the static KNOWN_CLASSES set, and
  * every ClassInheritanceMultiMap.add() then tests isAssignableFrom against ALL of them.
  */
 public class ClassMapRealBench2 {

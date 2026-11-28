@@ -34,138 +34,138 @@ import net.minecraft.util.IChatComponent;
  * 
  */
 public class SpectatorMenu {
-	private static final ISpectatorMenuObject field_178655_b = new SpectatorMenu.EndSpectatorObject();
-	private static final ISpectatorMenuObject field_178656_c = new SpectatorMenu.MoveMenuObject(-1, true);
-	private static final ISpectatorMenuObject field_178653_d = new SpectatorMenu.MoveMenuObject(1, true);
-	private static final ISpectatorMenuObject field_178654_e = new SpectatorMenu.MoveMenuObject(1, false);
-	public static final ISpectatorMenuObject field_178657_a = new ISpectatorMenuObject() {
-		public void func_178661_a(SpectatorMenu var1) {
+	private static final ISpectatorMenuObject CLOSE_ITEM = new SpectatorMenu.EndSpectatorObject();
+	private static final ISpectatorMenuObject SCROLL_LEFT = new SpectatorMenu.MoveMenuObject(-1, true);
+	private static final ISpectatorMenuObject SCROLL_RIGHT_ENABLED = new SpectatorMenu.MoveMenuObject(1, true);
+	private static final ISpectatorMenuObject SCROLL_RIGHT_DISABLED = new SpectatorMenu.MoveMenuObject(1, false);
+	public static final ISpectatorMenuObject EMPTY_SLOT = new ISpectatorMenuObject() {
+		public void selectItem(SpectatorMenu var1) {
 		}
 
 		public IChatComponent getSpectatorName() {
 			return new ChatComponentText("");
 		}
 
-		public void func_178663_a(float var1, int var2) {
+		public void renderIcon(float var1, int var2) {
 		}
 
-		public boolean func_178662_A_() {
+		public boolean isEnabled() {
 			return false;
 		}
 	};
-	private final ISpectatorMenuRecipient field_178651_f;
-	private final List<SpectatorDetails> field_178652_g = Lists.newArrayList();
-	private ISpectatorMenuView field_178659_h = new BaseSpectatorGroup();
-	private int field_178660_i = -1;
-	private int field_178658_j;
+	private final ISpectatorMenuRecipient listener;
+	private final List<SpectatorDetails> previousCategories = Lists.newArrayList();
+	private ISpectatorMenuView category = new BaseSpectatorGroup();
+	private int selectedSlot = -1;
+	private int page;
 
 	public SpectatorMenu(ISpectatorMenuRecipient parISpectatorMenuRecipient) {
-		this.field_178651_f = parISpectatorMenuRecipient;
+		this.listener = parISpectatorMenuRecipient;
 	}
 
-	public ISpectatorMenuObject func_178643_a(int parInt1) {
-		int i = parInt1 + this.field_178658_j * 6;
-		return this.field_178658_j > 0 && parInt1 == 0 ? field_178656_c
-				: (parInt1 == 7 ? (i < this.field_178659_h.func_178669_a().size() ? field_178653_d : field_178654_e)
-						: (parInt1 == 8 ? field_178655_b
-								: (i >= 0 && i < this.field_178659_h.func_178669_a().size()
+	public ISpectatorMenuObject getItem(int parInt1) {
+		int i = parInt1 + this.page * 6;
+		return this.page > 0 && parInt1 == 0 ? SCROLL_LEFT
+				: (parInt1 == 7 ? (i < this.category.getItems().size() ? SCROLL_RIGHT_ENABLED : SCROLL_RIGHT_DISABLED)
+						: (parInt1 == 8 ? CLOSE_ITEM
+								: (i >= 0 && i < this.category.getItems().size()
 										? (ISpectatorMenuObject) Objects.firstNonNull(
-												this.field_178659_h.func_178669_a().get(i), field_178657_a)
-										: field_178657_a)));
+												this.category.getItems().get(i), EMPTY_SLOT)
+										: EMPTY_SLOT)));
 	}
 
-	public List<ISpectatorMenuObject> func_178642_a() {
+	public List<ISpectatorMenuObject> getItems() {
 		ArrayList arraylist = Lists.newArrayList();
 
 		for (int i = 0; i <= 8; ++i) {
-			arraylist.add(this.func_178643_a(i));
+			arraylist.add(this.getItem(i));
 		}
 
 		return arraylist;
 	}
 
-	public ISpectatorMenuObject func_178645_b() {
-		return this.func_178643_a(this.field_178660_i);
+	public ISpectatorMenuObject getSelectedItem() {
+		return this.getItem(this.selectedSlot);
 	}
 
-	public ISpectatorMenuView func_178650_c() {
-		return this.field_178659_h;
+	public ISpectatorMenuView getSelectedCategory() {
+		return this.category;
 	}
 
-	public void func_178644_b(int parInt1) {
-		ISpectatorMenuObject ispectatormenuobject = this.func_178643_a(parInt1);
-		if (ispectatormenuobject != field_178657_a) {
-			if (this.field_178660_i == parInt1 && ispectatormenuobject.func_178662_A_()) {
-				ispectatormenuobject.func_178661_a(this);
+	public void selectSlot(int parInt1) {
+		ISpectatorMenuObject ispectatormenuobject = this.getItem(parInt1);
+		if (ispectatormenuobject != EMPTY_SLOT) {
+			if (this.selectedSlot == parInt1 && ispectatormenuobject.isEnabled()) {
+				ispectatormenuobject.selectItem(this);
 			} else {
-				this.field_178660_i = parInt1;
+				this.selectedSlot = parInt1;
 			}
 		}
 
 	}
 
-	public void func_178641_d() {
-		this.field_178651_f.func_175257_a(this);
+	public void exit() {
+		this.listener.onSpectatorMenuClosed(this);
 	}
 
-	public int func_178648_e() {
-		return this.field_178660_i;
+	public int getSelectedSlot() {
+		return this.selectedSlot;
 	}
 
-	public void func_178647_a(ISpectatorMenuView parISpectatorMenuView) {
-		this.field_178652_g.add(this.func_178646_f());
-		this.field_178659_h = parISpectatorMenuView;
-		this.field_178660_i = -1;
-		this.field_178658_j = 0;
+	public void selectCategory(ISpectatorMenuView parISpectatorMenuView) {
+		this.previousCategories.add(this.getCurrentPage());
+		this.category = parISpectatorMenuView;
+		this.selectedSlot = -1;
+		this.page = 0;
 	}
 
-	public SpectatorDetails func_178646_f() {
-		return new SpectatorDetails(this.field_178659_h, this.func_178642_a(), this.field_178660_i);
+	public SpectatorDetails getCurrentPage() {
+		return new SpectatorDetails(this.category, this.getItems(), this.selectedSlot);
 	}
 
 	static class EndSpectatorObject implements ISpectatorMenuObject {
 		private EndSpectatorObject() {
 		}
 
-		public void func_178661_a(SpectatorMenu spectatormenu) {
-			spectatormenu.func_178641_d();
+		public void selectItem(SpectatorMenu spectatormenu) {
+			spectatormenu.exit();
 		}
 
 		public IChatComponent getSpectatorName() {
 			return new ChatComponentText("Close menu");
 		}
 
-		public void func_178663_a(float var1, int var2) {
-			Minecraft.getMinecraft().getTextureManager().bindTexture(GuiSpectator.field_175269_a);
+		public void renderIcon(float var1, int var2) {
+			Minecraft.getMinecraft().getTextureManager().bindTexture(GuiSpectator.SPECTATOR_WIDGETS);
 			Gui.drawModalRectWithCustomSizedTexture(0, 0, 128.0F, 0.0F, 16, 16, 256.0F, 256.0F);
 		}
 
-		public boolean func_178662_A_() {
+		public boolean isEnabled() {
 			return true;
 		}
 	}
 
 	static class MoveMenuObject implements ISpectatorMenuObject {
-		private final int field_178666_a;
-		private final boolean field_178665_b;
+		private final int direction;
+		private final boolean enabled;
 
 		public MoveMenuObject(int parInt1, boolean parFlag) {
-			this.field_178666_a = parInt1;
-			this.field_178665_b = parFlag;
+			this.direction = parInt1;
+			this.enabled = parFlag;
 		}
 
-		public void func_178661_a(SpectatorMenu spectatormenu) {
-			spectatormenu.field_178658_j = this.field_178666_a;
+		public void selectItem(SpectatorMenu spectatormenu) {
+			spectatormenu.page = this.direction;
 		}
 
 		public IChatComponent getSpectatorName() {
-			return this.field_178666_a < 0 ? new ChatComponentText("Previous Page")
+			return this.direction < 0 ? new ChatComponentText("Previous Page")
 					: new ChatComponentText("Next Page");
 		}
 
-		public void func_178663_a(float var1, int var2) {
-			Minecraft.getMinecraft().getTextureManager().bindTexture(GuiSpectator.field_175269_a);
-			if (this.field_178666_a < 0) {
+		public void renderIcon(float var1, int var2) {
+			Minecraft.getMinecraft().getTextureManager().bindTexture(GuiSpectator.SPECTATOR_WIDGETS);
+			if (this.direction < 0) {
 				Gui.drawModalRectWithCustomSizedTexture(0, 0, 144.0F, 0.0F, 16, 16, 256.0F, 256.0F);
 			} else {
 				Gui.drawModalRectWithCustomSizedTexture(0, 0, 160.0F, 0.0F, 16, 16, 256.0F, 256.0F);
@@ -173,8 +173,8 @@ public class SpectatorMenu {
 
 		}
 
-		public boolean func_178662_A_() {
-			return this.field_178665_b;
+		public boolean isEnabled() {
+			return this.enabled;
 		}
 	}
 }

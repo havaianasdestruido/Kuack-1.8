@@ -42,20 +42,20 @@ import net.minecraft.world.gen.feature.WorldGenerator;
  * 
  */
 public class BiomeGenJungle extends BiomeGenBase {
-	private boolean field_150614_aC;
-	private final IBlockState field_181620_aE;
-	private final IBlockState field_181621_aF;
-	private final IBlockState field_181622_aG;
+	private boolean isEdge;
+	private final IBlockState JUNGLE_LOG;
+	private final IBlockState JUNGLE_LEAF;
+	private final IBlockState OAK_LEAF;
 
 	public BiomeGenJungle(int parInt1, boolean parFlag) {
 		super(parInt1);
-		field_181620_aE = Blocks.log.getDefaultState().withProperty(BlockOldLog.VARIANT, BlockPlanks.EnumType.JUNGLE);
-		field_181621_aF = Blocks.leaves.getDefaultState()
+		JUNGLE_LOG = Blocks.log.getDefaultState().withProperty(BlockOldLog.VARIANT, BlockPlanks.EnumType.JUNGLE);
+		JUNGLE_LEAF = Blocks.leaves.getDefaultState()
 				.withProperty(BlockOldLeaf.VARIANT, BlockPlanks.EnumType.JUNGLE)
 				.withProperty(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
-		field_181622_aG = Blocks.leaves.getDefaultState().withProperty(BlockOldLeaf.VARIANT, BlockPlanks.EnumType.OAK)
+		OAK_LEAF = Blocks.leaves.getDefaultState().withProperty(BlockOldLeaf.VARIANT, BlockPlanks.EnumType.OAK)
 				.withProperty(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
-		this.field_150614_aC = parFlag;
+		this.isEdge = parFlag;
 		if (parFlag) {
 			this.theBiomeDecorator.treesPerChunk = 2;
 		} else {
@@ -73,10 +73,10 @@ public class BiomeGenJungle extends BiomeGenBase {
 
 	public WorldGenAbstractTree genBigTreeChance(EaglercraftRandom random) {
 		return (WorldGenAbstractTree) (random.nextInt(10) == 0 ? this.worldGeneratorBigTree
-				: (random.nextInt(2) == 0 ? new WorldGenShrub(field_181620_aE, field_181622_aG)
-						: (!this.field_150614_aC && random.nextInt(3) == 0
-								? new WorldGenMegaJungle(false, 10, 20, field_181620_aE, field_181621_aF)
-								: new WorldGenTrees(false, 4 + random.nextInt(7), field_181620_aE, field_181621_aF,
+				: (random.nextInt(2) == 0 ? new WorldGenShrub(JUNGLE_LOG, OAK_LEAF)
+						: (!this.isEdge && random.nextInt(3) == 0
+								? new WorldGenMegaJungle(false, 10, 20, JUNGLE_LOG, JUNGLE_LEAF)
+								: new WorldGenTrees(false, 4 + random.nextInt(7), JUNGLE_LOG, JUNGLE_LEAF,
 										true))));
 	}
 

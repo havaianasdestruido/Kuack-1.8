@@ -29,35 +29,35 @@ import com.google.common.collect.Lists;
  * 
  */
 public class JsonException extends IOException {
-	private final List<JsonException.Entry> field_151383_a = Lists.newArrayList();
+	private final List<JsonException.Entry> entries = Lists.newArrayList();
 	private final String field_151382_b;
 
 	public JsonException(String parString1) {
-		this.field_151383_a.add(new JsonException.Entry());
+		this.entries.add(new JsonException.Entry());
 		this.field_151382_b = parString1;
 	}
 
 	public JsonException(String parString1, Throwable parThrowable) {
 		super(parThrowable);
-		this.field_151383_a.add(new JsonException.Entry());
+		this.entries.add(new JsonException.Entry());
 		this.field_151382_b = parString1;
 	}
 
-	public void func_151380_a(String parString1) {
-		((JsonException.Entry) this.field_151383_a.get(0)).func_151373_a(parString1);
+	public void prependJsonKey(String parString1) {
+		((JsonException.Entry) this.entries.get(0)).addJsonKey(parString1);
 	}
 
-	public void func_151381_b(String parString1) {
-		((JsonException.Entry) this.field_151383_a.get(0)).field_151376_a = parString1;
-		this.field_151383_a.add(0, new JsonException.Entry());
+	public void setFilenameAndFlush(String parString1) {
+		((JsonException.Entry) this.entries.get(0)).filename = parString1;
+		this.entries.add(0, new JsonException.Entry());
 	}
 
 	public String getMessage() {
-		return "Invalid " + ((JsonException.Entry) this.field_151383_a.get(this.field_151383_a.size() - 1)).toString()
+		return "Invalid " + ((JsonException.Entry) this.entries.get(this.entries.size() - 1)).toString()
 				+ ": " + this.field_151382_b;
 	}
 
-	public static JsonException func_151379_a(Exception parException) {
+	public static JsonException forException(Exception parException) {
 		if (parException instanceof JsonException) {
 			return (JsonException) parException;
 		} else {
@@ -71,27 +71,27 @@ public class JsonException extends IOException {
 	}
 
 	public static class Entry {
-		private String field_151376_a;
-		private final List<String> field_151375_b;
+		private String filename;
+		private final List<String> jsonKeys;
 
 		private Entry() {
-			this.field_151376_a = null;
-			this.field_151375_b = Lists.newArrayList();
+			this.filename = null;
+			this.jsonKeys = Lists.newArrayList();
 		}
 
-		private void func_151373_a(String parString1) {
-			this.field_151375_b.add(0, parString1);
+		private void addJsonKey(String parString1) {
+			this.jsonKeys.add(0, parString1);
 		}
 
-		public String func_151372_b() {
-			return StringUtils.join(this.field_151375_b, "->");
+		public String getJsonKeys() {
+			return StringUtils.join(this.jsonKeys, "->");
 		}
 
 		public String toString() {
-			return this.field_151376_a != null
-					? (!this.field_151375_b.isEmpty() ? this.field_151376_a + " " + this.func_151372_b()
-							: this.field_151376_a)
-					: (!this.field_151375_b.isEmpty() ? "(Unknown file) " + this.func_151372_b() : "(Unknown file)");
+			return this.filename != null
+					? (!this.jsonKeys.isEmpty() ? this.filename + " " + this.getJsonKeys()
+							: this.filename)
+					: (!this.jsonKeys.isEmpty() ? "(Unknown file) " + this.getJsonKeys() : "(Unknown file)");
 		}
 	}
 }

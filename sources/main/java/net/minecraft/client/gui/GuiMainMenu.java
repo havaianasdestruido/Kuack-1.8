@@ -83,7 +83,7 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback {
 	 * panorama background.
 	 */
 	private static DynamicTexture viewportTexture = null;
-	private boolean field_175375_v = true;
+	private boolean mcoEnabled = true;
 	private String openGLWarning1;
 	private String openGLWarning2;
 	private static final ResourceLocation splashTexts = new ResourceLocation("texts/splashes.txt");
@@ -102,12 +102,12 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback {
 			new ResourceLocation("textures/gui/title/background/panorama_3.png"),
 			new ResourceLocation("textures/gui/title/background/panorama_4.png"),
 			new ResourceLocation("textures/gui/title/background/panorama_5.png") };
-	private int field_92024_r;
-	private int field_92023_s;
-	private int field_92022_t;
-	private int field_92021_u;
-	private int field_92020_v;
-	private int field_92019_w;
+	private int openGLWarning2Width;
+	private int openGLWarning1Width;
+	private int openGLWarningX1;
+	private int openGLWarningY1;
+	private int openGLWarningX2;
+	private int openGLWarningY2;
 	private static ResourceLocation backgroundTexture = null;
 	private GuiUpdateCheckerOverlay updateCheckerOverlay;
 	private GuiButton downloadOfflineButton;
@@ -291,16 +291,16 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback {
 			this.openGLWarning1 = EaglercraftVersion.mainMenuStringE;
 			this.openGLWarning2 = EaglercraftVersion.mainMenuStringF;
 			boolean line2 = this.openGLWarning2 != null && this.openGLWarning2.length() > 0;
-			this.field_92023_s = this.fontRendererObj.getStringWidth(this.openGLWarning1);
-			this.field_92024_r = this.fontRendererObj.getStringWidth(this.openGLWarning2);
-			int j = Math.max(this.field_92023_s, this.field_92024_r);
-			this.field_92022_t = (this.width - j) / 2;
-			this.field_92021_u = ((GuiButton) this.buttonList.get(0)).yPosition - (line2 ? 32 : 21);
-			this.field_92020_v = this.field_92022_t + j;
-			this.field_92019_w = this.field_92021_u + (line2 ? 24 : 11);
+			this.openGLWarning1Width = this.fontRendererObj.getStringWidth(this.openGLWarning1);
+			this.openGLWarning2Width = this.fontRendererObj.getStringWidth(this.openGLWarning2);
+			int j = Math.max(this.openGLWarning1Width, this.openGLWarning2Width);
+			this.openGLWarningX1 = (this.width - j) / 2;
+			this.openGLWarningY1 = ((GuiButton) this.buttonList.get(0)).yPosition - (line2 ? 32 : 21);
+			this.openGLWarningX2 = this.openGLWarningX1 + j;
+			this.openGLWarningY2 = this.openGLWarningY1 + (line2 ? 24 : 11);
 		}
 
-		this.mc.func_181537_a(false);
+		this.mc.setConnectedToRealms(false);
 	}
 
 	/**+
@@ -373,7 +373,7 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback {
 		}
 
 		if (parGuiButton.id == 12) {
-			GuiYesNo guiyesno = GuiSelectWorld.func_152129_a(this, "Demo World", 12);
+			GuiYesNo guiyesno = GuiSelectWorld.makeDeleteWorldYesNo(this, "Demo World", 12);
 			this.mc.displayGuiScreen(guiyesno);
 		}
 
@@ -598,13 +598,13 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback {
 				|| (this.openGLWarning2 != null && this.openGLWarning2.length() > 0));
 
 		if (isForkLabel) {
-			drawRect(this.field_92022_t - 3, this.field_92021_u - 3, this.field_92020_v + 3, this.field_92019_w,
+			drawRect(this.openGLWarningX1 - 3, this.openGLWarningY1 - 3, this.openGLWarningX2 + 3, this.openGLWarningY2,
 					1428160512);
 			if (this.openGLWarning1 != null)
-				this.drawString(this.fontRendererObj, this.openGLWarning1, this.field_92022_t, this.field_92021_u, -1);
+				this.drawString(this.fontRendererObj, this.openGLWarning1, this.openGLWarningX1, this.openGLWarningY1, -1);
 			if (this.openGLWarning2 != null)
-				this.drawString(this.fontRendererObj, this.openGLWarning2, (this.width - this.field_92024_r) / 2,
-						this.field_92021_u + 12, -1);
+				this.drawString(this.fontRendererObj, this.openGLWarning2, (this.width - this.openGLWarning2Width) / 2,
+						this.openGLWarningY1 + 12, -1);
 		}
 
 		GlStateManager.pushMatrix();

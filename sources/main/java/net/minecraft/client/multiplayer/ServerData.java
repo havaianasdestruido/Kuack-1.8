@@ -59,11 +59,11 @@ public class ServerData {
 	 * Game version for this server.
 	 */
 	public String gameVersion = "1.8.8";
-	public boolean field_78841_f;
+	public boolean pinged;
 	public String playerList;
 	private ServerData.ServerResourceMode resourceMode = ServerData.ServerResourceMode.PROMPT;
 	public boolean hideAddress = false;
-	private boolean field_181042_l;
+	private boolean lanServer;
 	public IServerQuery currentQuery = null;
 	public final ResourceLocation iconResourceLocation;
 	public EaglerSkinTexture iconTextureObject = null;
@@ -80,7 +80,7 @@ public class ServerData {
 	public ServerData(String parString1, String parString2, boolean parFlag) {
 		this.serverName = parString1;
 		this.serverIP = parString2;
-		this.field_181042_l = parFlag;
+		this.lanServer = parFlag;
 		this.iconResourceLocation = new ResourceLocation("eagler:servers/icons/tex_" + serverTextureId++);
 	}
 
@@ -138,8 +138,8 @@ public class ServerData {
 		return serverdata;
 	}
 
-	public boolean func_181041_d() {
-		return this.field_181042_l;
+	public boolean isOnLAN() {
+		return this.lanServer;
 	}
 
 	public void copyFrom(ServerData serverDataIn) {
@@ -147,7 +147,7 @@ public class ServerData {
 		this.serverName = serverDataIn.serverName;
 		this.setResourceMode(serverDataIn.getResourceMode());
 		this.hideAddress = serverDataIn.hideAddress;
-		this.field_181042_l = serverDataIn.field_181042_l;
+		this.lanServer = serverDataIn.lanServer;
 	}
 
 	public static enum ServerResourceMode {

@@ -60,7 +60,7 @@ public class WorldManager implements IWorldAccess {
 	 */
 	public void onEntityRemoved(Entity entity) {
 		this.theWorldServer.getEntityTracker().untrackEntity(entity);
-		this.theWorldServer.getScoreboard().func_181140_a(entity);
+		this.theWorldServer.getScoreboard().removeEntity(entity);
 	}
 
 	/**+

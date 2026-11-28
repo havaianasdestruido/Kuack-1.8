@@ -34,7 +34,7 @@ public class InventoryBasic implements IInventory {
 	private String inventoryTitle;
 	private int slotsCount;
 	private ItemStack[] inventoryContents;
-	private List<IInvBasic> field_70480_d;
+	private List<IInvBasic> changeListeners;
 	private boolean hasCustomName;
 
 	public InventoryBasic(String title, boolean customName, int slotCount) {
@@ -48,16 +48,16 @@ public class InventoryBasic implements IInventory {
 		this(title.getUnformattedText(), true, slotCount);
 	}
 
-	public void func_110134_a(IInvBasic parIInvBasic) {
-		if (this.field_70480_d == null) {
-			this.field_70480_d = Lists.newArrayList();
+	public void addInventoryChangeListener(IInvBasic parIInvBasic) {
+		if (this.changeListeners == null) {
+			this.changeListeners = Lists.newArrayList();
 		}
 
-		this.field_70480_d.add(parIInvBasic);
+		this.changeListeners.add(parIInvBasic);
 	}
 
-	public void func_110132_b(IInvBasic parIInvBasic) {
-		this.field_70480_d.remove(parIInvBasic);
+	public void removeInventoryChangeListener(IInvBasic parIInvBasic) {
+		this.changeListeners.remove(parIInvBasic);
 	}
 
 	/**+
@@ -92,7 +92,7 @@ public class InventoryBasic implements IInventory {
 		}
 	}
 
-	public ItemStack func_174894_a(ItemStack stack) {
+	public ItemStack addItem(ItemStack stack) {
 		ItemStack itemstack = stack.copy();
 
 		for (int i = 0; i < this.slotsCount; ++i) {
@@ -204,9 +204,9 @@ public class InventoryBasic implements IInventory {
 	 * hasn't changed and skip it.
 	 */
 	public void markDirty() {
-		if (this.field_70480_d != null) {
-			for (int i = 0; i < this.field_70480_d.size(); ++i) {
-				((IInvBasic) this.field_70480_d.get(i)).onInventoryChanged(this);
+		if (this.changeListeners != null) {
+			for (int i = 0; i < this.changeListeners.size(); ++i) {
+				((IInvBasic) this.changeListeners.get(i)).onInventoryChanged(this);
 			}
 		}
 

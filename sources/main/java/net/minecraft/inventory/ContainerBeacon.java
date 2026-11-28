@@ -55,7 +55,7 @@ public class ContainerBeacon extends Container {
 		this.tileBeacon.setField(i, j);
 	}
 
-	public IInventory func_180611_e() {
+	public IInventory getTileEntity() {
 		return this.tileBeacon;
 	}
 

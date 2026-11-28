@@ -24,18 +24,18 @@ import net.minecraft.client.Minecraft;
  * 
  */
 public class GuiLockIconButton extends GuiButton {
-	private boolean field_175231_o = false;
+	private boolean locked = false;
 
 	public GuiLockIconButton(int parInt1, int parInt2, int parInt3) {
 		super(parInt1, parInt2, parInt3, 20, 20, "");
 	}
 
-	public boolean func_175230_c() {
-		return this.field_175231_o;
+	public boolean isLocked() {
+		return this.locked;
 	}
 
-	public void func_175229_b(boolean parFlag) {
-		this.field_175231_o = parFlag;
+	public void setLocked(boolean parFlag) {
+		this.locked = parFlag;
 	}
 
 	/**+
@@ -48,7 +48,7 @@ public class GuiLockIconButton extends GuiButton {
 			boolean flag = i >= this.xPosition && j >= this.yPosition && i < this.xPosition + this.width
 					&& j < this.yPosition + this.height;
 			GuiLockIconButton.Icon guilockiconbutton$icon;
-			if (this.field_175231_o) {
+			if (this.locked) {
 				if (!this.enabled) {
 					guilockiconbutton$icon = GuiLockIconButton.Icon.LOCKED_DISABLED;
 				} else if (flag) {
@@ -64,8 +64,8 @@ public class GuiLockIconButton extends GuiButton {
 				guilockiconbutton$icon = GuiLockIconButton.Icon.UNLOCKED;
 			}
 
-			this.drawTexturedModalRect(this.xPosition, this.yPosition, guilockiconbutton$icon.func_178910_a(),
-					guilockiconbutton$icon.func_178912_b(), this.width, this.height);
+			this.drawTexturedModalRect(this.xPosition, this.yPosition, guilockiconbutton$icon.getX(),
+					guilockiconbutton$icon.getY(), this.width, this.height);
 		}
 	}
 
@@ -73,20 +73,20 @@ public class GuiLockIconButton extends GuiButton {
 		LOCKED(0, 146), LOCKED_HOVER(0, 166), LOCKED_DISABLED(0, 186), UNLOCKED(20, 146), UNLOCKED_HOVER(20, 166),
 		UNLOCKED_DISABLED(20, 186);
 
-		private final int field_178914_g;
-		private final int field_178920_h;
+		private final int x;
+		private final int y;
 
 		private Icon(int parInt2, int parInt3) {
-			this.field_178914_g = parInt2;
-			this.field_178920_h = parInt3;
+			this.x = parInt2;
+			this.y = parInt3;
 		}
 
-		public int func_178910_a() {
-			return this.field_178914_g;
+		public int getX() {
+			return this.x;
 		}
 
-		public int func_178912_b() {
-			return this.field_178920_h;
+		public int getY() {
+			return this.y;
 		}
 	}
 }

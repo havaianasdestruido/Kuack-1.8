@@ -308,7 +308,7 @@ public enum EnumFacing implements IStringSerializable {
 		return this.name;
 	}
 
-	public static EnumFacing func_181076_a(EnumFacing.AxisDirection parAxisDirection, EnumFacing.Axis parAxis) {
+	public static EnumFacing getFacingFromAxis(EnumFacing.AxisDirection parAxisDirection, EnumFacing.Axis parAxis) {
 		EnumFacing[] facings = EnumFacing._VALUES;
 		for (int i = 0; i < facings.length; ++i) {
 			EnumFacing enumfacing = facings[i];

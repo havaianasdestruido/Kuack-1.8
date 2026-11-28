@@ -36,11 +36,11 @@ public class WorldGenMegaJungle extends WorldGenHugeTrees {
 	}
 
 	public boolean generate(World world, EaglercraftRandom random, BlockPos blockpos) {
-		int i = this.func_150533_a(random);
-		if (!this.func_175929_a(world, random, blockpos, i)) {
+		int i = this.getHeight(random);
+		if (!this.ensureGrowable(world, random, blockpos, i)) {
 			return false;
 		} else {
-			this.func_175930_c(world, blockpos.up(i), 2);
+			this.createCrown(world, blockpos.up(i), 2);
 
 			for (int j = blockpos.getY() + i - 2 - random.nextInt(4); j > blockpos.getY() + i / 2; j -= 2
 					+ random.nextInt(4)) {
@@ -59,45 +59,45 @@ public class WorldGenMegaJungle extends WorldGenHugeTrees {
 
 				for (int k1 = j - j2; k1 <= j1; ++k1) {
 					int l1 = k1 - j1;
-					this.func_175928_b(world, new BlockPos(k, k1, l), 1 - l1);
+					this.growLeavesLayer(world, new BlockPos(k, k1, l), 1 - l1);
 				}
 			}
 
 			for (int i2 = 0; i2 < i; ++i2) {
 				BlockPos blockpos1 = blockpos.up(i2);
-				if (this.func_150523_a(world.getBlockState(blockpos1).getBlock())) {
+				if (this.canGrowInto(world.getBlockState(blockpos1).getBlock())) {
 					this.setBlockAndNotifyAdequately(world, blockpos1, this.woodMetadata);
 					if (i2 > 0) {
-						this.func_181632_a(world, random, blockpos1.west(), BlockVine.EAST);
-						this.func_181632_a(world, random, blockpos1.north(), BlockVine.SOUTH);
+						this.placeVine(world, random, blockpos1.west(), BlockVine.EAST);
+						this.placeVine(world, random, blockpos1.north(), BlockVine.SOUTH);
 					}
 				}
 
 				if (i2 < i - 1) {
 					BlockPos blockpos2 = blockpos1.east();
-					if (this.func_150523_a(world.getBlockState(blockpos2).getBlock())) {
+					if (this.canGrowInto(world.getBlockState(blockpos2).getBlock())) {
 						this.setBlockAndNotifyAdequately(world, blockpos2, this.woodMetadata);
 						if (i2 > 0) {
-							this.func_181632_a(world, random, blockpos2.east(), BlockVine.WEST);
-							this.func_181632_a(world, random, blockpos2.north(), BlockVine.SOUTH);
+							this.placeVine(world, random, blockpos2.east(), BlockVine.WEST);
+							this.placeVine(world, random, blockpos2.north(), BlockVine.SOUTH);
 						}
 					}
 
 					BlockPos blockpos3 = blockpos1.south().east();
-					if (this.func_150523_a(world.getBlockState(blockpos3).getBlock())) {
+					if (this.canGrowInto(world.getBlockState(blockpos3).getBlock())) {
 						this.setBlockAndNotifyAdequately(world, blockpos3, this.woodMetadata);
 						if (i2 > 0) {
-							this.func_181632_a(world, random, blockpos3.east(), BlockVine.WEST);
-							this.func_181632_a(world, random, blockpos3.south(), BlockVine.NORTH);
+							this.placeVine(world, random, blockpos3.east(), BlockVine.WEST);
+							this.placeVine(world, random, blockpos3.south(), BlockVine.NORTH);
 						}
 					}
 
 					BlockPos blockpos4 = blockpos1.south();
-					if (this.func_150523_a(world.getBlockState(blockpos4).getBlock())) {
+					if (this.canGrowInto(world.getBlockState(blockpos4).getBlock())) {
 						this.setBlockAndNotifyAdequately(world, blockpos4, this.woodMetadata);
 						if (i2 > 0) {
-							this.func_181632_a(world, random, blockpos4.west(), BlockVine.EAST);
-							this.func_181632_a(world, random, blockpos4.south(), BlockVine.NORTH);
+							this.placeVine(world, random, blockpos4.west(), BlockVine.EAST);
+							this.placeVine(world, random, blockpos4.south(), BlockVine.NORTH);
 						}
 					}
 				}
@@ -107,7 +107,7 @@ public class WorldGenMegaJungle extends WorldGenHugeTrees {
 		}
 	}
 
-	private void func_181632_a(World parWorld, EaglercraftRandom parRandom, BlockPos parBlockPos,
+	private void placeVine(World parWorld, EaglercraftRandom parRandom, BlockPos parBlockPos,
 			PropertyBool parPropertyBool) {
 		if (parRandom.nextInt(3) > 0 && parWorld.isAirBlock(parBlockPos)) {
 			this.setBlockAndNotifyAdequately(parWorld, parBlockPos,
@@ -116,11 +116,11 @@ public class WorldGenMegaJungle extends WorldGenHugeTrees {
 
 	}
 
-	private void func_175930_c(World worldIn, BlockPos parBlockPos, int parInt1) {
+	private void createCrown(World worldIn, BlockPos parBlockPos, int parInt1) {
 		byte b0 = 2;
 
 		for (int i = -b0; i <= 0; ++i) {
-			this.func_175925_a(worldIn, parBlockPos.up(i), parInt1 + 1 - i);
+			this.growLeavesLayerStrict(worldIn, parBlockPos.up(i), parInt1 + 1 - i);
 		}
 
 	}

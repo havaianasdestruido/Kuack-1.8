@@ -668,7 +668,7 @@ public final class ItemStack {
 				AttributeModifier attributemodifier = (AttributeModifier) entry.getValue();
 				double d0 = attributemodifier.getAmount();
 				if (attributemodifier.getID() == Item.itemModifierUUID) {
-					d0 += (double) EnchantmentHelper.func_152377_a(this, EnumCreatureAttribute.UNDEFINED);
+					d0 += (double) EnchantmentHelper.getModifierForCreature(this, EnumCreatureAttribute.UNDEFINED);
 				}
 
 				double d1;

@@ -162,7 +162,7 @@ public class Explosion {
 						double d10 = (1.0D - d12) * d14;
 						entity.attackEntityFrom(DamageSource.setExplosionSource(this),
 								(float) ((int) ((d10 * d10 + d10) / 2.0D * 8.0D * (double) f3 + 1.0D)));
-						double d11 = EnchantmentProtection.func_92092_a(entity, d10);
+						double d11 = EnchantmentProtection.getBlastDamageReduction(entity, d10);
 						entity.motionX += d5 * d11;
 						entity.motionY += d7 * d11;
 						entity.motionZ += d9 * d11;

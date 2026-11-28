@@ -91,7 +91,7 @@ public class Village {
 
 		int i = this.numVillagers / 10;
 		if (this.numIronGolems < i && this.villageDoorInfoList.size() > 20 && this.worldObj.rand.nextInt(7000) == 0) {
-			Vec3 vec3 = this.func_179862_a(this.center, 2, 4, 2);
+			Vec3 vec3 = this.findRandomSpawnPos(this.center, 2, 4, 2);
 			if (vec3 != null) {
 				EntityIronGolem entityirongolem = new EntityIronGolem(this.worldObj);
 				entityirongolem.setPosition(vec3.xCoord, vec3.yCoord, vec3.zCoord);
@@ -102,11 +102,11 @@ public class Village {
 
 	}
 
-	private Vec3 func_179862_a(BlockPos parBlockPos, int parInt1, int parInt2, int parInt3) {
+	private Vec3 findRandomSpawnPos(BlockPos parBlockPos, int parInt1, int parInt2, int parInt3) {
 		for (int i = 0; i < 10; ++i) {
 			BlockPos blockpos = parBlockPos.add(this.worldObj.rand.nextInt(16) - 8, this.worldObj.rand.nextInt(6) - 3,
 					this.worldObj.rand.nextInt(16) - 8);
-			if (this.func_179866_a(blockpos) && this.func_179861_a(new BlockPos(parInt1, parInt2, parInt3), blockpos)) {
+			if (this.isBlockPosWithinSqVillageRadius(blockpos) && this.isAreaClearAround(new BlockPos(parInt1, parInt2, parInt3), blockpos)) {
 				return new Vec3((double) blockpos.getX(), (double) blockpos.getY(), (double) blockpos.getZ());
 			}
 		}
@@ -114,7 +114,7 @@ public class Village {
 		return null;
 	}
 
-	private boolean func_179861_a(BlockPos parBlockPos, BlockPos parBlockPos2) {
+	private boolean isAreaClearAround(BlockPos parBlockPos, BlockPos parBlockPos2) {
 		if (!World.doesBlockHaveSolidTopSurface(this.worldObj, parBlockPos2.down())) {
 			return false;
 		} else {
@@ -182,7 +182,7 @@ public class Village {
 		return this.numVillagers;
 	}
 
-	public boolean func_179866_a(BlockPos pos) {
+	public boolean isBlockPosWithinSqVillageRadius(BlockPos pos) {
 		return this.center.distanceSq(pos) < (double) (this.villageRadius * this.villageRadius);
 	}
 

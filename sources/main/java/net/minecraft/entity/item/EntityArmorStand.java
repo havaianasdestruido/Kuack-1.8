@@ -54,7 +54,7 @@ public class EntityArmorStand extends EntityLivingBase {
 	private boolean canInteract;
 	private long punchCooldown;
 	private int disabledSlots;
-	private boolean field_181028_bj;
+	private boolean wasMarker;
 	private Rotations headRotation;
 	private Rotations bodyRotation;
 	private Rotations leftArmRotation;
@@ -182,8 +182,8 @@ public class EntityArmorStand extends EntityLivingBase {
 		nbttagcompound.setInteger("DisabledSlots", this.disabledSlots);
 		nbttagcompound.setBoolean("NoGravity", this.hasNoGravity());
 		nbttagcompound.setBoolean("NoBasePlate", this.hasNoBasePlate());
-		if (this.func_181026_s()) {
-			nbttagcompound.setBoolean("Marker", this.func_181026_s());
+		if (this.hasMarker()) {
+			nbttagcompound.setBoolean("Marker", this.hasMarker());
 		}
 
 		nbttagcompound.setTag("Pose", this.readPoseFromNBT());
@@ -209,8 +209,8 @@ public class EntityArmorStand extends EntityLivingBase {
 		this.disabledSlots = nbttagcompound.getInteger("DisabledSlots");
 		this.setNoGravity(nbttagcompound.getBoolean("NoGravity"));
 		this.setNoBasePlate(nbttagcompound.getBoolean("NoBasePlate"));
-		this.func_181027_m(nbttagcompound.getBoolean("Marker"));
-		this.field_181028_bj = !this.func_181026_s();
+		this.setMarker(nbttagcompound.getBoolean("Marker"));
+		this.wasMarker = !this.hasMarker();
 		this.noClip = this.hasNoGravity();
 		NBTTagCompound nbttagcompound1 = nbttagcompound.getCompoundTag("Pose");
 		this.writePoseToNBT(nbttagcompound1);
@@ -324,7 +324,7 @@ public class EntityArmorStand extends EntityLivingBase {
 	 * on where precisely the player targeted.
 	 */
 	public boolean interactAt(EntityPlayer entityplayer, Vec3 vec3) {
-		if (this.func_181026_s()) {
+		if (this.hasMarker()) {
 			return false;
 		} else if (!this.worldObj.isRemote && !entityplayer.isSpectator()) {
 			byte b0 = 0;
@@ -430,7 +430,7 @@ public class EntityArmorStand extends EntityLivingBase {
 		} else if (DamageSource.outOfWorld.equals(damagesource)) {
 			this.setDead();
 			return false;
-		} else if (!this.isEntityInvulnerable(damagesource) && !this.canInteract && !this.func_181026_s()) {
+		} else if (!this.isEntityInvulnerable(damagesource) && !this.canInteract && !this.hasMarker()) {
 			if (damagesource.isExplosion()) {
 				this.dropContents();
 				this.setDead();
@@ -537,7 +537,7 @@ public class EntityArmorStand extends EntityLivingBase {
 
 	}
 
-	protected float func_110146_f(float var1, float var2) {
+	protected float updateDistance(float var1, float var2) {
 		this.prevRenderYawOffset = this.prevRotationYaw;
 		this.renderYawOffset = this.rotationYaw;
 		return 0.0F;
@@ -592,21 +592,21 @@ public class EntityArmorStand extends EntityLivingBase {
 			this.setRightLegRotation(rotations5);
 		}
 
-		boolean flag = this.func_181026_s();
-		if (!this.field_181028_bj && flag) {
-			this.func_181550_a(false);
+		boolean flag = this.hasMarker();
+		if (!this.wasMarker && flag) {
+			this.updateBoundingBox(false);
 		} else {
-			if (!this.field_181028_bj || flag) {
+			if (!this.wasMarker || flag) {
 				return;
 			}
 
-			this.func_181550_a(true);
+			this.updateBoundingBox(true);
 		}
 
-		this.field_181028_bj = flag;
+		this.wasMarker = flag;
 	}
 
-	private void func_181550_a(boolean parFlag) {
+	private void updateBoundingBox(boolean parFlag) {
 		double d0 = this.posX;
 		double d1 = this.posY;
 		double d2 = this.posZ;
@@ -711,7 +711,7 @@ public class EntityArmorStand extends EntityLivingBase {
 		return (this.dataWatcher.getWatchableObjectByte(10) & 8) != 0;
 	}
 
-	private void func_181027_m(boolean parFlag) {
+	private void setMarker(boolean parFlag) {
 		byte b0 = this.dataWatcher.getWatchableObjectByte(10);
 		if (parFlag) {
 			b0 = (byte) (b0 | 16);
@@ -722,7 +722,7 @@ public class EntityArmorStand extends EntityLivingBase {
 		this.dataWatcher.updateObject(10, Byte.valueOf(b0));
 	}
 
-	public boolean func_181026_s() {
+	public boolean hasMarker() {
 		return (this.dataWatcher.getWatchableObjectByte(10) & 16) != 0;
 	}
 
@@ -785,6 +785,6 @@ public class EntityArmorStand extends EntityLivingBase {
 	 * moving through this Entity.
 	 */
 	public boolean canBeCollidedWith() {
-		return super.canBeCollidedWith() && !this.func_181026_s();
+		return super.canBeCollidedWith() && !this.hasMarker();
 	}
 }

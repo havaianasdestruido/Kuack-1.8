@@ -485,7 +485,7 @@ public class CraftingManager {
 		return null;
 	}
 
-	public ItemStack[] func_180303_b(InventoryCrafting worldIn, World parWorld) {
+	public ItemStack[] getRemainingItems(InventoryCrafting worldIn, World parWorld) {
 		for (int i = 0, l = this.recipes.size(); i < l; ++i) {
 			IRecipe irecipe = this.recipes.get(i);
 			if (irecipe.matches(worldIn, parWorld)) {

@@ -32,17 +32,17 @@ public class BreakingFour extends BakedQuad {
 				Arrays.copyOf(parBakedQuad.getVertexDataWithNormals(), parBakedQuad.getVertexDataWithNormals().length),
 				parBakedQuad.tintIndex, parBakedQuad.face);
 		this.texture = textureIn;
-		this.func_178217_e();
+		this.remapQuad();
 	}
 
-	private void func_178217_e() {
+	private void remapQuad() {
 		for (int i = 0; i < 4; ++i) {
-			this.func_178216_a(i);
+			this.remapVert(i);
 		}
 
 	}
 
-	private void func_178216_a(int parInt1) {
+	private void remapVert(int parInt1) {
 		int i = 7 * parInt1;
 		float f = Float.intBitsToFloat(this.vertexData[i]);
 		float f1 = Float.intBitsToFloat(this.vertexData[i + 1]);

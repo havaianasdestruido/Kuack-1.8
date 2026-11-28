@@ -26,24 +26,24 @@ import net.lax1dude.eaglercraft.v1_8.opengl.GlStateManager;
  * 
  */
 public class JsonBlendingMode {
-	private static JsonBlendingMode field_148118_a = null;
-	private final int field_148116_b;
-	private final int field_148117_c;
-	private final int field_148114_d;
-	private final int field_148115_e;
-	private final int field_148112_f;
-	private final boolean field_148113_g;
-	private final boolean field_148119_h;
+	private static JsonBlendingMode lastApplied = null;
+	private final int srcColorFactor;
+	private final int srcAlphaFactor;
+	private final int destColorFactor;
+	private final int destAlphaFactor;
+	private final int blendFunction;
+	private final boolean separateBlend;
+	private final boolean opaque;
 
 	private JsonBlendingMode(boolean parFlag, boolean parFlag2, int parInt1, int parInt2, int parInt3, int parInt4,
 			int parInt5) {
-		this.field_148113_g = parFlag;
-		this.field_148116_b = parInt1;
-		this.field_148114_d = parInt2;
-		this.field_148117_c = parInt3;
-		this.field_148115_e = parInt4;
-		this.field_148119_h = parFlag2;
-		this.field_148112_f = parInt5;
+		this.separateBlend = parFlag;
+		this.srcColorFactor = parInt1;
+		this.destColorFactor = parInt2;
+		this.srcAlphaFactor = parInt3;
+		this.destAlphaFactor = parInt4;
+		this.opaque = parFlag2;
+		this.blendFunction = parInt5;
 	}
 
 	public JsonBlendingMode() {
@@ -58,11 +58,11 @@ public class JsonBlendingMode {
 		this(true, false, parInt1, parInt2, parInt3, parInt4, parInt5);
 	}
 
-	public void func_148109_a() {
-		if (!this.equals(field_148118_a)) {
-			if (field_148118_a == null || this.field_148119_h != field_148118_a.func_148111_b()) {
-				field_148118_a = this;
-				if (this.field_148119_h) {
+	public void apply() {
+		if (!this.equals(lastApplied)) {
+			if (lastApplied == null || this.opaque != lastApplied.isOpaque()) {
+				lastApplied = this;
+				if (this.opaque) {
 					GlStateManager.disableBlend();
 					return;
 				}
@@ -70,12 +70,12 @@ public class JsonBlendingMode {
 				GlStateManager.enableBlend();
 			}
 
-			EaglercraftGPU.glBlendEquation(this.field_148112_f);
-			if (this.field_148113_g) {
-				GlStateManager.tryBlendFuncSeparate(this.field_148116_b, this.field_148114_d, this.field_148117_c,
-						this.field_148115_e);
+			EaglercraftGPU.glBlendEquation(this.blendFunction);
+			if (this.separateBlend) {
+				GlStateManager.tryBlendFuncSeparate(this.srcColorFactor, this.destColorFactor, this.srcAlphaFactor,
+						this.destAlphaFactor);
 			} else {
-				GlStateManager.blendFunc(this.field_148116_b, this.field_148114_d);
+				GlStateManager.blendFunc(this.srcColorFactor, this.destColorFactor);
 			}
 
 		}
@@ -88,32 +88,32 @@ public class JsonBlendingMode {
 			return false;
 		} else {
 			JsonBlendingMode jsonblendingmode = (JsonBlendingMode) object;
-			return this.field_148112_f != jsonblendingmode.field_148112_f ? false
-					: (this.field_148115_e != jsonblendingmode.field_148115_e ? false
-							: (this.field_148114_d != jsonblendingmode.field_148114_d ? false
-									: (this.field_148119_h != jsonblendingmode.field_148119_h ? false
-											: (this.field_148113_g != jsonblendingmode.field_148113_g ? false
-													: (this.field_148117_c != jsonblendingmode.field_148117_c ? false
-															: this.field_148116_b == jsonblendingmode.field_148116_b)))));
+			return this.blendFunction != jsonblendingmode.blendFunction ? false
+					: (this.destAlphaFactor != jsonblendingmode.destAlphaFactor ? false
+							: (this.destColorFactor != jsonblendingmode.destColorFactor ? false
+									: (this.opaque != jsonblendingmode.opaque ? false
+											: (this.separateBlend != jsonblendingmode.separateBlend ? false
+													: (this.srcAlphaFactor != jsonblendingmode.srcAlphaFactor ? false
+															: this.srcColorFactor == jsonblendingmode.srcColorFactor)))));
 		}
 	}
 
 	public int hashCode() {
-		int i = this.field_148116_b;
-		i = 31 * i + this.field_148117_c;
-		i = 31 * i + this.field_148114_d;
-		i = 31 * i + this.field_148115_e;
-		i = 31 * i + this.field_148112_f;
-		i = 31 * i + (this.field_148113_g ? 1 : 0);
-		i = 31 * i + (this.field_148119_h ? 1 : 0);
+		int i = this.srcColorFactor;
+		i = 31 * i + this.srcAlphaFactor;
+		i = 31 * i + this.destColorFactor;
+		i = 31 * i + this.destAlphaFactor;
+		i = 31 * i + this.blendFunction;
+		i = 31 * i + (this.separateBlend ? 1 : 0);
+		i = 31 * i + (this.opaque ? 1 : 0);
 		return i;
 	}
 
-	public boolean func_148111_b() {
-		return this.field_148119_h;
+	public boolean isOpaque() {
+		return this.opaque;
 	}
 
-	public static JsonBlendingMode func_148110_a(JSONObject parJsonObject) {
+	public static JsonBlendingMode parseBlendNode(JSONObject parJsonObject) {
 		if (parJsonObject == null) {
 			return new JsonBlendingMode();
 		} else {
@@ -125,28 +125,28 @@ public class JsonBlendingMode {
 			boolean flag = true;
 			boolean flag1 = false;
 			if (parJsonObject.get("func") instanceof String) {
-				i = func_148108_a(parJsonObject.getString("func"));
+				i = stringToBlendFunction(parJsonObject.getString("func"));
 				if (i != '\u8006') {
 					flag = false;
 				}
 			}
 
 			if (parJsonObject.get("srcrgb") instanceof String) {
-				j = func_148107_b(parJsonObject.getString("srcrgb"));
+				j = stringToBlendFactor(parJsonObject.getString("srcrgb"));
 				if (j != 1) {
 					flag = false;
 				}
 			}
 
 			if (parJsonObject.get("dstrgb") instanceof String) {
-				k = func_148107_b(parJsonObject.getString("dstrgb"));
+				k = stringToBlendFactor(parJsonObject.getString("dstrgb"));
 				if (k != 0) {
 					flag = false;
 				}
 			}
 
 			if (parJsonObject.get("srcalpha") instanceof String) {
-				l = func_148107_b(parJsonObject.getString("srcalpha"));
+				l = stringToBlendFactor(parJsonObject.getString("srcalpha"));
 				if (l != 1) {
 					flag = false;
 				}
@@ -155,7 +155,7 @@ public class JsonBlendingMode {
 			}
 
 			if (parJsonObject.get("dstalpha") instanceof String) {
-				i1 = func_148107_b(parJsonObject.getString("dstalpha"));
+				i1 = stringToBlendFactor(parJsonObject.getString("dstalpha"));
 				if (i1 != 0) {
 					flag = false;
 				}
@@ -168,7 +168,7 @@ public class JsonBlendingMode {
 		}
 	}
 
-	private static int func_148108_a(String parString1) {
+	private static int stringToBlendFunction(String parString1) {
 		String s = parString1.trim().toLowerCase();
 		return s.equals("add") ? '\u8006'
 				: (s.equals("subtract") ? '\u800a'
@@ -177,7 +177,7 @@ public class JsonBlendingMode {
 										: (s.equals("min") ? '\u8007' : (s.equals("max") ? '\u8008' : '\u8006')))));
 	}
 
-	private static int func_148107_b(String parString1) {
+	private static int stringToBlendFactor(String parString1) {
 		String s = parString1.trim().toLowerCase();
 		s = s.replaceAll("_", "");
 		s = s.replaceAll("one", "1");

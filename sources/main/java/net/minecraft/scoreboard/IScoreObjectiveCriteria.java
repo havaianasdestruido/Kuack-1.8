@@ -36,7 +36,7 @@ public interface IScoreObjectiveCriteria {
 	IScoreObjectiveCriteria playerKillCount = new ScoreDummyCriteria("playerKillCount");
 	IScoreObjectiveCriteria totalKillCount = new ScoreDummyCriteria("totalKillCount");
 	IScoreObjectiveCriteria health = new ScoreHealthCriteria("health");
-	IScoreObjectiveCriteria[] field_178792_h = new IScoreObjectiveCriteria[] {
+	IScoreObjectiveCriteria[] TEAM_KILL = new IScoreObjectiveCriteria[] {
 			new GoalColor("teamkill.", EnumChatFormatting.BLACK),
 			new GoalColor("teamkill.", EnumChatFormatting.DARK_BLUE),
 			new GoalColor("teamkill.", EnumChatFormatting.DARK_GREEN),
@@ -50,7 +50,7 @@ public interface IScoreObjectiveCriteria {
 			new GoalColor("teamkill.", EnumChatFormatting.LIGHT_PURPLE),
 			new GoalColor("teamkill.", EnumChatFormatting.YELLOW),
 			new GoalColor("teamkill.", EnumChatFormatting.WHITE) };
-	IScoreObjectiveCriteria[] field_178793_i = new IScoreObjectiveCriteria[] {
+	IScoreObjectiveCriteria[] KILLED_BY_TEAM = new IScoreObjectiveCriteria[] {
 			new GoalColor("killedByTeam.", EnumChatFormatting.BLACK),
 			new GoalColor("killedByTeam.", EnumChatFormatting.DARK_BLUE),
 			new GoalColor("killedByTeam.", EnumChatFormatting.DARK_GREEN),
@@ -80,17 +80,17 @@ public interface IScoreObjectiveCriteria {
 		INTEGER("integer"), HEARTS("hearts");
 
 		private static final Map<String, IScoreObjectiveCriteria.EnumRenderType> field_178801_c = Maps.newHashMap();
-		private final String field_178798_d;
+		private final String renderType;
 
 		private EnumRenderType(String parString2) {
-			this.field_178798_d = parString2;
+			this.renderType = parString2;
 		}
 
-		public String func_178796_a() {
-			return this.field_178798_d;
+		public String IScoreObjectiveCriteriaGetRenderType() {
+			return this.renderType;
 		}
 
-		public static IScoreObjectiveCriteria.EnumRenderType func_178795_a(String parString1) {
+		public static IScoreObjectiveCriteria.EnumRenderType getByName(String parString1) {
 			IScoreObjectiveCriteria.EnumRenderType iscoreobjectivecriteria$enumrendertype = (IScoreObjectiveCriteria.EnumRenderType) field_178801_c
 					.get(parString1);
 			return iscoreobjectivecriteria$enumrendertype == null ? INTEGER : iscoreobjectivecriteria$enumrendertype;
@@ -99,7 +99,7 @@ public interface IScoreObjectiveCriteria {
 		static {
 			IScoreObjectiveCriteria.EnumRenderType[] types = values();
 			for (int i = 0; i < types.length; ++i) {
-				field_178801_c.put(types[i].func_178796_a(), types[i]);
+				field_178801_c.put(types[i].IScoreObjectiveCriteriaGetRenderType(), types[i]);
 			}
 
 		}

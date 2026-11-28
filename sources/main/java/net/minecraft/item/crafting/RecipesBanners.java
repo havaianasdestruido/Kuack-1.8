@@ -73,7 +73,7 @@ public class RecipesBanners {
 			if (!flag) {
 				return false;
 			} else {
-				return this.func_179533_c(inventorycrafting) != null;
+				return this.matchPatterns(inventorycrafting) != null;
 			}
 		}
 
@@ -90,7 +90,7 @@ public class RecipesBanners {
 			}
 
 			TileEntityBanner.EnumBannerPattern tileentitybanner$enumbannerpattern = this
-					.func_179533_c(inventorycrafting);
+					.matchPatterns(inventorycrafting);
 			if (tileentitybanner$enumbannerpattern != null) {
 				int k = 0;
 
@@ -141,7 +141,7 @@ public class RecipesBanners {
 			return aitemstack;
 		}
 
-		private TileEntityBanner.EnumBannerPattern func_179533_c(InventoryCrafting parInventoryCrafting) {
+		private TileEntityBanner.EnumBannerPattern matchPatterns(InventoryCrafting parInventoryCrafting) {
 			TileEntityBanner.EnumBannerPattern[] patterns = TileEntityBanner.EnumBannerPattern._VALUES;
 			for (int m = 0; m < patterns.length; ++m) {
 				TileEntityBanner.EnumBannerPattern tileentitybanner$enumbannerpattern = patterns[m];

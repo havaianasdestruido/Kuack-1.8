@@ -286,12 +286,12 @@ public class EaglerMinecraftServer extends MinecraftServer {
 	}
 
 	@Override
-	public boolean func_181034_q() {
+	public boolean shouldBroadcastRconToOps() {
 		return true;
 	}
 
 	@Override
-	public boolean func_183002_r() {
+	public boolean shouldBroadcastConsoleToOps() {
 		return true;
 	}
 
@@ -301,7 +301,7 @@ public class EaglerMinecraftServer extends MinecraftServer {
 	}
 
 	@Override
-	public boolean func_181035_ah() {
+	public boolean shouldUseNativeTransport() {
 		return false;
 	}
 

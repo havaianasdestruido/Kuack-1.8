@@ -45,7 +45,7 @@ public class GuiNewChat extends Gui {
 	 * Chat lines to be displayed in the chat box
 	 */
 	private final List<ChatLine> chatLines = Lists.newArrayList();
-	private final List<ChatLine> field_146253_i = Lists.newArrayList();
+	private final List<ChatLine> drawnChatLines = Lists.newArrayList();
 	private int scrollPos;
 	private boolean isScrolled;
 
@@ -58,7 +58,7 @@ public class GuiNewChat extends Gui {
 			int i = this.getLineCount();
 			boolean flag = false;
 			int j = 0;
-			int k = this.field_146253_i.size();
+			int k = this.drawnChatLines.size();
 			float f = this.mc.gameSettings.chatOpacity * 0.9F + 0.1F;
 			if (k > 0) {
 				if (this.getChatOpen()) {
@@ -71,8 +71,8 @@ public class GuiNewChat extends Gui {
 				GlStateManager.translate(2.0F, 20.0F, 0.0F);
 				GlStateManager.scale(f1, f1, 1.0F);
 
-				for (int i1 = 0; i1 + this.scrollPos < this.field_146253_i.size() && i1 < i; ++i1) {
-					ChatLine chatline = (ChatLine) this.field_146253_i.get(i1 + this.scrollPos);
+				for (int i1 = 0; i1 + this.scrollPos < this.drawnChatLines.size() && i1 < i; ++i1) {
+					ChatLine chatline = (ChatLine) this.drawnChatLines.get(i1 + this.scrollPos);
 					if (chatline != null) {
 						int j1 = parInt1 - chatline.getUpdatedCounter();
 						if (j1 < 200 || flag) {
@@ -127,7 +127,7 @@ public class GuiNewChat extends Gui {
 	 * Clears the chat.
 	 */
 	public void clearChatMessages() {
-		this.field_146253_i.clear();
+		this.drawnChatLines.clear();
 		this.chatLines.clear();
 		this.sentMessages.clear();
 	}
@@ -151,7 +151,7 @@ public class GuiNewChat extends Gui {
 		}
 
 		int i = MathHelper.floor_float((float) this.getChatWidth() / this.getChatScale());
-		List list = GuiUtilRenderComponents.func_178908_a(parIChatComponent, i, this.mc.fontRendererObj, false, false);
+		List list = GuiUtilRenderComponents.splitText(parIChatComponent, i, this.mc.fontRendererObj, false, false);
 		boolean flag = this.getChatOpen();
 
 		for (int j = 0, l = list.size(); j < l; ++j) {
@@ -160,11 +160,11 @@ public class GuiNewChat extends Gui {
 				this.scroll(1);
 			}
 
-			this.field_146253_i.add(0, new ChatLine(parInt2, (IChatComponent) list.get(j), parInt1));
+			this.drawnChatLines.add(0, new ChatLine(parInt2, (IChatComponent) list.get(j), parInt1));
 		}
 
-		while (this.field_146253_i.size() > 100) {
-			this.field_146253_i.remove(this.field_146253_i.size() - 1);
+		while (this.drawnChatLines.size() > 100) {
+			this.drawnChatLines.remove(this.drawnChatLines.size() - 1);
 		}
 
 		if (!parFlag) {
@@ -178,7 +178,7 @@ public class GuiNewChat extends Gui {
 	}
 
 	public void refreshChat() {
-		this.field_146253_i.clear();
+		this.drawnChatLines.clear();
 		this.resetScroll();
 
 		for (int i = this.chatLines.size() - 1; i >= 0; --i) {
@@ -222,7 +222,7 @@ public class GuiNewChat extends Gui {
 	 */
 	public void scroll(int parInt1) {
 		this.scrollPos += parInt1;
-		int i = this.field_146253_i.size();
+		int i = this.drawnChatLines.size();
 		if (this.scrollPos > i - this.getLineCount()) {
 			this.scrollPos = i - this.getLineCount();
 		}
@@ -249,17 +249,17 @@ public class GuiNewChat extends Gui {
 			j = MathHelper.floor_float((float) j / f);
 			k = MathHelper.floor_float((float) k / f);
 			if (j >= 0 && k >= 0) {
-				int l = Math.min(this.getLineCount(), this.field_146253_i.size());
+				int l = Math.min(this.getLineCount(), this.drawnChatLines.size());
 				if (j <= MathHelper.floor_float((float) this.getChatWidth() / this.getChatScale())
 						&& k < this.mc.fontRendererObj.FONT_HEIGHT * l + l) {
 					int i1 = k / this.mc.fontRendererObj.FONT_HEIGHT + this.scrollPos;
-					if (i1 >= 0 && i1 < this.field_146253_i.size()) {
-						ChatLine chatline = (ChatLine) this.field_146253_i.get(i1);
+					if (i1 >= 0 && i1 < this.drawnChatLines.size()) {
+						ChatLine chatline = (ChatLine) this.drawnChatLines.get(i1);
 						int j1 = 0;
 
 						for (IChatComponent ichatcomponent : chatline.getChatComponent()) {
 							if (ichatcomponent instanceof ChatComponentText) {
-								j1 += this.mc.fontRendererObj.getStringWidth(GuiUtilRenderComponents.func_178909_a(
+								j1 += this.mc.fontRendererObj.getStringWidth(GuiUtilRenderComponents.removeTextColorsIfConfigured(
 										((ChatComponentText) ichatcomponent).getChatComponentText_TextValue(), false));
 								if (j1 > j) {
 									return ichatcomponent;
@@ -289,7 +289,7 @@ public class GuiNewChat extends Gui {
 	 * finds and deletes a Chat line by ID
 	 */
 	public void deleteChatLine(int parInt1) {
-		Iterator iterator = this.field_146253_i.iterator();
+		Iterator iterator = this.drawnChatLines.iterator();
 
 		while (iterator.hasNext()) {
 			ChatLine chatline = (ChatLine) iterator.next();

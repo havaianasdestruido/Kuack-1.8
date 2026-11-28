@@ -26,7 +26,7 @@ import net.minecraft.entity.passive.EntityTameable;
 public class EntityAIOwnerHurtTarget extends EntityAITarget {
 	EntityTameable theEntityTameable;
 	EntityLivingBase theTarget;
-	private int field_142050_e;
+	private int timestamp;
 
 	public EntityAIOwnerHurtTarget(EntityTameable theEntityTameableIn) {
 		super(theEntityTameableIn, false);
@@ -47,7 +47,7 @@ public class EntityAIOwnerHurtTarget extends EntityAITarget {
 			} else {
 				this.theTarget = entitylivingbase.getLastAttacker();
 				int i = entitylivingbase.getLastAttackerTime();
-				return i != this.field_142050_e && this.isSuitableTarget(this.theTarget, false)
+				return i != this.timestamp && this.isSuitableTarget(this.theTarget, false)
 						&& this.theEntityTameable.shouldAttackEntity(this.theTarget, entitylivingbase);
 			}
 		}
@@ -60,7 +60,7 @@ public class EntityAIOwnerHurtTarget extends EntityAITarget {
 		this.taskOwner.setAttackTarget(this.theTarget);
 		EntityLivingBase entitylivingbase = this.theEntityTameable.getOwner();
 		if (entitylivingbase != null) {
-			this.field_142050_e = entitylivingbase.getLastAttackerTime();
+			this.timestamp = entitylivingbase.getLastAttackerTime();
 		}
 
 		super.startExecuting();

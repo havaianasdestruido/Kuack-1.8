@@ -341,7 +341,7 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 				}
 
 				for (int i = 0, l = arraylist.size(); i < l; ++i) {
-					this.getServerForPlayer().getEntityTracker().func_85172_a(this, (Chunk) arraylist.get(i));
+					this.getServerForPlayer().getEntityTracker().sendLeashedEntitiesInChunk(this, (Chunk) arraylist.get(i));
 				}
 			}
 		}
@@ -392,7 +392,7 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 				for (ScoreObjective scoreobjective : this.getWorldScoreboard()
 						.getObjectivesFromCriteria(IScoreObjectiveCriteria.health)) {
 					this.getWorldScoreboard().getValueFromObjective(this.getName(), scoreobjective)
-							.func_96651_a(Arrays.asList(new EntityPlayer[] { this }));
+							.updateForList(Arrays.asList(new EntityPlayer[] { this }));
 				}
 			}
 
@@ -424,10 +424,10 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 				new BlockPos(MathHelper.floor_double(this.posX), 0, MathHelper.floor_double(this.posZ)));
 		String s = biomegenbase.biomeName;
 		JsonSerializableSet jsonserializableset = (JsonSerializableSet) this.getStatFile()
-				.func_150870_b(AchievementList.exploreAllBiomes);
+				.getProgress(AchievementList.exploreAllBiomes);
 		if (jsonserializableset == null) {
 			jsonserializableset = (JsonSerializableSet) this.getStatFile()
-					.func_150872_a(AchievementList.exploreAllBiomes, new JsonSerializableSet());
+					.setProgress(AchievementList.exploreAllBiomes, new JsonSerializableSet());
 		}
 
 		jsonserializableset.add(s);
@@ -483,22 +483,22 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 		for (ScoreObjective scoreobjective : this.worldObj.getScoreboard()
 				.getObjectivesFromCriteria(IScoreObjectiveCriteria.deathCount)) {
 			Score score = this.getWorldScoreboard().getValueFromObjective(this.getName(), scoreobjective);
-			score.func_96648_a();
+			score.incrementScore();
 		}
 
-		EntityLivingBase entitylivingbase = this.func_94060_bK();
+		EntityLivingBase entitylivingbase = this.getAttackingEntity();
 		if (entitylivingbase != null) {
 			EntityList.EntityEggInfo entitylist$entityegginfo = (EntityList.EntityEggInfo) EntityList.entityEggs
 					.get(Integer.valueOf(EntityList.getEntityID(entitylivingbase)));
 			if (entitylist$entityegginfo != null) {
-				this.triggerAchievement(entitylist$entityegginfo.field_151513_e);
+				this.triggerAchievement(entitylist$entityegginfo.entityKilledByStat);
 			}
 
 			entitylivingbase.addToPlayerScore(this, this.scoreValue);
 		}
 
 		this.triggerAchievement(StatList.deathsStat);
-		this.func_175145_a(StatList.timeSinceDeathStat);
+		this.takeStat(StatList.timeSinceDeathStat);
 		this.getCombatTracker().reset();
 	}
 
@@ -619,7 +619,7 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 	 */
 	public void wakeUpPlayer(boolean updateWorldFlag, boolean setSpawn, boolean parFlag3) {
 		if (this.isPlayerSleeping()) {
-			this.getServerForPlayer().getEntityTracker().func_151248_b(this, new S0BPacketAnimation(this, 2));
+			this.getServerForPlayer().getEntityTracker().sendToTrackingAndSelf(this, new S0BPacketAnimation(this, 2));
 		}
 
 		super.wakeUpPlayer(updateWorldFlag, setSpawn, parFlag3);
@@ -865,28 +865,28 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 			this.statsFile.increaseStat(this, statbase, i);
 
 			for (ScoreObjective scoreobjective : this.getWorldScoreboard()
-					.getObjectivesFromCriteria(statbase.func_150952_k())) {
+					.getObjectivesFromCriteria(statbase.getCriteria())) {
 				this.getWorldScoreboard().getValueFromObjective(this.getName(), scoreobjective).increseScore(i);
 			}
 
-			if (this.statsFile.func_150879_e()) {
-				this.statsFile.func_150876_a(this);
+			if (this.statsFile.StatisticsFileHasUnsentAchievement()) {
+				this.statsFile.sendStats(this);
 			}
 
 		}
 	}
 
-	public void func_175145_a(StatBase parStatBase) {
+	public void takeStat(StatBase parStatBase) {
 		if (parStatBase != null) {
 			this.statsFile.unlockAchievement(this, parStatBase, 0);
 
 			for (ScoreObjective scoreobjective : this.getWorldScoreboard()
-					.getObjectivesFromCriteria(parStatBase.func_150952_k())) {
+					.getObjectivesFromCriteria(parStatBase.getCriteria())) {
 				this.getWorldScoreboard().getValueFromObjective(this.getName(), scoreobjective).setScorePoints(0);
 			}
 
-			if (this.statsFile.func_150879_e()) {
-				this.statsFile.func_150876_a(this);
+			if (this.statsFile.StatisticsFileHasUnsentAchievement()) {
+				this.statsFile.sendStats(this);
 			}
 
 		}
@@ -931,7 +931,7 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 	public void setItemInUse(ItemStack stack, int duration) {
 		super.setItemInUse(stack, duration);
 		if (stack != null && stack.getItem() != null && stack.getItem().getItemUseAction(stack) == EnumAction.EAT) {
-			this.getServerForPlayer().getEntityTracker().func_151248_b(this, new S0BPacketAnimation(this, 3));
+			this.getServerForPlayer().getEntityTracker().sendToTrackingAndSelf(this, new S0BPacketAnimation(this, 3));
 		}
 
 	}
@@ -976,11 +976,11 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 	 * Args: entity that was hit critically
 	 */
 	public void onCriticalHit(Entity entity) {
-		this.getServerForPlayer().getEntityTracker().func_151248_b(this, new S0BPacketAnimation(entity, 4));
+		this.getServerForPlayer().getEntityTracker().sendToTrackingAndSelf(this, new S0BPacketAnimation(entity, 4));
 	}
 
 	public void onEnchantmentCritical(Entity entity) {
-		this.getServerForPlayer().getEntityTracker().func_151248_b(this, new S0BPacketAnimation(entity, 5));
+		this.getServerForPlayer().getEntityTracker().sendToTrackingAndSelf(this, new S0BPacketAnimation(entity, 5));
 	}
 
 	/**+
@@ -1109,7 +1109,7 @@ public class EntityPlayerMP extends EntityPlayer implements ICrafting {
 			super.updatePotionMetadata();
 		}
 
-		this.getServerForPlayer().getEntityTracker().func_180245_a(this);
+		this.getServerForPlayer().getEntityTracker().updateVisibility(this);
 	}
 
 	public Entity getSpectatingEntity() {

@@ -35,7 +35,7 @@ public interface IAttributeInstance {
 
 	Collection<AttributeModifier> getModifiersByOperation(int var1);
 
-	Collection<AttributeModifier> func_111122_c();
+	Collection<AttributeModifier> getModifiers();
 
 	boolean hasModifier(AttributeModifier var1);
 

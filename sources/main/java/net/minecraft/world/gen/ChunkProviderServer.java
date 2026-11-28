@@ -224,7 +224,7 @@ public class ChunkProviderServer implements IChunkProvider {
 	public void populate(IChunkProvider ichunkprovider, int i, int j) {
 		Chunk chunk = this.provideChunk(i, j);
 		if (!chunk.isTerrainPopulated()) {
-			chunk.func_150809_p();
+			chunk.checkLight();
 			if (this.serverChunkGenerator != null) {
 				this.serverChunkGenerator.populate(ichunkprovider, i, j);
 				chunk.setChunkModified();
@@ -233,8 +233,8 @@ public class ChunkProviderServer implements IChunkProvider {
 
 	}
 
-	public boolean func_177460_a(IChunkProvider ichunkprovider, Chunk chunk, int i, int j) {
-		if (this.serverChunkGenerator != null && this.serverChunkGenerator.func_177460_a(ichunkprovider, chunk, i, j)) {
+	public boolean populateChunk(IChunkProvider ichunkprovider, Chunk chunk, int i, int j) {
+		if (this.serverChunkGenerator != null && this.serverChunkGenerator.populateChunk(ichunkprovider, chunk, i, j)) {
 			Chunk chunk1 = this.provideChunk(i, j);
 			chunk1.setChunkModified();
 			return true;

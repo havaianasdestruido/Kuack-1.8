@@ -30,7 +30,7 @@ import net.minecraft.world.World;
  */
 public class TileEntityMobSpawner extends TileEntity implements ITickable {
 	private final MobSpawnerBaseLogic spawnerLogic = new MobSpawnerBaseLogic() {
-		public void func_98267_a(int i) {
+		public void broadcastEvent(int i) {
 			TileEntityMobSpawner.this.worldObj.addBlockEvent(TileEntityMobSpawner.this.pos, Blocks.mob_spawner, i, 0);
 		}
 
@@ -86,7 +86,7 @@ public class TileEntityMobSpawner extends TileEntity implements ITickable {
 		return this.spawnerLogic.setDelayToMin(i) ? true : super.receiveClientEvent(i, j);
 	}
 
-	public boolean func_183000_F() {
+	public boolean onlyOpsCanSetNbt() {
 		return true;
 	}
 

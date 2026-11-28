@@ -209,7 +209,7 @@ public class EntitySpider extends EntityMob {
 			ientitylivingdata = new EntitySpider.GroupData();
 			if (this.worldObj.getDifficulty() == EnumDifficulty.HARD
 					&& this.worldObj.rand.nextFloat() < 0.1F * difficultyinstance.getClampedAdditionalDifficulty()) {
-				((EntitySpider.GroupData) ientitylivingdata).func_111104_a(this.worldObj.rand);
+				((EntitySpider.GroupData) ientitylivingdata).setRandomEffect(this.worldObj.rand);
 			}
 		}
 
@@ -242,7 +242,7 @@ public class EntitySpider extends EntityMob {
 			}
 		}
 
-		protected double func_179512_a(EntityLivingBase entitylivingbase) {
+		protected double getAttackReachSqr(EntityLivingBase entitylivingbase) {
 			return (double) (4.0F + entitylivingbase.width);
 		}
 	}
@@ -261,7 +261,7 @@ public class EntitySpider extends EntityMob {
 	public static class GroupData implements IEntityLivingData {
 		public int potionEffectId;
 
-		public void func_111104_a(EaglercraftRandom rand) {
+		public void setRandomEffect(EaglercraftRandom rand) {
 			int i = rand.nextInt(5);
 			if (i <= 1) {
 				this.potionEffectId = Potion.moveSpeed.id;

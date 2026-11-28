@@ -128,7 +128,7 @@ public abstract class StructureStart {
 	 * typically 63 - 10
 	 */
 	protected void markAvailableHeight(World worldIn, EaglercraftRandom rand, int parInt1) {
-		int i = worldIn.func_181545_F() - parInt1;
+		int i = worldIn.getSeaLevel() - parInt1;
 		int j = this.boundingBox.getYSize() + 1;
 		if (j < i) {
 			j += rand.nextInt(i - j);
@@ -138,7 +138,7 @@ public abstract class StructureStart {
 		this.boundingBox.offset(0, k, 0);
 
 		for (StructureComponent structurecomponent : this.components) {
-			structurecomponent.func_181138_a(0, k, 0);
+			structurecomponent.offset(0, k, 0);
 		}
 
 	}
@@ -156,7 +156,7 @@ public abstract class StructureStart {
 		this.boundingBox.offset(0, k, 0);
 
 		for (StructureComponent structurecomponent : this.components) {
-			structurecomponent.func_181138_a(0, k, 0);
+			structurecomponent.offset(0, k, 0);
 		}
 
 	}
@@ -169,11 +169,11 @@ public abstract class StructureStart {
 		return true;
 	}
 
-	public boolean func_175788_a(ChunkCoordIntPair var1) {
+	public boolean isValidForPostProcess(ChunkCoordIntPair var1) {
 		return true;
 	}
 
-	public void func_175787_b(ChunkCoordIntPair var1) {
+	public void notifyPostProcessAt(ChunkCoordIntPair var1) {
 	}
 
 	public int getChunkPosX() {

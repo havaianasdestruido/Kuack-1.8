@@ -85,7 +85,7 @@ public class CompressedStreamTools {
 	 * NBTTagCompound with the data from the DataInput
 	 */
 	public static NBTTagCompound read(DataInput parDataInput, NBTSizeTracker parNBTSizeTracker) throws IOException {
-		NBTBase nbtbase = func_152455_a(parDataInput, 0, parNBTSizeTracker);
+		NBTBase nbtbase = CompressedStreamToolsRead(parDataInput, 0, parNBTSizeTracker);
 		if (nbtbase instanceof NBTTagCompound) {
 			return (NBTTagCompound) nbtbase;
 		} else {
@@ -105,7 +105,7 @@ public class CompressedStreamTools {
 		}
 	}
 
-	private static NBTBase func_152455_a(DataInput parDataInput, int parInt1, NBTSizeTracker parNBTSizeTracker)
+	private static NBTBase CompressedStreamToolsRead(DataInput parDataInput, int parInt1, NBTSizeTracker parNBTSizeTracker)
 			throws IOException {
 		byte b0 = parDataInput.readByte();
 		if (b0 == 0) {

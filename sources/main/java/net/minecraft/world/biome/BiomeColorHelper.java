@@ -24,23 +24,23 @@ import net.minecraft.world.IBlockAccess;
  * 
  */
 public class BiomeColorHelper {
-	private static final BiomeColorHelper.ColorResolver field_180291_a = new BiomeColorHelper.ColorResolver() {
+	private static final BiomeColorHelper.ColorResolver GRASS_COLOR = new BiomeColorHelper.ColorResolver() {
 		public int getColorAtPos(BiomeGenBase blockPosition, BlockPos parBlockPos) {
 			return blockPosition.getGrassColorAtPos(parBlockPos);
 		}
 	};
-	private static final BiomeColorHelper.ColorResolver field_180289_b = new BiomeColorHelper.ColorResolver() {
+	private static final BiomeColorHelper.ColorResolver FOLIAGE_COLOR = new BiomeColorHelper.ColorResolver() {
 		public int getColorAtPos(BiomeGenBase biomegenbase, BlockPos blockpos) {
 			return biomegenbase.getFoliageColorAtPos(blockpos);
 		}
 	};
-	private static final BiomeColorHelper.ColorResolver field_180290_c = new BiomeColorHelper.ColorResolver() {
+	private static final BiomeColorHelper.ColorResolver WATER_COLOR = new BiomeColorHelper.ColorResolver() {
 		public int getColorAtPos(BiomeGenBase biomegenbase, BlockPos var2) {
 			return biomegenbase.waterColorMultiplier;
 		}
 	};
 
-	private static int func_180285_a(IBlockAccess parIBlockAccess, BlockPos parBlockPos,
+	private static int resolveColorAtPos(IBlockAccess parIBlockAccess, BlockPos parBlockPos,
 			BiomeColorHelper.ColorResolver parColorResolver) {
 		int i = 0;
 		int j = 0;
@@ -59,15 +59,15 @@ public class BiomeColorHelper {
 	}
 
 	public static int getGrassColorAtPos(IBlockAccess parIBlockAccess, BlockPos parBlockPos) {
-		return func_180285_a(parIBlockAccess, parBlockPos, field_180291_a);
+		return resolveColorAtPos(parIBlockAccess, parBlockPos, GRASS_COLOR);
 	}
 
 	public static int getFoliageColorAtPos(IBlockAccess parIBlockAccess, BlockPos parBlockPos) {
-		return func_180285_a(parIBlockAccess, parBlockPos, field_180289_b);
+		return resolveColorAtPos(parIBlockAccess, parBlockPos, FOLIAGE_COLOR);
 	}
 
 	public static int getWaterColorAtPos(IBlockAccess parIBlockAccess, BlockPos parBlockPos) {
-		return func_180285_a(parIBlockAccess, parBlockPos, field_180290_c);
+		return resolveColorAtPos(parIBlockAccess, parBlockPos, WATER_COLOR);
 	}
 
 	interface ColorResolver {

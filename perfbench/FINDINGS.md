@@ -37,7 +37,7 @@ n=4 0.052 → 0.031 ms (1.68×) … n=128 4.367 → 0.191 ms (**22.86×**).
 **Files:** `world/biome/BiomeColorHelper.java`, `client/renderer/RegionRenderCache.java`
 (reverted; see below)
 
-**What was tried.** `BiomeColorHelper.func_180285_a` recomputes a 3×3 biome-average for every tinted
+**What was tried.** `BiomeColorHelper.resolveColorAtPos` recomputes a 3×3 biome-average for every tinted
 quad, so a memo keyed by `(x,y,z)` inside the `RegionRenderCache` window was implemented (fixed
 `int[3][324]` + y-stamp arrays, ~7.6 KB/region, cannot grow) and verified byte-identical
 (`perfbench.VerifyBiomeColor`: 570,240 checks, 0 failures; that source now lives in
@@ -162,11 +162,11 @@ hundreds to several thousand on a normal view distance. `unloadQueuedChunks()` r
 `loadedChunks.remove(chunk)` per tick, and each one is an O(n) walk calling `equals()` at every node
 (`Chunk` does not override `equals`, so it is an identity scan — the worst case for a linked list).
 That is O(100·n) pointer-chasing work **every tick** just to maintain a set of chunks.
-`saveChunks` and `func_152380_a` also copy the list, but that is inherently O(n) and unchanged.
+`saveChunks` and `unloadAllChunks` also copy the list, but that is inherently O(n) and unchanged.
 
 **Fix.** `loadedChunks` is now a `LinkedHashSet`. `Chunk` has no `equals`/`hashCode` override, so the
 set reproduces the old identity relation exactly; insertion order (which `unloadAllChunks` iterates
-and `func_152380_a` snapshots) is preserved. `func_152380_a()` now returns `Collection<Chunk>` (the
+and `unloadAllChunks` snapshots) is preserved. `unloadAllChunks()` now returns `Collection<Chunk>` (the
 only caller is `Lists.newArrayList(...)` in `WorldServer`).
 
 **Old → new.** Per removal O(n) → **O(1)**; per tick O(100·n) → **O(100)**.
@@ -197,12 +197,12 @@ Steady state, 5,929 live chunks (radius 12) with 24 unloads/tick: 0.541 ms → 0
 **Bottleneck.** Every chunk section keeps one `ClassInheritanceMultiMap` per 16-block layer (16 per
 chunk). `add()` and `remove()` looped over **every key in `this.knownKeys`** and called
 `Class.isAssignableFrom()` on each one, per entity operation. `knownKeys` is seeded from the
-process-wide static `field_181158_a`, which accumulates every entity class ever queried for the whole
+process-wide static `KNOWN_CLASSES`, which accumulates every entity class ever queried for the whole
 session — so the per-entity cost grows monotonically as the game runs (to 20–30 keys on a busy
 server), and `isAssignableFrom` is a reflective subtype walk, not a cheap compare.
 
 **Fix.** Memoise, per map instance, the list of *this* map's `knownKeys` that match a given concrete
-class (`func_181156_a`). The answer depends only on the concrete class and on the instance's key set,
+class (`isAssignableFrom`). The answer depends only on the concrete class and on the instance's key set,
 so the memo is dropped only when that instance learns a new key (`createLookup`) — the only event
 that can change it. The memo is per-instance because two sections can legitimately hold different key
 sets, is allocated lazily (sections with no entities pay nothing), and is bounded by the number of
@@ -339,8 +339,8 @@ already full of them and a second copy of any of them would be pure overhead:
 |---|---|---|---|
 | `SIN_TABLE[65536]` (+ `cos` as a quarter-turn offset) | `util/MathHelper` | 16-bit-turn **step** table, built once in the static initializer, 256 KiB | already optimal for `MathHelper.sin/cos`; measured 2.08 ns/call in V8 (480 Mops/s) vs 9.17 ns for native `Math.sin` |
 | `multiplyDeBruijnBitPosition[32]` | `MathHelper.calculateLogBaseTwo` | De Bruijn log2 | optimal, untouched |
-| `field_181164_e[257]` / `field_181165_f[257]` | `MathHelper.func_181159_b` | asin/cos table + one Newton step | the engine's atan2 is already table-driven; untouched |
-| magic-constant reciprocal sqrt | `MathHelper.func_181161_i` | bit-twiddle + 1 Newton step | only used by `func_181159_b`; a table-free approximation, correct choice there |
+| `ASINE_TAB[257]` / `COS_TAB[257]` | `MathHelper.atan2` | asin/cos table + one Newton step | the engine's atan2 is already table-driven; untouched |
+| magic-constant reciprocal sqrt | `MathHelper.fastInvSqrt` | bit-twiddle + 1 Newton step | only used by `atan2`; a table-free approximation, correct choice there |
 | `lightBrightnessTable[16]` | `WorldProvider` | light level → brightness | present, used by every light query |
 | `GRAD3` / permutation tables | `world/gen/NoiseGeneratorSimplex`, `NoiseGeneratorImproved` | value/gradient noise | present; worldgen noise is already table-driven |
 | `VisGraph` bit tables, `EnumNeighborInfo`/`VertexTranslations`/`EnumFace` | `renderer/chunk/VisGraph`, `renderer/BlockModelRenderer` | face/visibility constant tables | present; the AO path is built on them |
@@ -589,14 +589,14 @@ TeaVM target); the JS numbers are quoted where the runtime behaviour differs mat
 | candidate | why it looked attractive | measured | verdict |
 |---|---|---|---|
 | **sqrt LUT** (`MathHelper.sqrt_float/sqrt_double`, 132 direct sites, every distance/normalise/physics path) | huge call count, monotone, easily tabulated | `Math.sqrt` = **1.56 ns** (JS) / 1.6 ns (JVM) — a hardware instruction. Any table needs range reduction + scaling + interpolation, i.e. ≥4× the work, plus unbounded-accuracy loss over the double range | **rejected**: cannot beat one instruction |
-| **fast inverse sqrt** (Quake/magic + Newton) as a `sqrt` replacement | already used inside `MathHelper.func_181161_i` | `1/Math.sqrt` = 2.63 ns; a JS-side magic-constant rsqrt (typed-array bit punning, which is what TeaVM would emit) = **12.1 ns**, 7.8× *slower* than `Math.sqrt`. The engine's own `func_181161_i` stays where it is (only `func_181159_b` uses it, to normalise two doubles for the asin table) | **rejected** |
+| **fast inverse sqrt** (Quake/magic + Newton) as a `sqrt` replacement | already used inside `MathHelper.fastInvSqrt` | `1/Math.sqrt` = 2.63 ns; a JS-side magic-constant rsqrt (typed-array bit punning, which is what TeaVM would emit) = **12.1 ns**, 7.8× *slower* than `Math.sqrt`. The engine's own `fastInvSqrt` stays where it is (only `atan2` uses it, to normalise two doubles for the asin table) | **rejected** |
 | **`Vec3.normalize` via reciprocal multiply** (`sqrt` + 3 divides → `1/sqrt` + 3 multiplies) | 1.68× on the operation | `sqrt`+3 div = 4.73 ns vs `1/sqrt`+3 mul = 2.83 ns, but the two forms differ in the last ULP, and `Vec3.normalize` feeds `getLook` → ray tracing and `AxisAlignedBB.calculateIntercept` where exact ties are decided | **rejected**: 1 ULP of risk for ~2 ns on a path called O(10)–O(100) times per frame |
 | **smaller sin table** (4,096 entries + linear interpolation) to cut the 256 KiB table into L1 | 16× less memory, *better* accuracy | 4,096-entry **step** table 1.00 ns/err 1.5e-3; 4,096-entry **lerp** 2.34 ns/err 2.4e-6; current 65,536-entry step 1.09 ns/err 9.6e-5. The lerp table is *slower* than the current table (two loads + FMA) and 40× more accurate; the step table is faster but 16× less accurate | **rejected for speed**; recorded as an accuracy/memory option if anyone ever needs `sin` to be more precise than vanilla |
 | **dropping `Math.fround` from `MathHelper.sin/cos`** (the float round-trip is a third of the cost) | the single hottest math function in the game | 2.08 ns → 1.09 ns (**1.9×**), but the index then differs from Java's float semantics for ~0.4 % of calls (float ULP at the products involved is up to 0.004, and any product within that of an integer truncates differently), shifting `sin` by one table step | **rejected**: `MathHelper.sin` is used by `MapGenCaves`, `MapGenRavine`, `WorldGenBigTree`, `WorldGenMinable` and `ChunkProviderHell` — a 0.4 % lookup perturbation changes generated terrain, breaking seed determinism |
 | **degree-indexed trig** (`sinDeg`/`cosDeg` for the ~100 `MathHelper.sin(x * 0.017453292F)` sites) | removes a multiply, tables are smaller | the multiply is 0.62 ns (baseline ALU op in the same benchmark); the inputs are almost never integral degrees, so a degree table would still need interpolation | **rejected**: no measurable saving |
 | **`wrapAngleTo180_float/double`: replace `%` with truncation** | float modulo is surprisingly slow in JS | `x % 360` = **7.96 ns** vs `x - 360*trunc(x/360)` = 1.49 ns (**5.3×**), but the replacement is not bit-exact (double rounding on the quotient), and the call count is 2–6 per entity per tick | **rejected**: 5× of nothing |
 | **floor LUT / `Math.floor` rewrite** (`floor_double`, `floor_float`; enormous call count in block iteration) | looks like a classic LUT | `Math.floor` = 1.152 ns, `MathHelper.floor_double` = **1.146 ns** — already at parity with the hardware instruction after JIT/TeaVM lowering | **rejected**: nothing to win |
-| **`atan2` LUT** (`func_181159_b`) | native `Math.atan2` is 18.4 ns | the engine already implements atan2 with a 257-entry asin/cos table + one Newton step; the remaining native `atan2` sites are per-entity-per-frame at most (`RenderDragon`, `RenderGuardian`, compass) | **keep existing table** |
+| **`atan2` LUT** (`atan2`) | native `Math.atan2` is 18.4 ns | the engine already implements atan2 with a 257-entry asin/cos table + one Newton step; the remaining native `atan2` sites are per-entity-per-frame at most (`RenderDragon`, `RenderGuardian`, compass) | **keep existing table** |
 | **block-property LUTs in the AO mesher** (`Block.getAmbientOcclusionLightValue()` is a virtual call executed up to ~70×/block during a section rebuild, and only two blocks deviate from the 0.2 default) | biggest single numeric consumer in chunk meshing | the only cheap key would be `Block.getIdFromBlock`, which is an identity-hash registry lookup — as expensive as the virtual dispatch it would replace; a per-state table needs `IBlockState.getStateId()`, another hash lookup. The surrounding `getBlockState(pos)` chunk lookup dominates anyway | **rejected**: not enough win for a new global table + invalidation contract |
 | **`Math.pow(2.718, -x)` → `Math.exp(-x)`** (`InstancedFontRenderer` per-vertex fog) | 43.0 ns → 5.6 ns | but it is once per text *batch*, not per vertex (the batch aggregates the whole string), and `2.718 != e` would change the fog curve | **rejected**: frequency is negligible |
 | **`Math.pow(x, 2.0)` → `x * x`** (`WorldGenBigTree` leaf mask, `SpawnerAnimals.MOB_COUNT_DIV`, `VisGraph` constants) | trivial, obvious | the `WorldGenBigTree` one runs per leaf, i.e. per tree, and world generation is the one place bit-exactness must not move; the others are one-time constants already | **rejected**: no measurable effect |

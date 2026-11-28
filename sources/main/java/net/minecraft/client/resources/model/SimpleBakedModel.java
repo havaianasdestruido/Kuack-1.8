@@ -86,7 +86,7 @@ public class SimpleBakedModel implements IBakedModel {
 		private ItemCameraTransforms builderCameraTransforms;
 
 		public Builder(ModelBlock parModelBlock) {
-			this(parModelBlock.isAmbientOcclusion(), parModelBlock.isGui3d(), parModelBlock.func_181682_g());
+			this(parModelBlock.isAmbientOcclusion(), parModelBlock.isGui3d(), parModelBlock.getAllTransforms());
 		}
 
 		public Builder(IBakedModel parIBakedModel, EaglerTextureAtlasSprite parTextureAtlasSprite) {

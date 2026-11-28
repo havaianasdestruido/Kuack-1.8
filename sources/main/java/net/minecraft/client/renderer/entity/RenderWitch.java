@@ -44,7 +44,7 @@ public class RenderWitch extends RenderLiving<EntityWitch> {
 	 * double d2, float f, float f1). But JAD is pre 1.5 so doe
 	 */
 	public void doRender(EntityWitch entitywitch, double d0, double d1, double d2, float f, float f1) {
-		((ModelWitch) this.mainModel).field_82900_g = entitywitch.getHeldItem() != null;
+		((ModelWitch) this.mainModel).holdingItem = entitywitch.getHeldItem() != null;
 		super.doRender(entitywitch, d0, d1, d2, f, f1);
 	}
 

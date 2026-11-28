@@ -66,7 +66,7 @@ public abstract class RenderLiving<T extends EntityLiving> extends RendererLivin
 		this.renderLeash(entityliving, d0, d1, d2, f, f1);
 	}
 
-	public void func_177105_a(T entityLivingIn, float partialTicks) {
+	public void setLightmap(T entityLivingIn, float partialTicks) {
 		int i = entityLivingIn.getBrightnessForRender(partialTicks);
 		int j = i % 65536;
 		int k = i / 65536;

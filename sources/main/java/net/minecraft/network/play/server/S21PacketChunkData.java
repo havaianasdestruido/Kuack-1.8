@@ -35,7 +35,7 @@ public class S21PacketChunkData implements Packet<INetHandlerPlayClient> {
 	private int chunkX;
 	private int chunkZ;
 	private S21PacketChunkData.Extracted extractedData;
-	private boolean field_149279_g;
+	private boolean loadChunk;
 
 	public S21PacketChunkData() {
 	}
@@ -43,8 +43,8 @@ public class S21PacketChunkData implements Packet<INetHandlerPlayClient> {
 	public S21PacketChunkData(Chunk chunkIn, boolean parFlag, int parInt1) {
 		this.chunkX = chunkIn.xPosition;
 		this.chunkZ = chunkIn.zPosition;
-		this.field_149279_g = parFlag;
-		this.extractedData = func_179756_a(chunkIn, parFlag, !chunkIn.getWorld().provider.getHasNoSky(), parInt1);
+		this.loadChunk = parFlag;
+		this.extractedData = getExtractedData(chunkIn, parFlag, !chunkIn.getWorld().provider.getHasNoSky(), parInt1);
 	}
 
 	/**+
@@ -53,7 +53,7 @@ public class S21PacketChunkData implements Packet<INetHandlerPlayClient> {
 	public void readPacketData(PacketBuffer parPacketBuffer) throws IOException {
 		this.chunkX = parPacketBuffer.readInt();
 		this.chunkZ = parPacketBuffer.readInt();
-		this.field_149279_g = parPacketBuffer.readBoolean();
+		this.loadChunk = parPacketBuffer.readBoolean();
 		this.extractedData = new S21PacketChunkData.Extracted();
 		this.extractedData.dataSize = parPacketBuffer.readShort();
 		this.extractedData.data = parPacketBuffer.readByteArray();
@@ -65,7 +65,7 @@ public class S21PacketChunkData implements Packet<INetHandlerPlayClient> {
 	public void writePacketData(PacketBuffer parPacketBuffer) throws IOException {
 		parPacketBuffer.writeInt(this.chunkX);
 		parPacketBuffer.writeInt(this.chunkZ);
-		parPacketBuffer.writeBoolean(this.field_149279_g);
+		parPacketBuffer.writeBoolean(this.loadChunk);
 		parPacketBuffer.writeShort((short) (this.extractedData.dataSize & '\uffff'));
 		parPacketBuffer.writeByteArray(this.extractedData.data);
 	}
@@ -77,7 +77,7 @@ public class S21PacketChunkData implements Packet<INetHandlerPlayClient> {
 		inethandlerplayclient.handleChunkData(this);
 	}
 
-	public byte[] func_149272_d() {
+	public byte[] getExtractedDataBytes() {
 		return this.extractedData.data;
 	}
 
@@ -89,7 +89,7 @@ public class S21PacketChunkData implements Packet<INetHandlerPlayClient> {
 		return i + j + k + l;
 	}
 
-	public static S21PacketChunkData.Extracted func_179756_a(Chunk parChunk, boolean parFlag, boolean parFlag2,
+	public static S21PacketChunkData.Extracted getExtractedData(Chunk parChunk, boolean parFlag, boolean parFlag2,
 			int parInt1) {
 		ExtendedBlockStorage[] aextendedblockstorage = parChunk.getBlockStorageArray();
 		S21PacketChunkData.Extracted s21packetchunkdata$extracted = new S21PacketChunkData.Extracted();
@@ -152,8 +152,8 @@ public class S21PacketChunkData implements Packet<INetHandlerPlayClient> {
 		return this.extractedData.dataSize;
 	}
 
-	public boolean func_149274_i() {
-		return this.field_149279_g;
+	public boolean doChunkLoad() {
+		return this.loadChunk;
 	}
 
 	public static class Extracted {

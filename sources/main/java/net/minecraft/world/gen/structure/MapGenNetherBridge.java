@@ -73,7 +73,7 @@ public class MapGenNetherBridge extends MapGenStructure {
 			this.components.add(structurenetherbridgepieces$start);
 			structurenetherbridgepieces$start.buildComponent(structurenetherbridgepieces$start, this.components,
 					parRandom);
-			List list = structurenetherbridgepieces$start.field_74967_d;
+			List list = structurenetherbridgepieces$start.pendingChildren;
 
 			while (!list.isEmpty()) {
 				int i = parRandom.nextInt(list.size());

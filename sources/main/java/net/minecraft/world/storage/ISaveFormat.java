@@ -43,7 +43,7 @@ public interface ISaveFormat {
 	 */
 	WorldInfo getWorldInfo(String var1);
 
-	boolean func_154335_d(String var1);
+	boolean isNewLevelIdAcceptable(String var1);
 
 	/**+
 	 * @args: Takes one argument - the name of the directory of the
@@ -58,7 +58,7 @@ public interface ISaveFormat {
 	 */
 	boolean renameWorld(String var1, String var2);
 
-	boolean func_154334_a(String var1);
+	boolean isConvertible(String var1);
 
 	/**+
 	 * gets if the map is old chunk saving (true) or McRegion

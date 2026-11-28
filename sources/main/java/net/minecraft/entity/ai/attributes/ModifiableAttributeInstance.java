@@ -74,7 +74,7 @@ public class ModifiableAttributeInstance implements IAttributeInstance {
 		return (Collection) this.mapByOperation.get(Integer.valueOf(i));
 	}
 
-	public Collection<AttributeModifier> func_111122_c() {
+	public Collection<AttributeModifier> getModifiers() {
 		HashSet hashset = Sets.newHashSet();
 
 		for (int i = 0; i < 3; ++i) {
@@ -114,7 +114,7 @@ public class ModifiableAttributeInstance implements IAttributeInstance {
 
 	protected void flagForUpdate() {
 		this.needsUpdate = true;
-		this.attributeMap.func_180794_a(this);
+		this.attributeMap.onAttributeModified(this);
 	}
 
 	public void removeModifier(AttributeModifier attributemodifier) {
@@ -136,7 +136,7 @@ public class ModifiableAttributeInstance implements IAttributeInstance {
 	}
 
 	public void removeAllModifiers() {
-		Collection collection = this.func_111122_c();
+		Collection collection = this.getModifiers();
 		if (collection != null) {
 			for (AttributeModifier attributemodifier : (List<AttributeModifier>) Lists.newArrayList(collection)) {
 				this.removeModifier(attributemodifier);
@@ -157,28 +157,28 @@ public class ModifiableAttributeInstance implements IAttributeInstance {
 	private double computeValue() {
 		double d0 = this.getBaseValue();
 
-		for (AttributeModifier attributemodifier : this.func_180375_b(0)) {
+		for (AttributeModifier attributemodifier : this.getAppliedModifiers(0)) {
 			d0 += attributemodifier.getAmount();
 		}
 
 		double d1 = d0;
 
-		for (AttributeModifier attributemodifier1 : this.func_180375_b(1)) {
+		for (AttributeModifier attributemodifier1 : this.getAppliedModifiers(1)) {
 			d1 += d0 * attributemodifier1.getAmount();
 		}
 
-		for (AttributeModifier attributemodifier2 : this.func_180375_b(2)) {
+		for (AttributeModifier attributemodifier2 : this.getAppliedModifiers(2)) {
 			d1 *= 1.0D + attributemodifier2.getAmount();
 		}
 
 		return this.genericAttribute.clampValue(d1);
 	}
 
-	private Collection<AttributeModifier> func_180375_b(int parInt1) {
+	private Collection<AttributeModifier> getAppliedModifiers(int parInt1) {
 		HashSet hashset = Sets.newHashSet(this.getModifiersByOperation(parInt1));
 
-		for (IAttribute iattribute = this.genericAttribute.func_180372_d(); iattribute != null; iattribute = iattribute
-				.func_180372_d()) {
+		for (IAttribute iattribute = this.genericAttribute.getParent(); iattribute != null; iattribute = iattribute
+				.getParent()) {
 			IAttributeInstance iattributeinstance = this.attributeMap.getAttributeInstance(iattribute);
 			if (iattributeinstance != null) {
 				hashset.addAll(iattributeinstance.getModifiersByOperation(parInt1));

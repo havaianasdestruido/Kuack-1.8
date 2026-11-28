@@ -210,7 +210,7 @@ public class CommandWorldBorder extends CommandBase {
 				: (astring.length == 2 && astring[0].equals("damage")
 						? getListOfStringsMatchingLastWord(astring, new String[] { "buffer", "amount" })
 						: (astring.length >= 2 && astring.length <= 3 && astring[0].equals("center")
-								? func_181043_b(astring, 1, blockpos)
+								? getTabCompletionCoordinateXZ(astring, 1, blockpos)
 								: (astring.length == 2 && astring[0].equals("warning")
 										? getListOfStringsMatchingLastWord(astring, new String[] { "time", "distance" })
 										: null)));

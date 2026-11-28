@@ -32,16 +32,16 @@ import net.minecraft.util.IntegerCache;
  * 
  */
 public class VisGraph {
-	private static final int field_178616_a = (int) Math.pow(16.0D, 0.0D);
-	private static final int field_178614_b = (int) Math.pow(16.0D, 1.0D);
-	private static final int field_178615_c = (int) Math.pow(16.0D, 2.0D);
-	private final BitSet field_178612_d = new BitSet(4096);
-	private static final int[] field_178613_e = new int[1352];
-	private int field_178611_f = 4096;
+	private static final int DX = (int) Math.pow(16.0D, 0.0D);
+	private static final int DZ = (int) Math.pow(16.0D, 1.0D);
+	private static final int DY = (int) Math.pow(16.0D, 2.0D);
+	private final BitSet bitSet = new BitSet(4096);
+	private static final int[] INDEX_OF_EDGES = new int[1352];
+	private int empty = 4096;
 
-	public void func_178606_a(BlockPos pos) {
-		this.field_178612_d.set(getIndex(pos), true);
-		--this.field_178611_f;
+	public void setOpaqueCube(BlockPos pos) {
+		this.bitSet.set(getIndex(pos), true);
+		--this.empty;
 	}
 
 	private static int getIndex(BlockPos pos) {
@@ -54,14 +54,14 @@ public class VisGraph {
 
 	public SetVisibility computeVisibility() {
 		SetVisibility setvisibility = new SetVisibility();
-		if (4096 - this.field_178611_f < 256) {
+		if (4096 - this.empty < 256) {
 			setvisibility.setAllVisible(true);
-		} else if (this.field_178611_f == 0) {
+		} else if (this.empty == 0) {
 			setvisibility.setAllVisible(false);
 		} else {
-			for (int i = 0; i < field_178613_e.length; ++i) {
-				if (!this.field_178612_d.get(field_178613_e[i])) {
-					setvisibility.setManyVisible(this.func_178604_a(field_178613_e[i]));
+			for (int i = 0; i < INDEX_OF_EDGES.length; ++i) {
+				if (!this.bitSet.get(INDEX_OF_EDGES[i])) {
+					setvisibility.setManyVisible(this.floodFill(INDEX_OF_EDGES[i]));
 				}
 			}
 		}
@@ -69,27 +69,27 @@ public class VisGraph {
 		return setvisibility;
 	}
 
-	public Set<EnumFacing> func_178609_b(BlockPos pos) {
-		return this.func_178604_a(getIndex(pos));
+	public Set<EnumFacing> getVisibleFacings(BlockPos pos) {
+		return this.floodFill(getIndex(pos));
 	}
 
-	private Set<EnumFacing> func_178604_a(int parInt1) {
+	private Set<EnumFacing> floodFill(int parInt1) {
 		EnumSet enumset = EnumSet.noneOf(EnumFacing.class);
 		LinkedList linkedlist = Lists.newLinkedList();
-		linkedlist.add(IntegerCache.func_181756_a(parInt1));
-		this.field_178612_d.set(parInt1, true);
+		linkedlist.add(IntegerCache.getInteger(parInt1));
+		this.bitSet.set(parInt1, true);
 
 		while (!linkedlist.isEmpty()) {
 			int i = ((Integer) linkedlist.poll()).intValue();
-			this.func_178610_a(i, enumset);
+			this.addEdges(i, enumset);
 
 			EnumFacing[] facings = EnumFacing._VALUES;
 			for (int k = 0; k < facings.length; ++k) {
 				EnumFacing enumfacing = facings[k];
-				int j = this.func_178603_a(i, enumfacing);
-				if (j >= 0 && !this.field_178612_d.get(j)) {
-					this.field_178612_d.set(j, true);
-					linkedlist.add(IntegerCache.func_181756_a(j));
+				int j = this.getNeighborIndexAtFace(i, enumfacing);
+				if (j >= 0 && !this.bitSet.get(j)) {
+					this.bitSet.set(j, true);
+					linkedlist.add(IntegerCache.getInteger(j));
 				}
 			}
 		}
@@ -97,7 +97,7 @@ public class VisGraph {
 		return enumset;
 	}
 
-	private void func_178610_a(int parInt1, Set<EnumFacing> parSet) {
+	private void addEdges(int parInt1, Set<EnumFacing> parSet) {
 		int i = parInt1 >> 0 & 15;
 		if (i == 0) {
 			parSet.add(EnumFacing.WEST);
@@ -121,44 +121,44 @@ public class VisGraph {
 
 	}
 
-	private int func_178603_a(int parInt1, EnumFacing parEnumFacing) {
+	private int getNeighborIndexAtFace(int parInt1, EnumFacing parEnumFacing) {
 		switch (parEnumFacing) {
 		case DOWN:
 			if ((parInt1 >> 8 & 15) == 0) {
 				return -1;
 			}
 
-			return parInt1 - field_178615_c;
+			return parInt1 - DY;
 		case UP:
 			if ((parInt1 >> 8 & 15) == 15) {
 				return -1;
 			}
 
-			return parInt1 + field_178615_c;
+			return parInt1 + DY;
 		case NORTH:
 			if ((parInt1 >> 4 & 15) == 0) {
 				return -1;
 			}
 
-			return parInt1 - field_178614_b;
+			return parInt1 - DZ;
 		case SOUTH:
 			if ((parInt1 >> 4 & 15) == 15) {
 				return -1;
 			}
 
-			return parInt1 + field_178614_b;
+			return parInt1 + DZ;
 		case WEST:
 			if ((parInt1 >> 0 & 15) == 0) {
 				return -1;
 			}
 
-			return parInt1 - field_178616_a;
+			return parInt1 - DX;
 		case EAST:
 			if ((parInt1 >> 0 & 15) == 15) {
 				return -1;
 			}
 
-			return parInt1 + field_178616_a;
+			return parInt1 + DX;
 		default:
 			return -1;
 		}
@@ -173,7 +173,7 @@ public class VisGraph {
 			for (int k = 0; k < 16; ++k) {
 				for (int l = 0; l < 16; ++l) {
 					if (j == 0 || j == 15 || k == 0 || k == 15 || l == 0 || l == 15) {
-						field_178613_e[i++] = getIndex(j, k, l);
+						INDEX_OF_EDGES[i++] = getIndex(j, k, l);
 					}
 				}
 			}

@@ -38,31 +38,31 @@ public class ServerListEntryNormal implements GuiListExtended.IGuiListEntry {
 	private static final ResourceLocation UNKNOWN_SERVER = new ResourceLocation("textures/misc/unknown_server.png");
 	private static final ResourceLocation SERVER_SELECTION_BUTTONS = new ResourceLocation(
 			"textures/gui/server_selection.png");
-	private final GuiMultiplayer field_148303_c;
+	private final GuiMultiplayer owner;
 	private final Minecraft mc;
-	private final ServerData field_148301_e;
-	private String field_148299_g;
-	long field_148298_f;
+	private final ServerData server;
+	private String lastIconB64;
+	long lastClickTime;
 
 	protected ServerListEntryNormal(GuiMultiplayer parGuiMultiplayer, ServerData parServerData) {
-		this.field_148303_c = parGuiMultiplayer;
-		this.field_148301_e = parServerData;
+		this.owner = parGuiMultiplayer;
+		this.server = parServerData;
 		this.mc = Minecraft.getMinecraft();
 	}
 
 	public void drawEntry(int i, int j, int k, int l, int var5, int i1, int j1, boolean flag) {
-		if (!this.field_148301_e.field_78841_f) {
-			this.field_148301_e.field_78841_f = true;
-			this.field_148301_e.pingToServer = -2L;
-			this.field_148301_e.serverMOTD = "";
-			this.field_148301_e.populationInfo = "";
+		if (!this.server.pinged) {
+			this.server.pinged = true;
+			this.server.pingToServer = -2L;
+			this.server.serverMOTD = "";
+			this.server.populationInfo = "";
 		}
 
-		boolean flag1 = this.field_148301_e.version > 47;
-		boolean flag2 = this.field_148301_e.version < 47;
+		boolean flag1 = this.server.version > 47;
+		boolean flag2 = this.server.version < 47;
 		boolean flag3 = flag1 || flag2;
-		this.mc.fontRendererObj.drawString(this.field_148301_e.serverName, j + 32 + 3, k + 1, 16777215);
-		List list = this.mc.fontRendererObj.listFormattedStringToWidth(this.field_148301_e.serverMOTD, l - 32 - 2);
+		this.mc.fontRendererObj.drawString(this.server.serverName, j + 32 + 3, k + 1, 16777215);
+		List list = this.mc.fontRendererObj.listFormattedStringToWidth(this.server.serverMOTD, l - 32 - 2);
 
 		for (int k1 = 0; k1 < 2; ++k1) {
 			if (k1 < list.size()) {
@@ -70,14 +70,14 @@ public class ServerListEntryNormal implements GuiListExtended.IGuiListEntry {
 						k + 12 + this.mc.fontRendererObj.FONT_HEIGHT * k1, 8421504);
 			} else if (k1 == 1) {
 				this.mc.fontRendererObj.drawString(
-						this.field_148301_e.hideAddress ? I18n.format("selectServer.hiddenAddress", new Object[0])
-								: this.field_148301_e.serverIP,
+						this.server.hideAddress ? I18n.format("selectServer.hiddenAddress", new Object[0])
+								: this.server.serverIP,
 						j + 32 + 3, k + 12 + this.mc.fontRendererObj.FONT_HEIGHT * k1 + k1, 0x444444);
 			}
 		}
 
-		String s2 = flag3 ? EnumChatFormatting.DARK_RED + this.field_148301_e.gameVersion
-				: this.field_148301_e.populationInfo;
+		String s2 = flag3 ? EnumChatFormatting.DARK_RED + this.server.gameVersion
+				: this.server.populationInfo;
 		int l1 = this.mc.fontRendererObj.getStringWidth(s2);
 		this.mc.fontRendererObj.drawString(s2, j + l - l1 - 15 - 2, k + 1, 8421504);
 		byte b0 = 0;
@@ -87,27 +87,27 @@ public class ServerListEntryNormal implements GuiListExtended.IGuiListEntry {
 		if (flag3) {
 			i2 = 5;
 			s1 = flag1 ? "Client out of date!" : "Server out of date!";
-			s = this.field_148301_e.playerList;
-		} else if (this.field_148301_e.field_78841_f && this.field_148301_e.pingToServer != -2L) {
-			if (this.field_148301_e.pingToServer < 0L) {
+			s = this.server.playerList;
+		} else if (this.server.pinged && this.server.pingToServer != -2L) {
+			if (this.server.pingToServer < 0L) {
 				i2 = 5;
-			} else if (this.field_148301_e.pingToServer < 150L) {
+			} else if (this.server.pingToServer < 150L) {
 				i2 = 0;
-			} else if (this.field_148301_e.pingToServer < 300L) {
+			} else if (this.server.pingToServer < 300L) {
 				i2 = 1;
-			} else if (this.field_148301_e.pingToServer < 600L) {
+			} else if (this.server.pingToServer < 600L) {
 				i2 = 2;
-			} else if (this.field_148301_e.pingToServer < 1000L) {
+			} else if (this.server.pingToServer < 1000L) {
 				i2 = 3;
 			} else {
 				i2 = 4;
 			}
 
-			if (this.field_148301_e.pingToServer < 0L) {
+			if (this.server.pingToServer < 0L) {
 				s1 = "(no connection)";
 			} else {
-				s1 = this.field_148301_e.pingToServer + "ms";
-				s = this.field_148301_e.playerList;
+				s1 = this.server.pingToServer + "ms";
+				s = this.server.playerList;
 			}
 		} else {
 			b0 = 1;
@@ -128,10 +128,10 @@ public class ServerListEntryNormal implements GuiListExtended.IGuiListEntry {
 			GlStateManager.setShaderBlendSrc(0.6f, 0.6f, 0.6f, 1.0f);
 			GlStateManager.setShaderBlendAdd(0.3f, 0.3f, 0.3f, 0.0f);
 		}
-		if (field_148301_e.iconTextureObject != null) {
-			this.func_178012_a(j, k, field_148301_e.iconResourceLocation);
+		if (server.iconTextureObject != null) {
+			this.drawTextureAt(j, k, server.iconResourceLocation);
 		} else {
-			this.func_178012_a(j, k, UNKNOWN_SERVER);
+			this.drawTextureAt(j, k, UNKNOWN_SERVER);
 		}
 		if (this.mc.gameSettings.touchscreen || flag) {
 			GlStateManager.disableShaderBlendAdd();
@@ -140,9 +140,9 @@ public class ServerListEntryNormal implements GuiListExtended.IGuiListEntry {
 		int j2 = i1 - j;
 		int k2 = j1 - k;
 		if (j2 >= l - 15 && j2 <= l - 5 && k2 >= 0 && k2 <= 8) {
-			this.field_148303_c.setHoveringText(s1);
+			this.owner.setHoveringText(s1);
 		} else if (j2 >= l - l1 - 15 - 2 && j2 <= l - 15 - 2 && k2 >= 0 && k2 <= 8) {
-			this.field_148303_c.setHoveringText(s);
+			this.owner.setHoveringText(s);
 		}
 
 		if (this.mc.gameSettings.touchscreen || flag) {
@@ -151,7 +151,7 @@ public class ServerListEntryNormal implements GuiListExtended.IGuiListEntry {
 			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 			int l2 = i1 - j;
 			int i3 = j1 - k;
-			if (this.func_178013_b()) {
+			if (this.canJoin()) {
 				if (l2 < 32 && l2 > 16) {
 					Gui.drawModalRectWithCustomSizedTexture(j, k, 0.0F, 32.0F, 32, 32, 256.0F, 256.0F);
 				} else {
@@ -159,7 +159,7 @@ public class ServerListEntryNormal implements GuiListExtended.IGuiListEntry {
 				}
 			}
 
-			if (this.field_148303_c.func_175392_a(this, i)) {
+			if (this.owner.canMoveUp(this, i)) {
 				if (l2 < 16 && i3 < 16) {
 					Gui.drawModalRectWithCustomSizedTexture(j, k, 96.0F, 32.0F, 32, 32, 256.0F, 256.0F);
 				} else {
@@ -167,7 +167,7 @@ public class ServerListEntryNormal implements GuiListExtended.IGuiListEntry {
 				}
 			}
 
-			if (this.field_148303_c.func_175394_b(this, i)) {
+			if (this.owner.canMoveDown(this, i)) {
 				if (l2 < 16 && i3 > 16) {
 					Gui.drawModalRectWithCustomSizedTexture(j, k, 64.0F, 32.0F, 32, 32, 256.0F, 256.0F);
 				} else {
@@ -178,7 +178,7 @@ public class ServerListEntryNormal implements GuiListExtended.IGuiListEntry {
 
 	}
 
-	protected void func_178012_a(int parInt1, int parInt2, ResourceLocation parResourceLocation) {
+	protected void drawTextureAt(int parInt1, int parInt2, ResourceLocation parResourceLocation) {
 		this.mc.getTextureManager().bindTexture(parResourceLocation);
 		GlStateManager.enableBlend();
 		GlStateManager.blendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -186,7 +186,7 @@ public class ServerListEntryNormal implements GuiListExtended.IGuiListEntry {
 		GlStateManager.disableBlend();
 	}
 
-	private boolean func_178013_b() {
+	private boolean canJoin() {
 		return true;
 	}
 
@@ -195,29 +195,29 @@ public class ServerListEntryNormal implements GuiListExtended.IGuiListEntry {
 	 */
 	public boolean mousePressed(int i, int var2, int var3, int var4, int j, int k) {
 		if (j <= 32) {
-			if (j < 32 && j > 16 && this.func_178013_b()) {
-				this.field_148303_c.selectServer(i);
-				this.field_148303_c.connectToSelected();
+			if (j < 32 && j > 16 && this.canJoin()) {
+				this.owner.selectServer(i);
+				this.owner.connectToSelected();
 				return true;
 			}
 
-			if (j < 16 && k < 16 && this.field_148303_c.func_175392_a(this, i)) {
-				this.field_148303_c.func_175391_a(this, i, GuiScreen.isShiftKeyDown());
+			if (j < 16 && k < 16 && this.owner.canMoveUp(this, i)) {
+				this.owner.moveServerUp(this, i, GuiScreen.isShiftKeyDown());
 				return true;
 			}
 
-			if (j < 16 && k > 16 && this.field_148303_c.func_175394_b(this, i)) {
-				this.field_148303_c.func_175393_b(this, i, GuiScreen.isShiftKeyDown());
+			if (j < 16 && k > 16 && this.owner.canMoveDown(this, i)) {
+				this.owner.moveServerDown(this, i, GuiScreen.isShiftKeyDown());
 				return true;
 			}
 		}
 
-		this.field_148303_c.selectServer(i);
-		if (Minecraft.getSystemTime() - this.field_148298_f < 250L) {
-			this.field_148303_c.connectToSelected();
+		this.owner.selectServer(i);
+		if (Minecraft.getSystemTime() - this.lastClickTime < 250L) {
+			this.owner.connectToSelected();
 		}
 
-		this.field_148298_f = Minecraft.getSystemTime();
+		this.lastClickTime = Minecraft.getSystemTime();
 		return false;
 	}
 
@@ -232,6 +232,6 @@ public class ServerListEntryNormal implements GuiListExtended.IGuiListEntry {
 	}
 
 	public ServerData getServerData() {
-		return this.field_148301_e;
+		return this.server;
 	}
 }

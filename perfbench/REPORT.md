@@ -290,7 +290,7 @@ caches (which the task forbids): `EnchantmentHelper.getMaxEnchantmentLevel` (129
 and `World.countEntities` (0.016 ms per spawn tick at 4,000 entities).
 
 **The maths/LUT sweep.** The engine's transcendentals are already 99 % tabulated (`SIN_TABLE`,
-`func_181159_b`'s 257-entry asin/cos tables, the De Bruijn log2, the noise gradient tables, the light
+`atan2`'s 257-entry asin/cos tables, the De Bruijn log2, the noise gradient tables, the light
 brightness table). The two sites that had escaped the tables are fixed above (#10, #11); everything
 else that looked like a table candidate was measured and rejected — sqrt LUT, magic-number rsqrt in
 JavaScript (11.8 ns vs 1.6 ns for `Math.sqrt`), smaller/lerped sine tables (slower than the existing

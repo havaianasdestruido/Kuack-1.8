@@ -150,7 +150,7 @@ public abstract class BlockStoneSlabNew extends BlockSlab {
 	 * Get the MapColor for this Block and the given BlockState
 	 */
 	public MapColor getMapColor(IBlockState iblockstate) {
-		return ((BlockStoneSlabNew.EnumType) iblockstate.getValue(VARIANT)).func_181068_c();
+		return ((BlockStoneSlabNew.EnumType) iblockstate.getValue(VARIANT)).BlockStoneSlabNewGetMapColor();
 	}
 
 	/**+
@@ -169,20 +169,20 @@ public abstract class BlockStoneSlabNew extends BlockSlab {
 		public static final BlockStoneSlabNew.EnumType[] META_LOOKUP = new BlockStoneSlabNew.EnumType[1];
 		private final int meta;
 		private final String name;
-		private final MapColor field_181069_e;
+		private final MapColor mapColor;
 
 		private EnumType(int parInt2, String parString2, MapColor parMapColor) {
 			this.meta = parInt2;
 			this.name = parString2;
-			this.field_181069_e = parMapColor;
+			this.mapColor = parMapColor;
 		}
 
 		public int getMetadata() {
 			return this.meta;
 		}
 
-		public MapColor func_181068_c() {
-			return this.field_181069_e;
+		public MapColor BlockStoneSlabNewGetMapColor() {
+			return this.mapColor;
 		}
 
 		public String toString() {

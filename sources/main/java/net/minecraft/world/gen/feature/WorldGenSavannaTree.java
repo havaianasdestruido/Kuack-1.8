@@ -34,9 +34,9 @@ import net.minecraft.world.World;
  * 
  */
 public class WorldGenSavannaTree extends WorldGenAbstractTree {
-	private static final IBlockState field_181643_a = Blocks.log2.getDefaultState().withProperty(BlockNewLog.VARIANT,
+	private static final IBlockState TRUNK = Blocks.log2.getDefaultState().withProperty(BlockNewLog.VARIANT,
 			BlockPlanks.EnumType.ACACIA);
-	private static final IBlockState field_181644_b = Blocks.leaves2.getDefaultState()
+	private static final IBlockState LEAF = Blocks.leaves2.getDefaultState()
 			.withProperty(BlockNewLeaf.VARIANT, BlockPlanks.EnumType.ACACIA)
 			.withProperty(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
 
@@ -63,8 +63,8 @@ public class WorldGenSavannaTree extends WorldGenAbstractTree {
 				for (int k = blockpos.getX() - b0; k <= blockpos.getX() + b0 && flag; ++k) {
 					for (int l = blockpos.getZ() - b0; l <= blockpos.getZ() + b0 && flag; ++l) {
 						if (j >= 0 && j < 256) {
-							if (!this.func_150523_a(
-									world.getBlockState(blockpos$mutableblockpos.func_181079_c(k, j, l)).getBlock())) {
+							if (!this.canGrowInto(
+									world.getBlockState(blockpos$mutableblockpos.setPos(k, j, l)).getBlock())) {
 								flag = false;
 							}
 						} else {
@@ -79,7 +79,7 @@ public class WorldGenSavannaTree extends WorldGenAbstractTree {
 			} else {
 				Block block = world.getBlockState(blockpos.down()).getBlock();
 				if ((block == Blocks.grass || block == Blocks.dirt) && blockpos.getY() < 256 - i - 1) {
-					this.func_175921_a(world, blockpos.down());
+					this.setDirtAt(world, blockpos.down());
 					EnumFacing enumfacing = EnumFacing.Plane.HORIZONTAL.random(random);
 					int j2 = i - random.nextInt(4) - 1;
 					int k2 = 3 - random.nextInt(3);
@@ -98,7 +98,7 @@ public class WorldGenSavannaTree extends WorldGenAbstractTree {
 						BlockPos blockpos1 = new BlockPos(l2, l1, i1);
 						Material material = world.getBlockState(blockpos1).getBlock().getMaterial();
 						if (material == Material.air || material == Material.leaves) {
-							this.func_181642_b(world, blockpos1);
+							this.placeLogAt(world, blockpos1);
 							j1 = l1;
 						}
 					}
@@ -108,7 +108,7 @@ public class WorldGenSavannaTree extends WorldGenAbstractTree {
 					for (int i3 = -3; i3 <= 3; ++i3) {
 						for (int l3 = -3; l3 <= 3; ++l3) {
 							if (Math.abs(i3) != 3 || Math.abs(l3) != 3) {
-								this.func_175924_b(world, blockpos3.add(i3, 0, l3));
+								this.placeLeafAt(world, blockpos3.add(i3, 0, l3));
 							}
 						}
 					}
@@ -117,14 +117,14 @@ public class WorldGenSavannaTree extends WorldGenAbstractTree {
 
 					for (int j3 = -1; j3 <= 1; ++j3) {
 						for (int i4 = -1; i4 <= 1; ++i4) {
-							this.func_175924_b(world, blockpos3.add(j3, 0, i4));
+							this.placeLeafAt(world, blockpos3.add(j3, 0, i4));
 						}
 					}
 
-					this.func_175924_b(world, blockpos3.east(2));
-					this.func_175924_b(world, blockpos3.west(2));
-					this.func_175924_b(world, blockpos3.south(2));
-					this.func_175924_b(world, blockpos3.north(2));
+					this.placeLeafAt(world, blockpos3.east(2));
+					this.placeLeafAt(world, blockpos3.west(2));
+					this.placeLeafAt(world, blockpos3.south(2));
+					this.placeLeafAt(world, blockpos3.north(2));
 					l2 = blockpos.getX();
 					i1 = blockpos.getZ();
 					EnumFacing enumfacing1 = EnumFacing.Plane.HORIZONTAL.random(random);
@@ -141,7 +141,7 @@ public class WorldGenSavannaTree extends WorldGenAbstractTree {
 								BlockPos blockpos2 = new BlockPos(l2, i2, i1);
 								Material material1 = world.getBlockState(blockpos2).getBlock().getMaterial();
 								if (material1 == Material.air || material1 == Material.leaves) {
-									this.func_181642_b(world, blockpos2);
+									this.placeLogAt(world, blockpos2);
 									j1 = i2;
 								}
 							}
@@ -155,7 +155,7 @@ public class WorldGenSavannaTree extends WorldGenAbstractTree {
 							for (int l4 = -2; l4 <= 2; ++l4) {
 								for (int j5 = -2; j5 <= 2; ++j5) {
 									if (Math.abs(l4) != 2 || Math.abs(j5) != 2) {
-										this.func_175924_b(world, blockpos4.add(l4, 0, j5));
+										this.placeLeafAt(world, blockpos4.add(l4, 0, j5));
 									}
 								}
 							}
@@ -164,7 +164,7 @@ public class WorldGenSavannaTree extends WorldGenAbstractTree {
 
 							for (int i5 = -1; i5 <= 1; ++i5) {
 								for (int k5 = -1; k5 <= 1; ++k5) {
-									this.func_175924_b(world, blockpos4.add(i5, 0, k5));
+									this.placeLeafAt(world, blockpos4.add(i5, 0, k5));
 								}
 							}
 						}
@@ -180,14 +180,14 @@ public class WorldGenSavannaTree extends WorldGenAbstractTree {
 		}
 	}
 
-	private void func_181642_b(World parWorld, BlockPos parBlockPos) {
-		this.setBlockAndNotifyAdequately(parWorld, parBlockPos, field_181643_a);
+	private void placeLogAt(World parWorld, BlockPos parBlockPos) {
+		this.setBlockAndNotifyAdequately(parWorld, parBlockPos, TRUNK);
 	}
 
-	private void func_175924_b(World worldIn, BlockPos parBlockPos) {
+	private void placeLeafAt(World worldIn, BlockPos parBlockPos) {
 		Material material = worldIn.getBlockState(parBlockPos).getBlock().getMaterial();
 		if (material == Material.air || material == Material.leaves) {
-			this.setBlockAndNotifyAdequately(worldIn, parBlockPos, field_181644_b);
+			this.setBlockAndNotifyAdequately(worldIn, parBlockPos, LEAF);
 		}
 
 	}

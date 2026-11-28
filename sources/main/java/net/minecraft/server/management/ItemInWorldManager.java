@@ -46,10 +46,10 @@ public class ItemInWorldManager {
 	private WorldSettings.GameType gameType = WorldSettings.GameType.NOT_SET;
 	private boolean isDestroyingBlock;
 	private int initialDamage;
-	private BlockPos field_180240_f = BlockPos.ORIGIN;
+	private BlockPos destroyPos = BlockPos.ORIGIN;
 	private int curblockDamage;
 	private boolean receivedFinishDiggingPacket;
-	private BlockPos field_180241_i = BlockPos.ORIGIN;
+	private BlockPos delayedDestroyPos = BlockPos.ORIGIN;
 	private int initialBlockDamage;
 	private int durabilityRemainingOnBlock = -1;
 
@@ -95,36 +95,36 @@ public class ItemInWorldManager {
 		++this.curblockDamage;
 		if (this.receivedFinishDiggingPacket) {
 			int i = this.curblockDamage - this.initialBlockDamage;
-			Block block = this.theWorld.getBlockState(this.field_180241_i).getBlock();
+			Block block = this.theWorld.getBlockState(this.delayedDestroyPos).getBlock();
 			if (block.getMaterial() == Material.air) {
 				this.receivedFinishDiggingPacket = false;
 			} else {
 				float f = block.getPlayerRelativeBlockHardness(this.thisPlayerMP, this.thisPlayerMP.worldObj,
-						this.field_180241_i) * (float) (i + 1);
+						this.delayedDestroyPos) * (float) (i + 1);
 				int j = (int) (f * 10.0F);
 				if (j != this.durabilityRemainingOnBlock) {
-					this.theWorld.sendBlockBreakProgress(this.thisPlayerMP.getEntityId(), this.field_180241_i, j);
+					this.theWorld.sendBlockBreakProgress(this.thisPlayerMP.getEntityId(), this.delayedDestroyPos, j);
 					this.durabilityRemainingOnBlock = j;
 				}
 
 				if (f >= 1.0F) {
 					this.receivedFinishDiggingPacket = false;
-					this.tryHarvestBlock(this.field_180241_i);
+					this.tryHarvestBlock(this.delayedDestroyPos);
 				}
 			}
 		} else if (this.isDestroyingBlock) {
-			Block block1 = this.theWorld.getBlockState(this.field_180240_f).getBlock();
+			Block block1 = this.theWorld.getBlockState(this.destroyPos).getBlock();
 			if (block1.getMaterial() == Material.air) {
-				this.theWorld.sendBlockBreakProgress(this.thisPlayerMP.getEntityId(), this.field_180240_f, -1);
+				this.theWorld.sendBlockBreakProgress(this.thisPlayerMP.getEntityId(), this.destroyPos, -1);
 				this.durabilityRemainingOnBlock = -1;
 				this.isDestroyingBlock = false;
 			} else {
 				int k = this.curblockDamage - this.initialDamage;
 				float f1 = block1.getPlayerRelativeBlockHardness(this.thisPlayerMP, this.thisPlayerMP.worldObj,
-						this.field_180241_i) * (float) (k + 1);
+						this.delayedDestroyPos) * (float) (k + 1);
 				int l = (int) (f1 * 10.0F);
 				if (l != this.durabilityRemainingOnBlock) {
-					this.theWorld.sendBlockBreakProgress(this.thisPlayerMP.getEntityId(), this.field_180240_f, l);
+					this.theWorld.sendBlockBreakProgress(this.thisPlayerMP.getEntityId(), this.destroyPos, l);
 					this.durabilityRemainingOnBlock = l;
 				}
 			}
@@ -174,7 +174,7 @@ public class ItemInWorldManager {
 				this.tryHarvestBlock(blockpos);
 			} else {
 				this.isDestroyingBlock = true;
-				this.field_180240_f = blockpos;
+				this.destroyPos = blockpos;
 				int i = (int) (f * 10.0F);
 				this.theWorld.sendBlockBreakProgress(this.thisPlayerMP.getEntityId(), blockpos, i);
 				this.durabilityRemainingOnBlock = i;
@@ -184,7 +184,7 @@ public class ItemInWorldManager {
 	}
 
 	public void blockRemoving(BlockPos blockpos) {
-		if (blockpos.equals(this.field_180240_f)) {
+		if (blockpos.equals(this.destroyPos)) {
 			int i = this.curblockDamage - this.initialDamage;
 			Block block = this.theWorld.getBlockState(blockpos).getBlock();
 			if (block.getMaterial() != Material.air) {
@@ -197,7 +197,7 @@ public class ItemInWorldManager {
 				} else if (!this.receivedFinishDiggingPacket) {
 					this.isDestroyingBlock = false;
 					this.receivedFinishDiggingPacket = true;
-					this.field_180241_i = blockpos;
+					this.delayedDestroyPos = blockpos;
 					this.initialBlockDamage = this.initialDamage;
 				}
 			}
@@ -210,7 +210,7 @@ public class ItemInWorldManager {
 	 */
 	public void cancelDestroyingBlock() {
 		this.isDestroyingBlock = false;
-		this.theWorld.sendBlockBreakProgress(this.thisPlayerMP.getEntityId(), this.field_180240_f, -1);
+		this.theWorld.sendBlockBreakProgress(this.thisPlayerMP.getEntityId(), this.destroyPos, -1);
 	}
 
 	/**+

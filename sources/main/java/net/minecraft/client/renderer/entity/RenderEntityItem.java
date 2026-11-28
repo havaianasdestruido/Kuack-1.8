@@ -37,7 +37,7 @@ import net.minecraft.util.ResourceLocation;
  */
 public class RenderEntityItem extends Render<EntityItem> {
 	private final RenderItem itemRenderer;
-	private EaglercraftRandom field_177079_e = new EaglercraftRandom();
+	private EaglercraftRandom random = new EaglercraftRandom();
 
 	public RenderEntityItem(RenderManager renderManagerIn, RenderItem parRenderItem) {
 		super(renderManagerIn);
@@ -46,7 +46,7 @@ public class RenderEntityItem extends Render<EntityItem> {
 		this.shadowOpaque = 0.75F;
 	}
 
-	private int func_177077_a(EntityItem itemIn, double parDouble1, double parDouble2, double parDouble3,
+	private int transformModelCount(EntityItem itemIn, double parDouble1, double parDouble2, double parDouble3,
 			float parFloat1, IBakedModel parIBakedModel) {
 		ItemStack itemstack = itemIn.getEntityItem();
 		Item item = itemstack.getItem();
@@ -54,7 +54,7 @@ public class RenderEntityItem extends Render<EntityItem> {
 			return 0;
 		} else {
 			boolean flag = parIBakedModel.isGui3d();
-			int i = this.func_177078_a(itemstack);
+			int i = this.getModelCount(itemstack);
 			float f = 0.25F;
 			float f1 = MathHelper.sin(((float) itemIn.getAge() + parFloat1) / 10.0F + itemIn.hoverStart) * 0.1F + 0.1F;
 			float f2 = parIBakedModel.getItemCameraTransforms()
@@ -77,7 +77,7 @@ public class RenderEntityItem extends Render<EntityItem> {
 		}
 	}
 
-	private int func_177078_a(ItemStack stack) {
+	private int getModelCount(ItemStack stack) {
 		byte b0 = 1;
 		if (stack.stackSize > 48) {
 			b0 = 5;
@@ -105,7 +105,7 @@ public class RenderEntityItem extends Render<EntityItem> {
 		boolean emissive = entityitem.eaglerEmissiveFlag;
 		entityitem.eaglerEmissiveFlag = false;
 		ItemStack itemstack = entityitem.getEntityItem();
-		this.field_177079_e.setSeed(187L);
+		this.random.setSeed(187L);
 		boolean flag = false;
 		if (this.bindEntityTexture(entityitem)) {
 			this.renderManager.renderEngine.getTexture(this.getEntityTexture(entityitem)).setBlurMipmap(false, false);
@@ -121,15 +121,15 @@ public class RenderEntityItem extends Render<EntityItem> {
 		GlStateManager.tryBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
 		GlStateManager.pushMatrix();
 		IBakedModel ibakedmodel = this.itemRenderer.getItemModelMesher().getItemModel(itemstack);
-		int i = this.func_177077_a(entityitem, d0, d1, d2, f1, ibakedmodel);
+		int i = this.transformModelCount(entityitem, d0, d1, d2, f1, ibakedmodel);
 
 		for (int j = 0; j < i; ++j) {
 			if (ibakedmodel.isGui3d()) {
 				GlStateManager.pushMatrix();
 				if (j > 0) {
-					float f2 = (this.field_177079_e.nextFloat() * 2.0F - 1.0F) * 0.15F;
-					float f3 = (this.field_177079_e.nextFloat() * 2.0F - 1.0F) * 0.15F;
-					float f4 = (this.field_177079_e.nextFloat() * 2.0F - 1.0F) * 0.15F;
+					float f2 = (this.random.nextFloat() * 2.0F - 1.0F) * 0.15F;
+					float f3 = (this.random.nextFloat() * 2.0F - 1.0F) * 0.15F;
+					float f4 = (this.random.nextFloat() * 2.0F - 1.0F) * 0.15F;
 					GlStateManager.translate(f2, f3, f4);
 				}
 

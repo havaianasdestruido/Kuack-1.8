@@ -38,7 +38,7 @@ public class EntityBlockDustFX extends EntityDiggingFX {
 				double d5, int... aint) {
 			IBlockState iblockstate = Block.getStateById(aint[0]);
 			return iblockstate.getBlock().getRenderType() == -1 ? null
-					: (new EntityBlockDustFX(world, d0, d1, d2, d3, d4, d5, iblockstate)).func_174845_l();
+					: (new EntityBlockDustFX(world, d0, d1, d2, d3, d4, d5, iblockstate)).init();
 		}
 	}
 }

@@ -68,7 +68,7 @@ public class CommandTeleport extends CommandBase {
 			if (parArrayOfString.length != 2 && parArrayOfString.length != 4 && parArrayOfString.length != 6) {
 				object = getCommandSenderAsPlayer(parICommandSender);
 			} else {
-				object = func_175768_b(parICommandSender, parArrayOfString[0]);
+				object = CommandBaseGetEntity(parICommandSender, parArrayOfString[0]);
 				b0 = 1;
 			}
 
@@ -91,33 +91,33 @@ public class CommandTeleport extends CommandBase {
 							parArrayOfString.length > i ? parArrayOfString[i] : "~", false);
 					if (object instanceof EntityPlayerMP) {
 						EnumSet enumset = EnumSet.noneOf(S08PacketPlayerPosLook.EnumFlags.class);
-						if (commandbase$coordinatearg.func_179630_c()) {
+						if (commandbase$coordinatearg.CommandBaseIsRelative()) {
 							enumset.add(S08PacketPlayerPosLook.EnumFlags.X);
 						}
 
-						if (commandbase$coordinatearg1.func_179630_c()) {
+						if (commandbase$coordinatearg1.CommandBaseIsRelative()) {
 							enumset.add(S08PacketPlayerPosLook.EnumFlags.Y);
 						}
 
-						if (commandbase$coordinatearg2.func_179630_c()) {
+						if (commandbase$coordinatearg2.CommandBaseIsRelative()) {
 							enumset.add(S08PacketPlayerPosLook.EnumFlags.Z);
 						}
 
-						if (commandbase$coordinatearg4.func_179630_c()) {
+						if (commandbase$coordinatearg4.CommandBaseIsRelative()) {
 							enumset.add(S08PacketPlayerPosLook.EnumFlags.X_ROT);
 						}
 
-						if (commandbase$coordinatearg3.func_179630_c()) {
+						if (commandbase$coordinatearg3.CommandBaseIsRelative()) {
 							enumset.add(S08PacketPlayerPosLook.EnumFlags.Y_ROT);
 						}
 
-						float f = (float) commandbase$coordinatearg3.func_179629_b();
-						if (!commandbase$coordinatearg3.func_179630_c()) {
+						float f = (float) commandbase$coordinatearg3.getAmount();
+						if (!commandbase$coordinatearg3.CommandBaseIsRelative()) {
 							f = MathHelper.wrapAngleTo180_float(f);
 						}
 
-						float f1 = (float) commandbase$coordinatearg4.func_179629_b();
-						if (!commandbase$coordinatearg4.func_179630_c()) {
+						float f1 = (float) commandbase$coordinatearg4.getAmount();
+						if (!commandbase$coordinatearg4.CommandBaseIsRelative()) {
 							f1 = MathHelper.wrapAngleTo180_float(f1);
 						}
 
@@ -128,31 +128,31 @@ public class CommandTeleport extends CommandBase {
 
 						((Entity) object).mountEntity((Entity) null);
 						((EntityPlayerMP) object).playerNetServerHandler.setPlayerLocation(
-								commandbase$coordinatearg.func_179629_b(), commandbase$coordinatearg1.func_179629_b(),
-								commandbase$coordinatearg2.func_179629_b(), f, f1, enumset);
+								commandbase$coordinatearg.getAmount(), commandbase$coordinatearg1.getAmount(),
+								commandbase$coordinatearg2.getAmount(), f, f1, enumset);
 						((Entity) object).setRotationYawHead(f);
 					} else {
-						float f2 = (float) MathHelper.wrapAngleTo180_double(commandbase$coordinatearg3.func_179628_a());
-						float f3 = (float) MathHelper.wrapAngleTo180_double(commandbase$coordinatearg4.func_179628_a());
+						float f2 = (float) MathHelper.wrapAngleTo180_double(commandbase$coordinatearg3.getResult());
+						float f3 = (float) MathHelper.wrapAngleTo180_double(commandbase$coordinatearg4.getResult());
 						if (f3 > 90.0F || f3 < -90.0F) {
 							f3 = MathHelper.wrapAngleTo180_float(180.0F - f3);
 							f2 = MathHelper.wrapAngleTo180_float(f2 + 180.0F);
 						}
 
-						((Entity) object).setLocationAndAngles(commandbase$coordinatearg.func_179628_a(),
-								commandbase$coordinatearg1.func_179628_a(), commandbase$coordinatearg2.func_179628_a(),
+						((Entity) object).setLocationAndAngles(commandbase$coordinatearg.getResult(),
+								commandbase$coordinatearg1.getResult(), commandbase$coordinatearg2.getResult(),
 								f2, f3);
 						((Entity) object).setRotationYawHead(f2);
 					}
 
 					notifyOperators(parICommandSender, this, "commands.tp.success.coordinates",
 							new Object[] { ((Entity) object).getName(),
-									Double.valueOf(commandbase$coordinatearg.func_179628_a()),
-									Double.valueOf(commandbase$coordinatearg1.func_179628_a()),
-									Double.valueOf(commandbase$coordinatearg2.func_179628_a()) });
+									Double.valueOf(commandbase$coordinatearg.getResult()),
+									Double.valueOf(commandbase$coordinatearg1.getResult()),
+									Double.valueOf(commandbase$coordinatearg2.getResult()) });
 				}
 			} else {
-				Entity entity = func_175768_b(parICommandSender, parArrayOfString[parArrayOfString.length - 1]);
+				Entity entity = CommandBaseGetEntity(parICommandSender, parArrayOfString[parArrayOfString.length - 1]);
 				if (entity.worldObj != ((Entity) object).worldObj) {
 					throw new CommandException("commands.tp.notSameDimension", new Object[0]);
 				} else {

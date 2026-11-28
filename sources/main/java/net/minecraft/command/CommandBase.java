@@ -205,7 +205,7 @@ public abstract class CommandBase implements ICommand {
 		}
 	}
 
-	public static Entity func_175768_b(ICommandSender parICommandSender, String parString1)
+	public static Entity CommandBaseGetEntity(ICommandSender parICommandSender, String parString1)
 			throws EntityNotFoundException {
 		return getEntity(parICommandSender, parString1, Entity.class);
 	}
@@ -241,7 +241,7 @@ public abstract class CommandBase implements ICommand {
 			throws EntityNotFoundException {
 		return (List<Entity>) (PlayerSelector.hasArguments(parString1)
 				? PlayerSelector.matchEntities(parICommandSender, parString1, Entity.class)
-				: Lists.newArrayList(new Entity[] { func_175768_b(parICommandSender, parString1) }));
+				: Lists.newArrayList(new Entity[] { CommandBaseGetEntity(parICommandSender, parString1) }));
 	}
 
 	public static String getPlayerName(ICommandSender sender, String query) throws PlayerNotFoundException {
@@ -267,7 +267,7 @@ public abstract class CommandBase implements ICommand {
 			return getPlayer(parICommandSender, parString1).getName();
 		} catch (PlayerNotFoundException var5) {
 			try {
-				return func_175768_b(parICommandSender, parString1).getUniqueID().toString();
+				return CommandBaseGetEntity(parICommandSender, parString1).getUniqueID().toString();
 			} catch (EntityNotFoundException entitynotfoundexception) {
 				if (PlayerSelector.hasArguments(parString1)) {
 					throw entitynotfoundexception;
@@ -504,7 +504,7 @@ public abstract class CommandBase implements ICommand {
 		return joinNiceString(strings.toArray(new String[strings.size()]));
 	}
 
-	public static List<String> func_175771_a(String[] parArrayOfString, int parInt1, BlockPos parBlockPos) {
+	public static List<String> getTabCompletionCoordinate(String[] parArrayOfString, int parInt1, BlockPos parBlockPos) {
 		if (parBlockPos == null) {
 			return null;
 		} else {
@@ -526,7 +526,7 @@ public abstract class CommandBase implements ICommand {
 		}
 	}
 
-	public static List<String> func_181043_b(String[] parArrayOfString, int parInt1, BlockPos parBlockPos) {
+	public static List<String> getTabCompletionCoordinateXZ(String[] parArrayOfString, int parInt1, BlockPos parBlockPos) {
 		if (parBlockPos == null) {
 			return null;
 		} else {
@@ -629,26 +629,26 @@ public abstract class CommandBase implements ICommand {
 	}
 
 	public static class CoordinateArg {
-		private final double field_179633_a;
-		private final double field_179631_b;
-		private final boolean field_179632_c;
+		private final double result;
+		private final double amount;
+		private final boolean isRelative;
 
 		protected CoordinateArg(double parDouble1, double parDouble2, boolean parFlag) {
-			this.field_179633_a = parDouble1;
-			this.field_179631_b = parDouble2;
-			this.field_179632_c = parFlag;
+			this.result = parDouble1;
+			this.amount = parDouble2;
+			this.isRelative = parFlag;
 		}
 
-		public double func_179628_a() {
-			return this.field_179633_a;
+		public double getResult() {
+			return this.result;
 		}
 
-		public double func_179629_b() {
-			return this.field_179631_b;
+		public double getAmount() {
+			return this.amount;
 		}
 
-		public boolean func_179630_c() {
-			return this.field_179632_c;
+		public boolean CommandBaseIsRelative() {
+			return this.isRelative;
 		}
 	}
 }

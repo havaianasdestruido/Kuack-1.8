@@ -31,9 +31,9 @@ public class MathHelper {
 	 */
 	private static final float[] SIN_TABLE = new float[65536];
 	private static final int[] multiplyDeBruijnBitPosition;
-	private static final double field_181163_d;
-	private static final double[] field_181164_e;
-	private static final double[] field_181165_f;
+	private static final double FRAC_BIAS;
+	private static final double[] ASINE_TAB;
+	private static final double[] COS_TAB;
 
 	/**+
 	 * sin looked up in a table
@@ -91,7 +91,7 @@ public class MathHelper {
 		return value < (double) i ? i - 1L : i;
 	}
 
-	public static int func_154353_e(double value) {
+	public static int absFloor(double value) {
 		return (int) (value >= 0.0D ? value : -value + 1.0D);
 	}
 
@@ -316,7 +316,7 @@ public class MathHelper {
 		return calculateLogBaseTwoDeBruijn(value) - (isPowerOfTwo(value) ? 0 : 1);
 	}
 
-	public static int func_154354_b(int parInt1, int parInt2) {
+	public static int roundUp(int parInt1, int parInt2) {
 		if (parInt2 == 0) {
 			return 0;
 		} else if (parInt1 == 0) {
@@ -331,18 +331,18 @@ public class MathHelper {
 		}
 	}
 
-	public static int func_180183_b(float parFloat1, float parFloat2, float parFloat3) {
-		return func_180181_b(floor_float(parFloat1 * 255.0F), floor_float(parFloat2 * 255.0F),
+	public static int rgb(float parFloat1, float parFloat2, float parFloat3) {
+		return rgba(floor_float(parFloat1 * 255.0F), floor_float(parFloat2 * 255.0F),
 				floor_float(parFloat3 * 255.0F));
 	}
 
-	public static int func_180181_b(int parInt1, int parInt2, int parInt3) {
+	public static int rgba(int parInt1, int parInt2, int parInt3) {
 		int i = (parInt1 << 8) + parInt2;
 		i = (i << 8) + parInt3;
 		return i;
 	}
 
-	public static int func_180188_d(int parInt1, int parInt2) {
+	public static int multiplyColor(int parInt1, int parInt2) {
 		int i = (parInt1 & 16711680) >> 16;
 		int j = (parInt2 & 16711680) >> 16;
 		int k = (parInt1 & '\uff00') >> 8;
@@ -355,7 +355,7 @@ public class MathHelper {
 		return parInt1 & -16777216 | k1 << 16 | l1 << 8 | i2;
 	}
 
-	public static double func_181162_h(double parDouble1) {
+	public static double frac(double parDouble1) {
 		return parDouble1 - Math.floor(parDouble1);
 	}
 
@@ -375,11 +375,11 @@ public class MathHelper {
 		return new EaglercraftUUID(i, j);
 	}
 
-	public static double func_181160_c(double parDouble1, double parDouble2, double parDouble3) {
+	public static double pct(double parDouble1, double parDouble2, double parDouble3) {
 		return (parDouble1 - parDouble2) / (parDouble3 - parDouble2);
 	}
 
-	public static double func_181159_b(double parDouble1, double parDouble2) {
+	public static double atan2(double parDouble1, double parDouble2) {
 		double d0 = parDouble2 * parDouble2 + parDouble1 * parDouble1;
 		if (Double.isNaN(d0)) {
 			return Double.NaN;
@@ -401,14 +401,14 @@ public class MathHelper {
 				parDouble1 = d1;
 			}
 
-			double d9 = func_181161_i(d0);
+			double d9 = fastInvSqrt(d0);
 			parDouble2 = parDouble2 * d9;
 			parDouble1 = parDouble1 * d9;
-			double d2 = field_181163_d + parDouble1;
+			double d2 = FRAC_BIAS + parDouble1;
 			int i = (int) Double.doubleToRawLongBits(d2);
-			double d3 = field_181164_e[i];
-			double d4 = field_181165_f[i];
-			double d5 = d2 - field_181163_d;
+			double d3 = ASINE_TAB[i];
+			double d4 = COS_TAB[i];
+			double d5 = d2 - FRAC_BIAS;
 			double d6 = parDouble1 * d4 - parDouble2 * d5;
 			double d7 = (6.0D + d6 * d6) * d6 * 0.16666666666666666D;
 			double d8 = d3 + d7;
@@ -428,7 +428,7 @@ public class MathHelper {
 		}
 	}
 
-	public static double func_181161_i(double parDouble1) {
+	public static double fastInvSqrt(double parDouble1) {
 		double d0 = 0.5D * parDouble1;
 		long i = Double.doubleToRawLongBits(parDouble1);
 		i = 6910469410427058090L - (i >> 1);
@@ -437,7 +437,7 @@ public class MathHelper {
 		return parDouble1;
 	}
 
-	public static int func_181758_c(float parFloat1, float parFloat2, float parFloat3) {
+	public static int hsvToRGB(float parFloat1, float parFloat2, float parFloat3) {
 		int i = (int) (parFloat1 * 6.0F) % 6;
 		float f = parFloat1 * 6.0F - (float) i;
 		float f1 = parFloat3 * (1.0F - parFloat2);
@@ -495,15 +495,15 @@ public class MathHelper {
 
 		multiplyDeBruijnBitPosition = new int[] { 0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 31, 27, 13,
 				23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9 };
-		field_181163_d = Double.longBitsToDouble(4805340802404319232L);
-		field_181164_e = new double[257];
-		field_181165_f = new double[257];
+		FRAC_BIAS = Double.longBitsToDouble(4805340802404319232L);
+		ASINE_TAB = new double[257];
+		COS_TAB = new double[257];
 
 		for (int j = 0; j < 257; ++j) {
 			double d0 = (double) j / 256.0D;
 			double d1 = Math.asin(d0);
-			field_181165_f[j] = Math.cos(d1);
-			field_181164_e[j] = d1;
+			COS_TAB[j] = Math.cos(d1);
+			ASINE_TAB[j] = d1;
 		}
 
 	}

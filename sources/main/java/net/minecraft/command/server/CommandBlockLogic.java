@@ -208,14 +208,14 @@ public abstract class CommandBlockLogic implements ICommandSender {
 	}
 
 	public void setCommandStat(CommandResultStats.Type commandresultstats$type, int i) {
-		this.resultStats.func_179672_a(this, commandresultstats$type, i);
+		this.resultStats.setCommandStatScore(this, commandresultstats$type, i);
 	}
 
 	public abstract void updateCommand();
 
-	public abstract int func_145751_f();
+	public abstract int getCommandBlockType();
 
-	public abstract void func_145757_a(ByteBuf var1);
+	public abstract void fillInInfo(ByteBuf var1);
 
 	public void setLastOutput(IChatComponent lastOutputMessage) {
 		this.lastOutput = lastOutputMessage;

@@ -117,7 +117,7 @@ public class PlayerSelector {
 				return Collections.emptyList();
 			} else {
 				String s = matcher.group(1);
-				BlockPos blockpos = func_179664_b(map, sender.getPosition());
+				BlockPos blockpos = getBlockPosFromArguments(map, sender.getPosition());
 				List<World> list = getWorlds(sender, map);
 				ArrayList arraylist = Lists.newArrayList();
 
@@ -125,19 +125,19 @@ public class PlayerSelector {
 					World world = list.get(i);
 					if (world != null) {
 						ArrayList arraylist1 = Lists.newArrayList();
-						arraylist1.addAll(func_179663_a(map, s));
-						arraylist1.addAll(func_179648_b(map));
-						arraylist1.addAll(func_179649_c(map));
-						arraylist1.addAll(func_179659_d(map));
-						arraylist1.addAll(func_179657_e(map));
-						arraylist1.addAll(func_179647_f(map));
-						arraylist1.addAll(func_180698_a(map, blockpos));
-						arraylist1.addAll(func_179662_g(map));
+						arraylist1.addAll(getTypePredicates(map, s));
+						arraylist1.addAll(getXpLevelPredicates(map));
+						arraylist1.addAll(getGamemodePredicates(map));
+						arraylist1.addAll(getTeamPredicates(map));
+						arraylist1.addAll(getScorePredicates(map));
+						arraylist1.addAll(getNamePredicates(map));
+						arraylist1.addAll(getRadiusPredicates(map, blockpos));
+						arraylist1.addAll(getRotationsPredicates(map));
 						arraylist.addAll(filterResults(map, targetClass, arraylist1, s, world, blockpos));
 					}
 				}
 
-				return func_179658_a(arraylist, map, sender, targetClass, s, blockpos);
+				return getEntitiesFromPredicates(arraylist, map, sender, targetClass, s, blockpos);
 			}
 		} else {
 			return Collections.emptyList();
@@ -152,7 +152,7 @@ public class PlayerSelector {
 	 */
 	private static List<World> getWorlds(ICommandSender sender, Map<String, String> argumentMap) {
 		ArrayList arraylist = Lists.newArrayList();
-		if (func_179665_h(argumentMap)) {
+		if (hasArgument(argumentMap)) {
 			arraylist.add(sender.getEntityWorld());
 		} else {
 			Collections.addAll(arraylist, MinecraftServer.getServer().worldServers);
@@ -163,7 +163,7 @@ public class PlayerSelector {
 
 	private static <T extends Entity> boolean isEntityTypeValid(ICommandSender commandSender,
 			Map<String, String> params) {
-		String s = func_179651_b(params, "type");
+		String s = getArgument(params, "type");
 		s = s != null && s.startsWith("!") ? s.substring(1) : s;
 		if (s != null && !EntityList.isStringValidEntityName(s)) {
 			ChatComponentTranslation chatcomponenttranslation = new ChatComponentTranslation(
@@ -176,9 +176,9 @@ public class PlayerSelector {
 		}
 	}
 
-	private static List<Predicate<Entity>> func_179663_a(Map<String, String> parMap, String parString1) {
+	private static List<Predicate<Entity>> getTypePredicates(Map<String, String> parMap, String parString1) {
 		ArrayList arraylist = Lists.newArrayList();
-		String s = func_179651_b(parMap, "type");
+		String s = getArgument(parMap, "type");
 		final boolean flag = s != null && s.startsWith("!");
 		if (flag) {
 			s = s.substring(1);
@@ -206,7 +206,7 @@ public class PlayerSelector {
 		return arraylist;
 	}
 
-	private static List<Predicate<Entity>> func_179648_b(Map<String, String> parMap) {
+	private static List<Predicate<Entity>> getXpLevelPredicates(Map<String, String> parMap) {
 		ArrayList arraylist = Lists.newArrayList();
 		final int i = parseIntWithDefault(parMap, "lm", -1);
 		final int j = parseIntWithDefault(parMap, "l", -1);
@@ -227,7 +227,7 @@ public class PlayerSelector {
 		return arraylist;
 	}
 
-	private static List<Predicate<Entity>> func_179649_c(Map<String, String> parMap) {
+	private static List<Predicate<Entity>> getGamemodePredicates(Map<String, String> parMap) {
 		ArrayList arraylist = Lists.newArrayList();
 		final int i = parseIntWithDefault(parMap, "m", WorldSettings.GameType.NOT_SET.getID());
 		if (i != WorldSettings.GameType.NOT_SET.getID()) {
@@ -246,9 +246,9 @@ public class PlayerSelector {
 		return arraylist;
 	}
 
-	private static List<Predicate<Entity>> func_179659_d(Map<String, String> parMap) {
+	private static List<Predicate<Entity>> getTeamPredicates(Map<String, String> parMap) {
 		ArrayList arraylist = Lists.newArrayList();
-		String s = func_179651_b(parMap, "team");
+		String s = getArgument(parMap, "team");
 		final boolean flag = s != null && s.startsWith("!");
 		if (flag) {
 			s = s.substring(1);
@@ -273,7 +273,7 @@ public class PlayerSelector {
 		return arraylist;
 	}
 
-	private static List<Predicate<Entity>> func_179657_e(Map<String, String> parMap) {
+	private static List<Predicate<Entity>> getScorePredicates(Map<String, String> parMap) {
 		ArrayList arraylist = Lists.newArrayList();
 		final Map map = func_96560_a(parMap);
 		if (map != null && map.size() > 0) {
@@ -319,9 +319,9 @@ public class PlayerSelector {
 		return arraylist;
 	}
 
-	private static List<Predicate<Entity>> func_179647_f(Map<String, String> parMap) {
+	private static List<Predicate<Entity>> getNamePredicates(Map<String, String> parMap) {
 		ArrayList arraylist = Lists.newArrayList();
-		String s = func_179651_b(parMap, "name");
+		String s = getArgument(parMap, "name");
 		final boolean flag = s != null && s.startsWith("!");
 		if (flag) {
 			s = s.substring(1);
@@ -339,7 +339,7 @@ public class PlayerSelector {
 		return arraylist;
 	}
 
-	private static List<Predicate<Entity>> func_180698_a(Map<String, String> parMap, final BlockPos parBlockPos) {
+	private static List<Predicate<Entity>> getRadiusPredicates(Map<String, String> parMap, final BlockPos parBlockPos) {
 		ArrayList arraylist = Lists.newArrayList();
 		final int i = parseIntWithDefault(parMap, "rm", -1);
 		final int j = parseIntWithDefault(parMap, "r", -1);
@@ -357,7 +357,7 @@ public class PlayerSelector {
 		return arraylist;
 	}
 
-	private static List<Predicate<Entity>> func_179662_g(Map<String, String> parMap) {
+	private static List<Predicate<Entity>> getRotationsPredicates(Map<String, String> parMap) {
 		ArrayList arraylist = Lists.newArrayList();
 		if (parMap.containsKey("rym") || parMap.containsKey("ry")) {
 			final int i = func_179650_a(parseIntWithDefault(parMap, "rym", 0));
@@ -387,7 +387,7 @@ public class PlayerSelector {
 	private static <T extends Entity> List<T> filterResults(Map<String, String> params, Class<? extends T> entityClass,
 			List<Predicate<Entity>> inputList, String type, World worldIn, BlockPos position) {
 		ArrayList arraylist = Lists.newArrayList();
-		String s = func_179651_b(params, "type");
+		String s = getArgument(params, "type");
 		s = s != null && s.startsWith("!") ? s.substring(1) : s;
 		boolean flag = !type.equals("e");
 		boolean flag1 = type.equals("r") && s != null;
@@ -420,7 +420,7 @@ public class PlayerSelector {
 					arraylist.addAll(worldIn.getPlayers(entityClass, predicate1));
 				}
 			} else {
-				final AxisAlignedBB axisalignedbb = func_179661_a(position, i, j, k);
+				final AxisAlignedBB axisalignedbb = getAABB(position, i, j, k);
 				if (flag && flag2 && !flag1) {
 					Predicate predicate2 = new Predicate<Entity>() {
 						public boolean apply(Entity entity) {
@@ -447,7 +447,7 @@ public class PlayerSelector {
 		return arraylist;
 	}
 
-	private static <T extends Entity> List<T> func_179658_a(List<T> parList, Map<String, String> parMap,
+	private static <T extends Entity> List<T> getEntitiesFromPredicates(List<T> parList, Map<String, String> parMap,
 			ICommandSender parICommandSender, Class<? extends T> parClass1, String parString1,
 			final BlockPos parBlockPos) {
 		int i = parseIntWithDefault(parMap, "c", !parString1.equals("a") && !parString1.equals("e") ? 1 : 0);
@@ -481,7 +481,7 @@ public class PlayerSelector {
 		return (List) parList;
 	}
 
-	private static AxisAlignedBB func_179661_a(BlockPos parBlockPos, int parInt1, int parInt2, int parInt3) {
+	private static AxisAlignedBB getAABB(BlockPos parBlockPos, int parInt1, int parInt2, int parInt3) {
 		boolean flag = parInt1 < 0;
 		boolean flag1 = parInt2 < 0;
 		boolean flag2 = parInt3 < 0;
@@ -507,13 +507,13 @@ public class PlayerSelector {
 		return parInt1;
 	}
 
-	private static BlockPos func_179664_b(Map<String, String> parMap, BlockPos parBlockPos) {
+	private static BlockPos getBlockPosFromArguments(Map<String, String> parMap, BlockPos parBlockPos) {
 		return new BlockPos(parseIntWithDefault(parMap, "x", parBlockPos.getX()),
 				parseIntWithDefault(parMap, "y", parBlockPos.getY()),
 				parseIntWithDefault(parMap, "z", parBlockPos.getZ()));
 	}
 
-	private static boolean func_179665_h(Map<String, String> parMap) {
+	private static boolean hasArgument(Map<String, String> parMap) {
 		for (String s : WORLD_BINDING_ARGS) {
 			if (parMap.containsKey(s)) {
 				return true;
@@ -528,7 +528,7 @@ public class PlayerSelector {
 				: parInt1;
 	}
 
-	private static String func_179651_b(Map<String, String> parMap, String parString1) {
+	private static String getArgument(Map<String, String> parMap, String parString1) {
 		return (String) parMap.get(parString1);
 	}
 

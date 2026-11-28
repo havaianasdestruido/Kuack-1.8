@@ -30,7 +30,7 @@ public class Util {
 		return EagRuntime.getPlatformOS().getMinecraftEnum();
 	}
 
-	public static <V> V func_181617_a(FutureTask<V> parFutureTask, Logger parLogger) {
+	public static <V> V runTask(FutureTask<V> parFutureTask, Logger parLogger) {
 		try {
 			parFutureTask.run();
 			return (V) parFutureTask.get();

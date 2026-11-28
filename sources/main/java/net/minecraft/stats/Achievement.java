@@ -115,8 +115,8 @@ public class Achievement extends StatBase {
 		return ichatcomponent;
 	}
 
-	public Achievement func_150953_b(Class<? extends IJsonSerializable> parClass1) {
-		return (Achievement) super.func_150953_b(parClass1);
+	public Achievement setSerializableClazz(Class<? extends IJsonSerializable> parClass1) {
+		return (Achievement) super.setSerializableClazz(parClass1);
 	}
 
 	/**+

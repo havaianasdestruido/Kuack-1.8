@@ -32,17 +32,17 @@ public abstract class WorldGenAbstractTree extends WorldGenerator {
 		super(parFlag);
 	}
 
-	protected boolean func_150523_a(Block parBlock) {
+	protected boolean canGrowInto(Block parBlock) {
 		Material material = parBlock.getMaterial();
 		return material == Material.air || material == Material.leaves || parBlock == Blocks.grass
 				|| parBlock == Blocks.dirt || parBlock == Blocks.log || parBlock == Blocks.log2
 				|| parBlock == Blocks.sapling || parBlock == Blocks.vine;
 	}
 
-	public void func_180711_a(World worldIn, EaglercraftRandom parRandom, BlockPos parBlockPos) {
+	public void generateSaplings(World worldIn, EaglercraftRandom parRandom, BlockPos parBlockPos) {
 	}
 
-	protected void func_175921_a(World worldIn, BlockPos parBlockPos) {
+	protected void setDirtAt(World worldIn, BlockPos parBlockPos) {
 		if (worldIn.getBlockState(parBlockPos).getBlock() != Blocks.dirt) {
 			this.setBlockAndNotifyAdequately(worldIn, parBlockPos, Blocks.dirt.getDefaultState());
 		}

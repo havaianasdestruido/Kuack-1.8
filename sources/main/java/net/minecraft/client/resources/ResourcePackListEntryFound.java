@@ -23,36 +23,36 @@ import net.minecraft.client.gui.GuiScreenResourcePacks;
  * 
  */
 public class ResourcePackListEntryFound extends ResourcePackListEntry {
-	private final ResourcePackRepository.Entry field_148319_c;
+	private final ResourcePackRepository.Entry resourcePackEntry;
 
 	public ResourcePackListEntryFound(GuiScreenResourcePacks resourcePacksGUIIn,
 			ResourcePackRepository.Entry parEntry) {
 		super(resourcePacksGUIIn);
-		this.field_148319_c = parEntry;
+		this.resourcePackEntry = parEntry;
 	}
 
-	protected void func_148313_c() {
-		this.field_148319_c.bindTexturePackIcon(this.mc.getTextureManager());
+	protected void bindResourcePackIcon() {
+		this.resourcePackEntry.bindTexturePackIcon(this.mc.getTextureManager());
 	}
 
-	protected int func_183019_a() {
-		return this.field_148319_c.func_183027_f();
+	protected int getResourcePackFormat() {
+		return this.resourcePackEntry.getPackFormat();
 	}
 
-	protected String func_148311_a() {
-		return this.field_148319_c.getTexturePackDescription();
+	protected String getResourcePackDescription() {
+		return this.resourcePackEntry.getTexturePackDescription();
 	}
 
-	protected String func_148312_b() {
-		return this.field_148319_c.getResourcePackEaglerDisplayName();
+	protected String getResourcePackName() {
+		return this.resourcePackEntry.getResourcePackEaglerDisplayName();
 	}
 
-	public ResourcePackRepository.Entry func_148318_i() {
-		return this.field_148319_c;
+	public ResourcePackRepository.Entry getResourcePackEntry() {
+		return this.resourcePackEntry;
 	}
 
 	@Override
 	protected String getEaglerFolderName() {
-		return field_148319_c.getResourcePackName();
+		return resourcePackEntry.getResourcePackName();
 	}
 }

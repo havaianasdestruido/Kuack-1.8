@@ -43,14 +43,14 @@ import net.minecraft.util.ResourceLocation;
 public abstract class LayerArmorBase<T extends ModelBase> implements LayerRenderer<EntityLivingBase> {
 	protected static final ResourceLocation ENCHANTED_ITEM_GLINT_RES = new ResourceLocation(
 			"textures/misc/enchanted_item_glint.png");
-	protected T field_177189_c;
-	protected T field_177186_d;
+	protected T modelLeggings;
+	protected T modelArmor;
 	private final RendererLivingEntity<?> renderer;
 	private float alpha = 1.0F;
 	private float colorR = 1.0F;
 	private float colorG = 1.0F;
 	private float colorB = 1.0F;
-	private boolean field_177193_i;
+	private boolean skipRenderGlint;
 	private static final Map<String, ResourceLocation> ARMOR_TEXTURE_RES_MAP = Maps.newHashMap();
 
 	public LayerArmorBase(RendererLivingEntity<?> rendererIn) {
@@ -79,10 +79,10 @@ public abstract class LayerArmorBase<T extends ModelBase> implements LayerRender
 		ItemStack itemstack = this.getCurrentArmor(entitylivingbaseIn, parInt1);
 		if (itemstack != null && itemstack.getItem() instanceof ItemArmor) {
 			ItemArmor itemarmor = (ItemArmor) itemstack.getItem();
-			ModelBase modelbase = this.func_177175_a(parInt1);
+			ModelBase modelbase = this.getArmorModel(parInt1);
 			modelbase.setModelAttributes(this.renderer.getMainModel());
 			modelbase.setLivingAnimations(entitylivingbaseIn, armorSlot, parFloat2, parFloat3);
-			this.func_177179_a((T) modelbase, parInt1);
+			this.setModelPartVisible((T) modelbase, parInt1);
 			boolean flag = this.isSlotForLeggings(parInt1);
 			this.renderer.bindTexture(this.getArmorResource(itemarmor, flag));
 			DeferredStateManager.setDefaultMaterialConstants();
@@ -120,7 +120,7 @@ public abstract class LayerArmorBase<T extends ModelBase> implements LayerRender
 				modelbase.render(entitylivingbaseIn, armorSlot, parFloat2, parFloat4, parFloat5, parFloat6, parFloat7);
 				DeferredStateManager.setDefaultMaterialConstants();
 			default:
-				if (!this.field_177193_i && itemstack.isItemEnchanted()) {
+				if (!this.skipRenderGlint && itemstack.isItemEnchanted()) {
 					if (DeferredStateManager.isInDeferredPass()) {
 						if (!DeferredStateManager.isEnableShadowRender()
 								&& DeferredStateManager.forwardCallbackHandler != null) {
@@ -146,8 +146,8 @@ public abstract class LayerArmorBase<T extends ModelBase> implements LayerRender
 									GlStateManager.tryBlendFuncSeparate(GL_ONE, GL_ONE, GL_ZERO, GL_ONE);
 									modelbase.setModelAttributes(LayerArmorBase.this.renderer.getMainModel());
 									modelbase.setLivingAnimations(entitylivingbaseIn, armorSlot, parFloat2, parFloat3);
-									LayerArmorBase.this.func_177179_a((T) modelbase, parInt1);
-									LayerArmorBase.this.func_177183_a(entitylivingbaseIn, (T) modelbase, armorSlot,
+									LayerArmorBase.this.setModelPartVisible((T) modelbase, parInt1);
+									LayerArmorBase.this.renderGlint(entitylivingbaseIn, (T) modelbase, armorSlot,
 											parFloat2, parFloat3, parFloat4, parFloat5, parFloat6, parFloat7);
 									DeferredStateManager.setHDRTranslucentPassBlendFunc();
 									GlStateManager.enableBlend();
@@ -159,7 +159,7 @@ public abstract class LayerArmorBase<T extends ModelBase> implements LayerRender
 						}
 						break;
 					}
-					this.func_177183_a(entitylivingbaseIn, (T) modelbase, armorSlot, parFloat2, parFloat3, parFloat4,
+					this.renderGlint(entitylivingbaseIn, (T) modelbase, armorSlot, parFloat2, parFloat3, parFloat4,
 							parFloat5, parFloat6, parFloat7);
 				}
 
@@ -171,15 +171,15 @@ public abstract class LayerArmorBase<T extends ModelBase> implements LayerRender
 		return entitylivingbaseIn.getCurrentArmor(armorSlot - 1);
 	}
 
-	public T func_177175_a(int parInt1) {
-		return (T) (this.isSlotForLeggings(parInt1) ? this.field_177189_c : this.field_177186_d);
+	public T getArmorModel(int parInt1) {
+		return (T) (this.isSlotForLeggings(parInt1) ? this.modelLeggings : this.modelArmor);
 	}
 
 	private boolean isSlotForLeggings(int armorSlot) {
 		return armorSlot == 2;
 	}
 
-	private void func_177183_a(EntityLivingBase entitylivingbaseIn, T modelbaseIn, float parFloat1, float parFloat2,
+	private void renderGlint(EntityLivingBase entitylivingbaseIn, T modelbaseIn, float parFloat1, float parFloat2,
 			float parFloat3, float parFloat4, float parFloat5, float parFloat6, float parFloat7) {
 		float f = (float) entitylivingbaseIn.ticksExisted + parFloat3;
 		this.renderer.bindTexture(ENCHANTED_ITEM_GLINT_RES);
@@ -237,5 +237,5 @@ public abstract class LayerArmorBase<T extends ModelBase> implements LayerRender
 
 	protected abstract void initArmor();
 
-	protected abstract void func_177179_a(T var1, int var2);
+	protected abstract void setModelPartVisible(T var1, int var2);
 }

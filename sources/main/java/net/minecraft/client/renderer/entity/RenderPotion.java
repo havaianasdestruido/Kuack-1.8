@@ -29,7 +29,7 @@ public class RenderPotion extends RenderSnowball<EntityPotion> {
 		super(renderManagerIn, Items.potionitem, itemRendererIn);
 	}
 
-	public ItemStack func_177082_d(EntityPotion entitypotion) {
-		return new ItemStack(this.field_177084_a, 1, entitypotion.getPotionDamage());
+	public ItemStack getStackToRender(EntityPotion entitypotion) {
+		return new ItemStack(this.item, 1, entitypotion.getPotionDamage());
 	}
 }

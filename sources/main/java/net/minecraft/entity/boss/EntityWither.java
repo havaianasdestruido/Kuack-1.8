@@ -58,12 +58,12 @@ import net.minecraft.world.World;
  * 
  */
 public class EntityWither extends EntityMob implements IBossDisplayData, IRangedAttackMob {
-	private float[] field_82220_d = new float[2];
-	private float[] field_82221_e = new float[2];
-	private float[] field_82217_f = new float[2];
-	private float[] field_82218_g = new float[2];
-	private int[] field_82223_h = new int[2];
-	private int[] field_82224_i = new int[2];
+	private float[] xRotationHeads = new float[2];
+	private float[] yRotationHeads = new float[2];
+	private float[] xRotOHeads = new float[2];
+	private float[] yRotOHeads = new float[2];
+	private int[] nextHeadUpdate = new int[2];
+	private int[] idleHeadUpdates = new int[2];
 	private int blockBreakCounter;
 	/**+
 	 * Selector used to determine the entities a wither boss should
@@ -170,14 +170,14 @@ public class EntityWither extends EntityMob implements IBossDisplayData, IRanged
 		}
 
 		if (this.motionX * this.motionX + this.motionZ * this.motionZ > 0.05000000074505806D) {
-			this.rotationYaw = (float) MathHelper.func_181159_b(this.motionZ, this.motionX) * 57.295776F - 90.0F;
+			this.rotationYaw = (float) MathHelper.atan2(this.motionZ, this.motionX) * 57.295776F - 90.0F;
 		}
 
 		super.onLivingUpdate();
 
 		for (int i = 0; i < 2; ++i) {
-			this.field_82218_g[i] = this.field_82221_e[i];
-			this.field_82217_f[i] = this.field_82220_d[i];
+			this.yRotOHeads[i] = this.yRotationHeads[i];
+			this.xRotOHeads[i] = this.xRotationHeads[i];
 		}
 
 		for (int j = 0; j < 2; ++j) {
@@ -188,28 +188,28 @@ public class EntityWither extends EntityMob implements IBossDisplayData, IRanged
 			}
 
 			if (entity1 != null) {
-				double d11 = this.func_82214_u(j + 1);
-				double d12 = this.func_82208_v(j + 1);
-				double d13 = this.func_82213_w(j + 1);
+				double d11 = this.getHeadX(j + 1);
+				double d12 = this.getHeadY(j + 1);
+				double d13 = this.getHeadZ(j + 1);
 				double d6 = entity1.posX - d11;
 				double d7 = entity1.posY + (double) entity1.getEyeHeight() - d12;
 				double d8 = entity1.posZ - d13;
 				double d9 = (double) MathHelper.sqrt_double(d6 * d6 + d8 * d8);
-				float f = (float) (MathHelper.func_181159_b(d8, d6) * 180.0D / 3.1415927410125732D) - 90.0F;
-				float f1 = (float) (-(MathHelper.func_181159_b(d7, d9) * 180.0D / 3.1415927410125732D));
-				this.field_82220_d[j] = this.func_82204_b(this.field_82220_d[j], f1, 40.0F);
-				this.field_82221_e[j] = this.func_82204_b(this.field_82221_e[j], f, 10.0F);
+				float f = (float) (MathHelper.atan2(d8, d6) * 180.0D / 3.1415927410125732D) - 90.0F;
+				float f1 = (float) (-(MathHelper.atan2(d7, d9) * 180.0D / 3.1415927410125732D));
+				this.xRotationHeads[j] = this.rotlerp(this.xRotationHeads[j], f1, 40.0F);
+				this.yRotationHeads[j] = this.rotlerp(this.yRotationHeads[j], f, 10.0F);
 			} else {
-				this.field_82221_e[j] = this.func_82204_b(this.field_82221_e[j], this.renderYawOffset, 10.0F);
+				this.yRotationHeads[j] = this.rotlerp(this.yRotationHeads[j], this.renderYawOffset, 10.0F);
 			}
 		}
 
 		boolean flag = this.isArmored();
 
 		for (int l = 0; l < 3; ++l) {
-			double d10 = this.func_82214_u(l);
-			double d2 = this.func_82208_v(l);
-			double d4 = this.func_82213_w(l);
+			double d10 = this.getHeadX(l);
+			double d2 = this.getHeadY(l);
+			double d4 = this.getHeadZ(l);
 			this.worldObj.spawnParticle(EnumParticleTypes.SMOKE_NORMAL,
 					d10 + this.rand.nextGaussian() * 0.30000001192092896D,
 					d2 + this.rand.nextGaussian() * 0.30000001192092896D,
@@ -252,13 +252,13 @@ public class EntityWither extends EntityMob implements IBossDisplayData, IRanged
 			super.updateAITasks();
 
 			for (int i = 1; i < 3; ++i) {
-				if (this.ticksExisted >= this.field_82223_h[i - 1]) {
-					this.field_82223_h[i - 1] = this.ticksExisted + 10 + this.rand.nextInt(10);
+				if (this.ticksExisted >= this.nextHeadUpdate[i - 1]) {
+					this.nextHeadUpdate[i - 1] = this.ticksExisted + 10 + this.rand.nextInt(10);
 					if (this.worldObj.getDifficulty() == EnumDifficulty.NORMAL
 							|| this.worldObj.getDifficulty() == EnumDifficulty.HARD) {
 						int j3 = i - 1;
-						int k3 = this.field_82224_i[i - 1];
-						this.field_82224_i[j3] = this.field_82224_i[i - 1] + 1;
+						int k3 = this.idleHeadUpdates[i - 1];
+						this.idleHeadUpdates[j3] = this.idleHeadUpdates[i - 1] + 1;
 						if (k3 > 15) {
 							float f = 10.0F;
 							float f1 = 5.0F;
@@ -269,7 +269,7 @@ public class EntityWither extends EntityMob implements IBossDisplayData, IRanged
 							double d2 = MathHelper.getRandomDoubleInRange(this.rand, this.posZ - (double) f,
 									this.posZ + (double) f);
 							this.launchWitherSkullToCoords(i + 1, d0, d1, d2, true);
-							this.field_82224_i[i - 1] = 0;
+							this.idleHeadUpdates[i - 1] = 0;
 						}
 					}
 
@@ -282,8 +282,8 @@ public class EntityWither extends EntityMob implements IBossDisplayData, IRanged
 								this.updateWatchedTargetId(i, 0);
 							} else {
 								this.launchWitherSkullToEntity(i + 1, (EntityLivingBase) entity);
-								this.field_82223_h[i - 1] = this.ticksExisted + 40 + this.rand.nextInt(20);
-								this.field_82224_i[i - 1] = 0;
+								this.nextHeadUpdate[i - 1] = this.ticksExisted + 40 + this.rand.nextInt(20);
+								this.idleHeadUpdates[i - 1] = 0;
 							}
 						} else {
 							this.updateWatchedTargetId(i, 0);
@@ -336,7 +336,7 @@ public class EntityWither extends EntityMob implements IBossDisplayData, IRanged
 								int l = i2 + l2;
 								BlockPos blockpos = new BlockPos(i3, k, l);
 								Block block = this.worldObj.getBlockState(blockpos).getBlock();
-								if (block.getMaterial() != Material.air && func_181033_a(block)) {
+								if (block.getMaterial() != Material.air && canDestroyBlock(block)) {
 									flag = this.worldObj.destroyBlock(blockpos, true) || flag;
 								}
 							}
@@ -356,12 +356,12 @@ public class EntityWither extends EntityMob implements IBossDisplayData, IRanged
 		}
 	}
 
-	public static boolean func_181033_a(Block parBlock) {
+	public static boolean canDestroyBlock(Block parBlock) {
 		return parBlock != Blocks.bedrock && parBlock != Blocks.end_portal && parBlock != Blocks.end_portal_frame
 				&& parBlock != Blocks.command_block && parBlock != Blocks.barrier;
 	}
 
-	public void func_82206_m() {
+	public void ignite() {
 		this.setInvulTime(220);
 		this.setHealth(this.getMaxHealth() / 3.0F);
 	}
@@ -380,7 +380,7 @@ public class EntityWither extends EntityMob implements IBossDisplayData, IRanged
 		return 4;
 	}
 
-	private double func_82214_u(int parInt1) {
+	private double getHeadX(int parInt1) {
 		if (parInt1 <= 0) {
 			return this.posX;
 		} else {
@@ -390,11 +390,11 @@ public class EntityWither extends EntityMob implements IBossDisplayData, IRanged
 		}
 	}
 
-	private double func_82208_v(int parInt1) {
+	private double getHeadY(int parInt1) {
 		return parInt1 <= 0 ? this.posY + 3.0D : this.posY + 2.2D;
 	}
 
-	private double func_82213_w(int parInt1) {
+	private double getHeadZ(int parInt1) {
 		if (parInt1 <= 0) {
 			return this.posZ;
 		} else {
@@ -404,7 +404,7 @@ public class EntityWither extends EntityMob implements IBossDisplayData, IRanged
 		}
 	}
 
-	private float func_82204_b(float parFloat1, float parFloat2, float parFloat3) {
+	private float rotlerp(float parFloat1, float parFloat2, float parFloat3) {
 		float f = MathHelper.wrapAngleTo180_float(parFloat2 - parFloat1);
 		if (f > parFloat3) {
 			f = parFloat3;
@@ -428,9 +428,9 @@ public class EntityWither extends EntityMob implements IBossDisplayData, IRanged
 	 */
 	private void launchWitherSkullToCoords(int x, double y, double z, double invulnerable, boolean parFlag) {
 		this.worldObj.playAuxSFXAtEntity((EntityPlayer) null, 1014, new BlockPos(this), 0);
-		double d0 = this.func_82214_u(x);
-		double d1 = this.func_82208_v(x);
-		double d2 = this.func_82213_w(x);
+		double d0 = this.getHeadX(x);
+		double d1 = this.getHeadY(x);
+		double d2 = this.getHeadZ(x);
 		double d3 = y - d0;
 		double d4 = z - d1;
 		double d5 = invulnerable - d2;
@@ -478,8 +478,8 @@ public class EntityWither extends EntityMob implements IBossDisplayData, IRanged
 						this.blockBreakCounter = 20;
 					}
 
-					for (int i = 0; i < this.field_82224_i.length; ++i) {
-						this.field_82224_i[i] += 3;
+					for (int i = 0; i < this.idleHeadUpdates.length; ++i) {
+						this.idleHeadUpdates[i] += 3;
 					}
 
 					return super.attackEntityFrom(damagesource, f);
@@ -540,12 +540,12 @@ public class EntityWither extends EntityMob implements IBossDisplayData, IRanged
 		this.getEntityAttribute(SharedMonsterAttributes.followRange).setBaseValue(40.0D);
 	}
 
-	public float func_82207_a(int parInt1) {
-		return this.field_82221_e[parInt1];
+	public float getHeadYRotation(int parInt1) {
+		return this.yRotationHeads[parInt1];
 	}
 
-	public float func_82210_r(int parInt1) {
-		return this.field_82220_d[parInt1];
+	public float getHeadXRotation(int parInt1) {
+		return this.xRotationHeads[parInt1];
 	}
 
 	public int getInvulTime() {

@@ -50,18 +50,18 @@ public class IMetadataSerializer {
 				throw new IllegalArgumentException("Don\'t know how to handle metadata section \'" + parString1 + "\'");
 			} else {
 				return (T) ((IMetadataSection) JSONTypeProvider.deserialize(parJsonObject.getJSONObject(parString1),
-						imetadataserializer$registration.field_110500_b));
+						imetadataserializer$registration.clazz));
 			}
 		}
 	}
 
 	class Registration<T extends IMetadataSection> {
-		final IMetadataSectionSerializer<T> field_110502_a;
-		final Class<T> field_110500_b;
+		final IMetadataSectionSerializer<T> section;
+		final Class<T> clazz;
 
 		private Registration(IMetadataSectionSerializer<T> parIMetadataSectionSerializer, Class<T> parClass1) {
-			this.field_110502_a = parIMetadataSectionSerializer;
-			this.field_110500_b = parClass1;
+			this.section = parIMetadataSectionSerializer;
+			this.clazz = parClass1;
 		}
 	}
 }

@@ -242,38 +242,38 @@ public class MapData extends WorldSavedData {
 
 	public class MapInfo {
 		public final EntityPlayer entityplayerObj;
-		private boolean field_176105_d = true;
+		private boolean isDirty = true;
 		private int minX = 0;
 		private int minY = 0;
 		private int maxX = 127;
 		private int maxY = 127;
-		private int field_176109_i;
-		public int field_82569_d;
+		private int tick;
+		public int step;
 
 		public MapInfo(EntityPlayer player) {
 			this.entityplayerObj = player;
 		}
 
 		public Packet getPacket(ItemStack stack) {
-			if (this.field_176105_d) {
-				this.field_176105_d = false;
+			if (this.isDirty) {
+				this.isDirty = false;
 				return new S34PacketMaps(stack.getMetadata(), MapData.this.scale, MapData.this.mapDecorations.values(),
 						MapData.this.colors, this.minX, this.minY, this.maxX + 1 - this.minX,
 						this.maxY + 1 - this.minY);
 			} else {
-				return this.field_176109_i++ % 5 == 0 ? new S34PacketMaps(stack.getMetadata(), MapData.this.scale,
+				return this.tick++ % 5 == 0 ? new S34PacketMaps(stack.getMetadata(), MapData.this.scale,
 						MapData.this.mapDecorations.values(), MapData.this.colors, 0, 0, 0, 0) : null;
 			}
 		}
 
 		public void update(int x, int y) {
-			if (this.field_176105_d) {
+			if (this.isDirty) {
 				this.minX = Math.min(this.minX, x);
 				this.minY = Math.min(this.minY, y);
 				this.maxX = Math.max(this.maxX, x);
 				this.maxY = Math.max(this.maxY, y);
 			} else {
-				this.field_176105_d = true;
+				this.isDirty = true;
 				this.minX = x;
 				this.minY = y;
 				this.maxX = x;

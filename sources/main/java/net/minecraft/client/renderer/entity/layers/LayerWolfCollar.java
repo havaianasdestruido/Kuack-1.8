@@ -40,7 +40,7 @@ public class LayerWolfCollar implements LayerRenderer<EntityWolf> {
 		if (entitywolf.isTamed() && !entitywolf.isInvisible()) {
 			this.wolfRenderer.bindTexture(WOLF_COLLAR);
 			EnumDyeColor enumdyecolor = EnumDyeColor.byMetadata(entitywolf.getCollarColor().getMetadata());
-			float[] afloat = EntitySheep.func_175513_a(enumdyecolor);
+			float[] afloat = EntitySheep.getDyeRgb(enumdyecolor);
 			GlStateManager.color(afloat[0], afloat[1], afloat[2]);
 			this.wolfRenderer.getMainModel().render(entitywolf, f, f1, f2, f3, f4, f5);
 		}

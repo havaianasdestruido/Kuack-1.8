@@ -42,11 +42,11 @@ public class RenderGuardian extends RenderLiving<EntityGuardian> {
 			"textures/entity/guardian_elder.png");
 	private static final ResourceLocation GUARDIAN_BEAM_TEXTURE = new ResourceLocation(
 			"textures/entity/guardian_beam.png");
-	int field_177115_a;
+	int lastModelVersion;
 
 	public RenderGuardian(RenderManager renderManagerIn) {
 		super(renderManagerIn, new ModelGuardian(), 0.5F);
-		this.field_177115_a = ((ModelGuardian) this.mainModel).func_178706_a();
+		this.lastModelVersion = ((ModelGuardian) this.mainModel).getModelVersion();
 	}
 
 	public boolean shouldRender(EntityGuardian entityguardian, ICamera icamera, double d0, double d1, double d2) {
@@ -56,8 +56,8 @@ public class RenderGuardian extends RenderLiving<EntityGuardian> {
 			if (entityguardian.hasTargetedEntity()) {
 				EntityLivingBase entitylivingbase = entityguardian.getTargetedEntity();
 				if (entitylivingbase != null) {
-					Vec3 vec3 = this.func_177110_a(entitylivingbase, (double) entitylivingbase.height * 0.5D, 1.0F);
-					Vec3 vec31 = this.func_177110_a(entityguardian, (double) entityguardian.getEyeHeight(), 1.0F);
+					Vec3 vec3 = this.getPosition(entitylivingbase, (double) entitylivingbase.height * 0.5D, 1.0F);
+					Vec3 vec31 = this.getPosition(entityguardian, (double) entityguardian.getEyeHeight(), 1.0F);
 					if (icamera.isBoundingBoxInFrustum(AxisAlignedBB.fromBounds(vec31.xCoord, vec31.yCoord,
 							vec31.zCoord, vec3.xCoord, vec3.yCoord, vec3.zCoord))) {
 						return true;
@@ -69,7 +69,7 @@ public class RenderGuardian extends RenderLiving<EntityGuardian> {
 		}
 	}
 
-	private Vec3 func_177110_a(EntityLivingBase entityLivingBaseIn, double parDouble1, float parFloat1) {
+	private Vec3 getPosition(EntityLivingBase entityLivingBaseIn, double parDouble1, float parFloat1) {
 		double d0 = entityLivingBaseIn.lastTickPosX
 				+ (entityLivingBaseIn.posX - entityLivingBaseIn.lastTickPosX) * (double) parFloat1;
 		double d1 = parDouble1 + entityLivingBaseIn.lastTickPosY
@@ -89,15 +89,15 @@ public class RenderGuardian extends RenderLiving<EntityGuardian> {
 	 * double d2, float f, float f1). But JAD is pre 1.5 so doe
 	 */
 	public void doRender(EntityGuardian entityguardian, double d0, double d1, double d2, float f, float f1) {
-		if (this.field_177115_a != ((ModelGuardian) this.mainModel).func_178706_a()) {
+		if (this.lastModelVersion != ((ModelGuardian) this.mainModel).getModelVersion()) {
 			this.mainModel = new ModelGuardian();
-			this.field_177115_a = ((ModelGuardian) this.mainModel).func_178706_a();
+			this.lastModelVersion = ((ModelGuardian) this.mainModel).getModelVersion();
 		}
 
 		super.doRender(entityguardian, d0, d1, d2, f, f1);
 		EntityLivingBase entitylivingbase = entityguardian.getTargetedEntity();
 		if (entitylivingbase != null) {
-			float f2 = entityguardian.func_175477_p(f1);
+			float f2 = entityguardian.getAttackAnimationScale(f1);
 			Tessellator tessellator = Tessellator.getInstance();
 			WorldRenderer worldrenderer = tessellator.getWorldRenderer();
 			this.bindTexture(GUARDIAN_BEAM_TEXTURE);
@@ -115,8 +115,8 @@ public class RenderGuardian extends RenderLiving<EntityGuardian> {
 			float f6 = entityguardian.getEyeHeight();
 			GlStateManager.pushMatrix();
 			GlStateManager.translate((float) d0, (float) d1 + f6, (float) d2);
-			Vec3 vec3 = this.func_177110_a(entitylivingbase, (double) entitylivingbase.height * 0.5D, f1);
-			Vec3 vec31 = this.func_177110_a(entityguardian, (double) f6, f1);
+			Vec3 vec3 = this.getPosition(entitylivingbase, (double) entitylivingbase.height * 0.5D, f1);
+			Vec3 vec31 = this.getPosition(entityguardian, (double) f6, f1);
 			Vec3 vec32 = vec3.subtract(vec31);
 			double d3 = vec32.lengthVector() + 1.0D;
 			vec32 = vec32.normalize();

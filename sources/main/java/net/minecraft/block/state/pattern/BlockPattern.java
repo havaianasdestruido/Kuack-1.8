@@ -137,15 +137,15 @@ public class BlockPattern {
 
 	static class CacheLoader implements EaglerCacheProvider<BlockPos, BlockWorldState> {
 		private final World world;
-		private final boolean field_181626_b;
+		private final boolean forceLoad;
 
 		public CacheLoader(World parWorld, boolean parFlag) {
 			this.world = parWorld;
-			this.field_181626_b = parFlag;
+			this.forceLoad = parFlag;
 		}
 
 		public BlockWorldState create(BlockPos parBlockPos) {
-			return new BlockWorldState(this.world, parBlockPos, this.field_181626_b);
+			return new BlockWorldState(this.world, parBlockPos, this.forceLoad);
 		}
 	}
 
@@ -154,9 +154,9 @@ public class BlockPattern {
 		private final EnumFacing finger;
 		private final EnumFacing thumb;
 		private final EaglerLoadingCache<BlockPos, BlockWorldState> lcache;
-		private final int field_181120_e;
-		private final int field_181121_f;
-		private final int field_181122_g;
+		private final int width;
+		private final int height;
+		private final int depth;
 
 		public PatternHelper(BlockPos parBlockPos, EnumFacing parEnumFacing, EnumFacing parEnumFacing2,
 				EaglerLoadingCache<BlockPos, BlockWorldState> parLoadingCache, int parInt1, int parInt2, int parInt3) {
@@ -164,12 +164,12 @@ public class BlockPattern {
 			this.finger = parEnumFacing;
 			this.thumb = parEnumFacing2;
 			this.lcache = parLoadingCache;
-			this.field_181120_e = parInt1;
-			this.field_181121_f = parInt2;
-			this.field_181122_g = parInt3;
+			this.width = parInt1;
+			this.height = parInt2;
+			this.depth = parInt3;
 		}
 
-		public BlockPos func_181117_a() {
+		public BlockPos getFrontTopLeft() {
 			return this.pos;
 		}
 
@@ -181,12 +181,12 @@ public class BlockPattern {
 			return this.thumb;
 		}
 
-		public int func_181118_d() {
-			return this.field_181120_e;
+		public int getWidth() {
+			return this.width;
 		}
 
-		public int func_181119_e() {
-			return this.field_181121_f;
+		public int getHeight() {
+			return this.height;
 		}
 
 		/**+

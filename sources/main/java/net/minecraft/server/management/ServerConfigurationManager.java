@@ -139,7 +139,7 @@ public abstract class ServerConfigurationManager {
 		nethandlerplayserver.sendPacket(new S05PacketSpawnPosition(blockpos));
 		nethandlerplayserver.sendPacket(new S39PacketPlayerAbilities(playerIn.capabilities));
 		nethandlerplayserver.sendPacket(new S09PacketHeldItemChange(playerIn.inventory.currentItem));
-		playerIn.getStatFile().func_150877_d();
+		playerIn.getStatFile().markAllDirty();
 		playerIn.getStatFile().sendAchievements(playerIn);
 		this.sendScoreboard((ServerScoreboard) worldserver.getScoreboard(), playerIn);
 		this.mcServer.refreshStatusNextTick();
@@ -441,7 +441,7 @@ public abstract class ServerConfigurationManager {
 		entityplayermp.playerNetServerHandler = playerIn.playerNetServerHandler;
 		entityplayermp.clonePlayer(playerIn, conqueredEnd);
 		entityplayermp.setEntityId(playerIn.getEntityId());
-		entityplayermp.func_174817_o(playerIn);
+		entityplayermp.setCommandStats(playerIn);
 		WorldServer worldserver = this.mcServer.worldServerForDimension(playerIn.dimension);
 		this.setPlayerGameTypeBasedOnOther(entityplayermp, playerIn, worldserver);
 		if (blockpos != null) {
@@ -630,7 +630,7 @@ public abstract class ServerConfigurationManager {
 		}
 	}
 
-	public String func_181058_b(boolean parFlag) {
+	public String getFormattedListOfPlayers(boolean parFlag) {
 		String s = "";
 		ArrayList arraylist = Lists.newArrayList(this.playerEntityList);
 
@@ -909,7 +909,7 @@ public abstract class ServerConfigurationManager {
 		return (EntityPlayerMP) this.uuidToPlayerMap.get(playerUUID);
 	}
 
-	public boolean func_183023_f(GameProfile var1) {
+	public boolean bypassesPlayerLimit(GameProfile var1) {
 		return false;
 	}
 

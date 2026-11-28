@@ -29,7 +29,7 @@ import net.minecraft.world.World;
 public class BlockWorldState {
 	private final World world;
 	private final BlockPos pos;
-	private final boolean field_181628_c;
+	private final boolean forceLoad;
 	private IBlockState state;
 	private TileEntity tileEntity;
 	private boolean tileEntityInitialized;
@@ -37,11 +37,11 @@ public class BlockWorldState {
 	public BlockWorldState(World parWorld, BlockPos parBlockPos, boolean parFlag) {
 		this.world = parWorld;
 		this.pos = parBlockPos;
-		this.field_181628_c = parFlag;
+		this.forceLoad = parFlag;
 	}
 
 	public IBlockState getBlockState() {
-		if (this.state == null && (this.field_181628_c || this.world.isBlockLoaded(this.pos))) {
+		if (this.state == null && (this.forceLoad || this.world.isBlockLoaded(this.pos))) {
 			this.state = this.world.getBlockState(this.pos);
 		}
 

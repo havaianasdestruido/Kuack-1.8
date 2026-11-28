@@ -44,7 +44,7 @@ public class LoadingScreenRenderer implements IProgressUpdate {
 	 * The system's time represented in milliseconds.
 	 */
 	private long systemTime = Minecraft.getSystemTime();
-	private boolean field_73724_e;
+	private boolean loadingSuccess;
 	private ScaledResolution scaledResolution;
 
 	public LoadingScreenRenderer(Minecraft mcIn) {
@@ -58,7 +58,7 @@ public class LoadingScreenRenderer implements IProgressUpdate {
 	 * and the WorkingString to "working...".
 	 */
 	public void resetProgressAndMessage(String message) {
-		this.field_73724_e = false;
+		this.loadingSuccess = false;
 		this.displayString(message);
 	}
 
@@ -66,14 +66,14 @@ public class LoadingScreenRenderer implements IProgressUpdate {
 	 * Shows the 'Saving level' string.
 	 */
 	public void displaySavingString(String message) {
-		this.field_73724_e = true;
+		this.loadingSuccess = true;
 		this.displayString(message);
 	}
 
 	private void displayString(String message) {
 		this.currentlyDisplayedText = message;
 		if (!this.mc.running) {
-			if (!this.field_73724_e) {
+			if (!this.loadingSuccess) {
 				throw new MinecraftError();
 			}
 		} else {
@@ -95,7 +95,7 @@ public class LoadingScreenRenderer implements IProgressUpdate {
 	 */
 	public void displayLoadingString(String message) {
 		if (!this.mc.running) {
-			if (!this.field_73724_e) {
+			if (!this.loadingSuccess) {
 				throw new MinecraftError();
 			}
 		} else {
@@ -108,7 +108,7 @@ public class LoadingScreenRenderer implements IProgressUpdate {
 
 	public void eaglerShow(String line1, String line2) {
 		if (!this.mc.running) {
-			if (!this.field_73724_e) {
+			if (!this.loadingSuccess) {
 				throw new MinecraftError();
 			}
 		} else {
@@ -130,7 +130,7 @@ public class LoadingScreenRenderer implements IProgressUpdate {
 	 */
 	public void setLoadingProgress(int progress) {
 		if (!this.mc.running) {
-			if (!this.field_73724_e) {
+			if (!this.loadingSuccess) {
 				throw new MinecraftError();
 			}
 		} else {

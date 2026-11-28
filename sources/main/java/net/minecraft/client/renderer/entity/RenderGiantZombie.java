@@ -38,8 +38,8 @@ public class RenderGiantZombie extends RenderLiving<EntityGiantZombie> {
 		this.addLayer(new LayerHeldItem(this));
 		this.addLayer(new LayerBipedArmor(this) {
 			protected void initArmor() {
-				this.field_177189_c = new ModelZombie(0.5F, false);
-				this.field_177186_d = new ModelZombie(1.0F, false);
+				this.modelLeggings = new ModelZombie(0.5F, false);
+				this.modelArmor = new ModelZombie(1.0F, false);
 			}
 		});
 	}

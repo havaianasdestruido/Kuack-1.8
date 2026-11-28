@@ -34,66 +34,66 @@ import net.minecraft.util.ResourceLocation;
  * 
  */
 public class GuiSpectator extends Gui implements ISpectatorMenuRecipient {
-	private static final ResourceLocation field_175267_f = new ResourceLocation("textures/gui/widgets.png");
-	public static final ResourceLocation field_175269_a = new ResourceLocation("textures/gui/spectator_widgets.png");
-	private final Minecraft field_175268_g;
-	private long field_175270_h;
-	private SpectatorMenu field_175271_i;
+	private static final ResourceLocation WIDGETS = new ResourceLocation("textures/gui/widgets.png");
+	public static final ResourceLocation SPECTATOR_WIDGETS = new ResourceLocation("textures/gui/spectator_widgets.png");
+	private final Minecraft mc;
+	private long lastSelectionTime;
+	private SpectatorMenu menu;
 
 	public GuiSpectator(Minecraft mcIn) {
-		this.field_175268_g = mcIn;
+		this.mc = mcIn;
 	}
 
-	public void func_175260_a(int parInt1) {
-		this.field_175270_h = Minecraft.getSystemTime();
-		if (this.field_175271_i != null) {
-			this.field_175271_i.func_178644_b(parInt1);
+	public void onHotbarSelected(int parInt1) {
+		this.lastSelectionTime = Minecraft.getSystemTime();
+		if (this.menu != null) {
+			this.menu.selectSlot(parInt1);
 		} else {
-			this.field_175271_i = new SpectatorMenu(this);
+			this.menu = new SpectatorMenu(this);
 		}
 
 	}
 
-	private float func_175265_c() {
-		long i = this.field_175270_h - Minecraft.getSystemTime() + 5000L;
+	private float getHotbarAlpha() {
+		long i = this.lastSelectionTime - Minecraft.getSystemTime() + 5000L;
 		return MathHelper.clamp_float((float) i / 2000.0F, 0.0F, 1.0F);
 	}
 
 	public void renderTooltip(ScaledResolution parScaledResolution, float parFloat1) {
-		if (this.field_175271_i != null) {
-			float f = this.func_175265_c();
+		if (this.menu != null) {
+			float f = this.getHotbarAlpha();
 			if (f <= 0.0F) {
-				this.field_175271_i.func_178641_d();
+				this.menu.exit();
 			} else {
 				int i = parScaledResolution.getScaledWidth() / 2;
 				float f1 = this.zLevel;
 				this.zLevel = -90.0F;
 				float f2 = (float) parScaledResolution.getScaledHeight() - 22.0F * f;
-				SpectatorDetails spectatordetails = this.field_175271_i.func_178646_f();
-				this.func_175258_a(parScaledResolution, f, i, f2, spectatordetails);
+				SpectatorDetails spectatordetails = this.menu.getCurrentPage();
+				this.renderPage(parScaledResolution, f, i, f2, spectatordetails);
 				this.zLevel = f1;
 			}
 		}
 	}
 
-	protected void func_175258_a(ScaledResolution parScaledResolution, float parFloat1, int parInt1, float parFloat2,
+	protected void renderPage(ScaledResolution parScaledResolution, float parFloat1, int parInt1, float parFloat2,
 			SpectatorDetails parSpectatorDetails) {
 		GlStateManager.enableRescaleNormal();
 		GlStateManager.enableBlend();
 		GlStateManager.tryBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
 		GlStateManager.color(1.0F, 1.0F, 1.0F, parFloat1);
-		this.field_175268_g.getTextureManager().bindTexture(field_175267_f);
+		this.mc.getTextureManager().bindTexture(WIDGETS);
 		this.drawTexturedModalRect((float) (parInt1 - 91), parFloat2, 0, 0, 182, 22);
-		if (parSpectatorDetails.func_178681_b() >= 0) {
-			this.drawTexturedModalRect((float) (parInt1 - 91 - 1 + parSpectatorDetails.func_178681_b() * 20),
+		if (parSpectatorDetails.getSelectedSlot() >= 0) {
+			this.drawTexturedModalRect((float) (parInt1 - 91 - 1 + parSpectatorDetails.getSelectedSlot() * 20),
 					parFloat2 - 1.0F, 0, 22, 24, 22);
 		}
 
 		RenderHelper.enableGUIStandardItemLighting();
 
 		for (int i = 0; i < 9; ++i) {
-			this.func_175266_a(i, parScaledResolution.getScaledWidth() / 2 - 90 + i * 20 + 2, parFloat2 + 3.0F,
-					parFloat1, parSpectatorDetails.func_178680_a(i));
+			this.renderSlot(i, parScaledResolution.getScaledWidth() / 2 - 90 + i * 20 + 2, parFloat2 + 3.0F,
+					parFloat1, parSpectatorDetails.getObject(i));
 		}
 
 		RenderHelper.disableStandardItemLighting();
@@ -101,43 +101,43 @@ public class GuiSpectator extends Gui implements ISpectatorMenuRecipient {
 		GlStateManager.disableBlend();
 	}
 
-	private void func_175266_a(int parInt1, int parInt2, float parFloat1, float parFloat2,
+	private void renderSlot(int parInt1, int parInt2, float parFloat1, float parFloat2,
 			ISpectatorMenuObject parISpectatorMenuObject) {
-		this.field_175268_g.getTextureManager().bindTexture(field_175269_a);
-		if (parISpectatorMenuObject != SpectatorMenu.field_178657_a) {
+		this.mc.getTextureManager().bindTexture(SPECTATOR_WIDGETS);
+		if (parISpectatorMenuObject != SpectatorMenu.EMPTY_SLOT) {
 			int i = (int) (parFloat2 * 255.0F);
 			GlStateManager.pushMatrix();
 			GlStateManager.translate((float) parInt2, parFloat1, 0.0F);
-			float f = parISpectatorMenuObject.func_178662_A_() ? 1.0F : 0.25F;
+			float f = parISpectatorMenuObject.isEnabled() ? 1.0F : 0.25F;
 			GlStateManager.color(f, f, f, parFloat2);
-			parISpectatorMenuObject.func_178663_a(f, i);
+			parISpectatorMenuObject.renderIcon(f, i);
 			GlStateManager.popMatrix();
 			String s = String.valueOf(GameSettings
-					.getKeyDisplayString(this.field_175268_g.gameSettings.keyBindsHotbar[parInt1].getKeyCode()));
-			if (i > 3 && parISpectatorMenuObject.func_178662_A_()) {
-				this.field_175268_g.fontRendererObj.drawStringWithShadow(s,
-						(float) (parInt2 + 19 - 2 - this.field_175268_g.fontRendererObj.getStringWidth(s)),
+					.getKeyDisplayString(this.mc.gameSettings.keyBindsHotbar[parInt1].getKeyCode()));
+			if (i > 3 && parISpectatorMenuObject.isEnabled()) {
+				this.mc.fontRendererObj.drawStringWithShadow(s,
+						(float) (parInt2 + 19 - 2 - this.mc.fontRendererObj.getStringWidth(s)),
 						parFloat1 + 6.0F + 3.0F, 16777215 + (i << 24));
 			}
 		}
 
 	}
 
-	public void func_175263_a(ScaledResolution parScaledResolution) {
-		int i = (int) (this.func_175265_c() * 255.0F);
-		if (i > 3 && this.field_175271_i != null) {
-			ISpectatorMenuObject ispectatormenuobject = this.field_175271_i.func_178645_b();
-			String s = ispectatormenuobject != SpectatorMenu.field_178657_a
+	public void renderSelectedItem(ScaledResolution parScaledResolution) {
+		int i = (int) (this.getHotbarAlpha() * 255.0F);
+		if (i > 3 && this.menu != null) {
+			ISpectatorMenuObject ispectatormenuobject = this.menu.getSelectedItem();
+			String s = ispectatormenuobject != SpectatorMenu.EMPTY_SLOT
 					? ispectatormenuobject.getSpectatorName().getFormattedText()
-					: this.field_175271_i.func_178650_c().func_178670_b().getFormattedText();
+					: this.menu.getSelectedCategory().getPrompt().getFormattedText();
 			if (s != null) {
-				int j = (parScaledResolution.getScaledWidth() - this.field_175268_g.fontRendererObj.getStringWidth(s))
+				int j = (parScaledResolution.getScaledWidth() - this.mc.fontRendererObj.getStringWidth(s))
 						/ 2;
 				int k = parScaledResolution.getScaledHeight() - 35;
 				GlStateManager.pushMatrix();
 				GlStateManager.enableBlend();
 				GlStateManager.tryBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
-				this.field_175268_g.fontRendererObj.drawStringWithShadow(s, (float) j, (float) k, 16777215 + (i << 24));
+				this.mc.fontRendererObj.drawStringWithShadow(s, (float) j, (float) k, 16777215 + (i << 24));
 				GlStateManager.disableBlend();
 				GlStateManager.popMatrix();
 			}
@@ -145,39 +145,39 @@ public class GuiSpectator extends Gui implements ISpectatorMenuRecipient {
 
 	}
 
-	public void func_175257_a(SpectatorMenu parSpectatorMenu) {
-		this.field_175271_i = null;
-		this.field_175270_h = 0L;
+	public void onSpectatorMenuClosed(SpectatorMenu parSpectatorMenu) {
+		this.menu = null;
+		this.lastSelectionTime = 0L;
 	}
 
-	public boolean func_175262_a() {
-		return this.field_175271_i != null;
+	public boolean isMenuActive() {
+		return this.menu != null;
 	}
 
-	public void func_175259_b(int parInt1) {
+	public void onMouseScroll(int parInt1) {
 		int i;
-		for (i = this.field_175271_i.func_178648_e() + parInt1; i >= 0 && i <= 8
-				&& (this.field_175271_i.func_178643_a(i) == SpectatorMenu.field_178657_a
-						|| !this.field_175271_i.func_178643_a(i).func_178662_A_()); i += parInt1) {
+		for (i = this.menu.getSelectedSlot() + parInt1; i >= 0 && i <= 8
+				&& (this.menu.getItem(i) == SpectatorMenu.EMPTY_SLOT
+						|| !this.menu.getItem(i).isEnabled()); i += parInt1) {
 			;
 		}
 
 		if (i >= 0 && i <= 8) {
-			this.field_175271_i.func_178644_b(i);
-			this.field_175270_h = Minecraft.getSystemTime();
+			this.menu.selectSlot(i);
+			this.lastSelectionTime = Minecraft.getSystemTime();
 		}
 
 	}
 
-	public void func_175261_b() {
-		this.field_175270_h = Minecraft.getSystemTime();
-		if (this.func_175262_a()) {
-			int i = this.field_175271_i.func_178648_e();
+	public void onMiddleClick() {
+		this.lastSelectionTime = Minecraft.getSystemTime();
+		if (this.isMenuActive()) {
+			int i = this.menu.getSelectedSlot();
 			if (i != -1) {
-				this.field_175271_i.func_178644_b(i);
+				this.menu.selectSlot(i);
 			}
 		} else {
-			this.field_175271_i = new SpectatorMenu(this);
+			this.menu = new SpectatorMenu(this);
 		}
 
 	}

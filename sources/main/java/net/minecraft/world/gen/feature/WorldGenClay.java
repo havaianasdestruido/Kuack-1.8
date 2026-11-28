@@ -28,7 +28,7 @@ import net.minecraft.world.World;
  * 
  */
 public class WorldGenClay extends WorldGenerator {
-	private Block field_150546_a = Blocks.clay;
+	private Block WorldGenClayBlock = Blocks.clay;
 	private int numberOfBlocks;
 
 	public WorldGenClay(int parInt1) {
@@ -51,7 +51,7 @@ public class WorldGenClay extends WorldGenerator {
 							BlockPos blockpos1 = new BlockPos(j, j1, k);
 							Block block = world.getBlockState(blockpos1).getBlock();
 							if (block == Blocks.dirt || block == Blocks.clay) {
-								world.setBlockState(blockpos1, this.field_150546_a.getDefaultState(), 2);
+								world.setBlockState(blockpos1, this.WorldGenClayBlock.getDefaultState(), 2);
 							}
 						}
 					}

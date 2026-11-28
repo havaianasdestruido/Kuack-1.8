@@ -58,7 +58,7 @@ public abstract class BlockWoodSlab extends BlockSlab {
 	 * Get the MapColor for this Block and the given BlockState
 	 */
 	public MapColor getMapColor(IBlockState iblockstate) {
-		return ((BlockPlanks.EnumType) iblockstate.getValue(VARIANT)).func_181070_c();
+		return ((BlockPlanks.EnumType) iblockstate.getValue(VARIANT)).BlockPlanksGetMapColor();
 	}
 
 	/**+

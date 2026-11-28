@@ -35,16 +35,16 @@ import net.minecraft.util.ResourceLocation;
  */
 public class ResourcePackListEntryDefault extends ResourcePackListEntry {
 	private static final Logger logger = LogManager.getLogger();
-	private final IResourcePack field_148320_d;
+	private final IResourcePack resourcePack;
 	private final ResourceLocation resourcePackIcon;
 
 	public ResourcePackListEntryDefault(GuiScreenResourcePacks resourcePacksGUIIn) {
 		super(resourcePacksGUIIn);
-		this.field_148320_d = this.mc.getResourcePackRepository().rprDefaultResourcePack;
+		this.resourcePack = this.mc.getResourcePackRepository().rprDefaultResourcePack;
 
 		DynamicTexture dynamictexture;
 		try {
-			dynamictexture = new DynamicTexture(this.field_148320_d.getPackImage());
+			dynamictexture = new DynamicTexture(this.resourcePack.getPackImage());
 		} catch (IOException var4) {
 			dynamictexture = TextureUtil.missingTexture;
 		}
@@ -53,13 +53,13 @@ public class ResourcePackListEntryDefault extends ResourcePackListEntry {
 				dynamictexture);
 	}
 
-	protected int func_183019_a() {
+	protected int getResourcePackFormat() {
 		return 1;
 	}
 
-	protected String func_148311_a() {
+	protected String getResourcePackDescription() {
 		try {
-			PackMetadataSection packmetadatasection = (PackMetadataSection) this.field_148320_d
+			PackMetadataSection packmetadatasection = (PackMetadataSection) this.resourcePack
 					.getPackMetadata(this.mc.getResourcePackRepository().rprMetadataSerializer, "pack");
 			if (packmetadatasection != null) {
 				return packmetadatasection.getPackDescription().getFormattedText();
@@ -73,31 +73,31 @@ public class ResourcePackListEntryDefault extends ResourcePackListEntry {
 		return EnumChatFormatting.RED + "Missing " + "pack.mcmeta" + " :(";
 	}
 
-	protected boolean func_148309_e() {
+	protected boolean canMoveRight() {
 		return false;
 	}
 
-	protected boolean func_148308_f() {
+	protected boolean canMoveLeft() {
 		return false;
 	}
 
-	protected boolean func_148314_g() {
+	protected boolean canMoveUp() {
 		return false;
 	}
 
-	protected boolean func_148307_h() {
+	protected boolean canMoveDown() {
 		return false;
 	}
 
-	protected String func_148312_b() {
+	protected String getResourcePackName() {
 		return "Default";
 	}
 
-	protected void func_148313_c() {
+	protected void bindResourcePackIcon() {
 		this.mc.getTextureManager().bindTexture(this.resourcePackIcon);
 	}
 
-	protected boolean func_148310_d() {
+	protected boolean showHoverOverlay() {
 		return false;
 	}
 

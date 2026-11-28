@@ -28,10 +28,10 @@ import net.minecraft.world.gen.feature.WorldGenerator;
  */
 public class GeneratorBushFeature extends WorldGenerator {
 
-	private BlockBush field_175908_a;
+	private BlockBush block;
 
 	public GeneratorBushFeature(BlockBush parBlockBush) {
-		this.field_175908_a = parBlockBush;
+		this.block = parBlockBush;
 	}
 
 	public boolean generate(World world, EaglercraftRandom random, BlockPos blockpos) {
@@ -39,8 +39,8 @@ public class GeneratorBushFeature extends WorldGenerator {
 			BlockPos blockpos1 = blockpos.add(random.nextInt(8) - random.nextInt(8),
 					random.nextInt(4) - random.nextInt(4), random.nextInt(8) - random.nextInt(8));
 			if (world.isAirBlock(blockpos1) && (!world.provider.getHasNoSky() || blockpos1.getY() < 255)
-					&& this.field_175908_a.canBlockStay(world, blockpos1, this.field_175908_a.getDefaultState())) {
-				world.setBlockState(blockpos1, this.field_175908_a.getDefaultState(), 2);
+					&& this.block.canBlockStay(world, blockpos1, this.block.getDefaultState())) {
+				world.setBlockState(blockpos1, this.block.getDefaultState(), 2);
 			}
 		}
 

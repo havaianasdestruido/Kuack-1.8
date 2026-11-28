@@ -29,7 +29,7 @@ public abstract class EntityAIMoveToBlock extends EntityAIBase {
 	private final double movementSpeed;
 	protected int runDelay;
 	private int timeoutCounter;
-	private int field_179490_f;
+	private int maxStayTicks;
 	/**+
 	 * Block to move to
 	 */
@@ -62,7 +62,7 @@ public abstract class EntityAIMoveToBlock extends EntityAIBase {
 	 * executing
 	 */
 	public boolean continueExecuting() {
-		return this.timeoutCounter >= -this.field_179490_f && this.timeoutCounter <= 1200
+		return this.timeoutCounter >= -this.maxStayTicks && this.timeoutCounter <= 1200
 				&& this.shouldMoveTo(this.theEntity.worldObj, this.destinationBlock);
 	}
 
@@ -74,7 +74,7 @@ public abstract class EntityAIMoveToBlock extends EntityAIBase {
 				(double) (this.destinationBlock.getY() + 1), (double) ((float) this.destinationBlock.getZ()) + 0.5D,
 				this.movementSpeed);
 		this.timeoutCounter = 0;
-		this.field_179490_f = this.theEntity.getRNG().nextInt(this.theEntity.getRNG().nextInt(1200) + 1200) + 1200;
+		this.maxStayTicks = this.theEntity.getRNG().nextInt(this.theEntity.getRNG().nextInt(1200) + 1200) + 1200;
 	}
 
 	/**+

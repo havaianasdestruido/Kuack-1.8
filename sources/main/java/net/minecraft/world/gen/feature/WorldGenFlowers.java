@@ -28,7 +28,7 @@ import net.minecraft.world.World;
  */
 public class WorldGenFlowers extends WorldGenerator {
 	private BlockFlower flower;
-	private IBlockState field_175915_b;
+	private IBlockState state;
 
 	public WorldGenFlowers(BlockFlower parBlockFlower, BlockFlower.EnumFlowerType parEnumFlowerType) {
 		this.setGeneratedBlock(parBlockFlower, parEnumFlowerType);
@@ -36,7 +36,7 @@ public class WorldGenFlowers extends WorldGenerator {
 
 	public void setGeneratedBlock(BlockFlower parBlockFlower, BlockFlower.EnumFlowerType parEnumFlowerType) {
 		this.flower = parBlockFlower;
-		this.field_175915_b = parBlockFlower.getDefaultState().withProperty(parBlockFlower.getTypeProperty(),
+		this.state = parBlockFlower.getDefaultState().withProperty(parBlockFlower.getTypeProperty(),
 				parEnumFlowerType);
 	}
 
@@ -45,8 +45,8 @@ public class WorldGenFlowers extends WorldGenerator {
 			BlockPos blockpos1 = blockpos.add(random.nextInt(8) - random.nextInt(8),
 					random.nextInt(4) - random.nextInt(4), random.nextInt(8) - random.nextInt(8));
 			if (world.isAirBlock(blockpos1) && (!world.provider.getHasNoSky() || blockpos1.getY() < 255)
-					&& this.flower.canBlockStay(world, blockpos1, this.field_175915_b)) {
-				world.setBlockState(blockpos1, this.field_175915_b, 2);
+					&& this.flower.canBlockStay(world, blockpos1, this.state)) {
+				world.setBlockState(blockpos1, this.state, 2);
 			}
 		}
 

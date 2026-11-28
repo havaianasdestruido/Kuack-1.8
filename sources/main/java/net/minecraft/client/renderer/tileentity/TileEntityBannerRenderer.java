@@ -82,7 +82,7 @@ public class TileEntityBannerRenderer extends TileEntitySpecialRenderer<TileEnti
 		this.bannerModel.bannerSlate.rotateAngleX = (-0.0125F + 0.01F * MathHelper.cos(f3 * 3.1415927F * 0.02F))
 				* 3.1415927F;
 		GlStateManager.enableRescaleNormal();
-		ResourceLocation resourcelocation = this.func_178463_a(te);
+		ResourceLocation resourcelocation = this.getBannerResourceLocation(te);
 		if (resourcelocation != null) {
 			this.bindTexture(resourcelocation);
 			GlStateManager.pushMatrix();
@@ -95,8 +95,8 @@ public class TileEntityBannerRenderer extends TileEntitySpecialRenderer<TileEnti
 		GlStateManager.popMatrix();
 	}
 
-	private ResourceLocation func_178463_a(TileEntityBanner bannerObj) {
-		String s = bannerObj.func_175116_e();
+	private ResourceLocation getBannerResourceLocation(TileEntityBanner bannerObj) {
+		String s = bannerObj.getPatternResourceLocation();
 		if (s.isEmpty()) {
 			return null;
 		} else {

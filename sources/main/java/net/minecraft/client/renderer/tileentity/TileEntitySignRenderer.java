@@ -109,7 +109,7 @@ public class TileEntitySignRenderer extends TileEntitySpecialRenderer<TileEntity
 			for (int j = 0; j < tileentitysign.signText.length; ++j) {
 				if (tileentitysign.signText[j] != null) {
 					IChatComponent ichatcomponent = tileentitysign.signText[j];
-					List list = GuiUtilRenderComponents.func_178908_a(ichatcomponent, 90, fontrenderer, false, true);
+					List list = GuiUtilRenderComponents.splitText(ichatcomponent, 90, fontrenderer, false, true);
 					String s = list != null && list.size() > 0 ? ((IChatComponent) list.get(0)).getFormattedText() : "";
 					if (j == tileentitysign.lineBeingEdited) {
 						s = "> " + s + " <";

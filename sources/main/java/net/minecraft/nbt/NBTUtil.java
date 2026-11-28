@@ -115,7 +115,7 @@ public final class NBTUtil {
 		return tagCompound;
 	}
 
-	public static boolean func_181123_a(NBTBase parNBTBase, NBTBase parNBTBase2, boolean parFlag) {
+	public static boolean areNBTEquals(NBTBase parNBTBase, NBTBase parNBTBase2, boolean parFlag) {
 		if (parNBTBase == parNBTBase2) {
 			return true;
 		} else if (parNBTBase == null) {
@@ -130,7 +130,7 @@ public final class NBTUtil {
 
 			for (String s : nbttagcompound.getKeySet()) {
 				NBTBase nbtbase1 = nbttagcompound.getTag(s);
-				if (!func_181123_a(nbtbase1, nbttagcompound1.getTag(s), parFlag)) {
+				if (!areNBTEquals(nbtbase1, nbttagcompound1.getTag(s), parFlag)) {
 					return false;
 				}
 			}
@@ -147,7 +147,7 @@ public final class NBTUtil {
 					boolean flag = false;
 
 					for (int j = 0; j < nbttaglist1.tagCount(); ++j) {
-						if (func_181123_a(nbtbase, nbttaglist1.get(j), parFlag)) {
+						if (areNBTEquals(nbtbase, nbttaglist1.get(j), parFlag)) {
 							flag = true;
 							break;
 						}

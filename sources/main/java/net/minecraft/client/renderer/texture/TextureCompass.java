@@ -30,11 +30,11 @@ import net.minecraft.world.World;
 public class TextureCompass extends EaglerTextureAtlasSprite {
 	public double currentAngle;
 	public double angleDelta;
-	public static String field_176608_l;
+	public static String locationSprite;
 
 	public TextureCompass(String iconName) {
 		super(iconName);
-		field_176608_l = iconName;
+		locationSprite = iconName;
 	}
 
 	public void updateAnimation(IFramebufferGL[] copyColorFramebuffer) {

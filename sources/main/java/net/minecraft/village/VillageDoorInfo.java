@@ -63,7 +63,7 @@ public class VillageDoorInfo {
 		return (int) this.insideBlock.distanceSq(parBlockPos);
 	}
 
-	public boolean func_179850_c(BlockPos parBlockPos) {
+	public boolean isInsideSide(BlockPos parBlockPos) {
 		int i = parBlockPos.getX() - this.doorBlockPos.getX();
 		int j = parBlockPos.getZ() - this.doorBlockPos.getY();
 		return i * this.insideDirection.getFrontOffsetX() + j * this.insideDirection.getFrontOffsetZ() >= 0;
@@ -101,7 +101,7 @@ public class VillageDoorInfo {
 		return this.lastActivityTimestamp;
 	}
 
-	public void func_179849_a(int parInt1) {
+	public void setLastActivityTimestamp(int parInt1) {
 		this.lastActivityTimestamp = parInt1;
 	}
 

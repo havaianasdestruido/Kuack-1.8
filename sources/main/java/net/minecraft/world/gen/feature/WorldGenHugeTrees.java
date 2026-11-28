@@ -43,7 +43,7 @@ public abstract class WorldGenHugeTrees extends WorldGenAbstractTree {
 		this.leavesMetadata = parIBlockState2;
 	}
 
-	protected int func_150533_a(EaglercraftRandom parRandom) {
+	protected int getHeight(EaglercraftRandom parRandom) {
 		int i = parRandom.nextInt(3) + this.baseHeight;
 		if (this.extraRandomHeight > 1) {
 			i += parRandom.nextInt(this.extraRandomHeight);
@@ -52,7 +52,7 @@ public abstract class WorldGenHugeTrees extends WorldGenAbstractTree {
 		return i;
 	}
 
-	private boolean func_175926_c(World worldIn, BlockPos parBlockPos, int parInt1) {
+	private boolean isSpaceAt(World worldIn, BlockPos parBlockPos, int parInt1) {
 		boolean flag = true;
 		if (parBlockPos.getY() >= 1 && parBlockPos.getY() + parInt1 + 1 <= 256) {
 			for (int i = 0; i <= 1 + parInt1; ++i) {
@@ -66,7 +66,7 @@ public abstract class WorldGenHugeTrees extends WorldGenAbstractTree {
 				for (int j = -b0; j <= b0 && flag; ++j) {
 					for (int k = -b0; k <= b0 && flag; ++k) {
 						if (parBlockPos.getY() + i < 0 || parBlockPos.getY() + i >= 256
-								|| !this.func_150523_a(worldIn.getBlockState(parBlockPos.add(j, i, k)).getBlock())) {
+								|| !this.canGrowInto(worldIn.getBlockState(parBlockPos.add(j, i, k)).getBlock())) {
 							flag = false;
 						}
 					}
@@ -79,25 +79,25 @@ public abstract class WorldGenHugeTrees extends WorldGenAbstractTree {
 		}
 	}
 
-	private boolean func_175927_a(BlockPos worldIn, World parWorld) {
+	private boolean ensureDirtsUnderneath(BlockPos worldIn, World parWorld) {
 		BlockPos blockpos = worldIn.down();
 		Block block = parWorld.getBlockState(blockpos).getBlock();
 		if ((block == Blocks.grass || block == Blocks.dirt) && worldIn.getY() >= 2) {
-			this.func_175921_a(parWorld, blockpos);
-			this.func_175921_a(parWorld, blockpos.east());
-			this.func_175921_a(parWorld, blockpos.south());
-			this.func_175921_a(parWorld, blockpos.south().east());
+			this.setDirtAt(parWorld, blockpos);
+			this.setDirtAt(parWorld, blockpos.east());
+			this.setDirtAt(parWorld, blockpos.south());
+			this.setDirtAt(parWorld, blockpos.south().east());
 			return true;
 		} else {
 			return false;
 		}
 	}
 
-	protected boolean func_175929_a(World worldIn, EaglercraftRandom parRandom, BlockPos parBlockPos, int parInt1) {
-		return this.func_175926_c(worldIn, parBlockPos, parInt1) && this.func_175927_a(parBlockPos, worldIn);
+	protected boolean ensureGrowable(World worldIn, EaglercraftRandom parRandom, BlockPos parBlockPos, int parInt1) {
+		return this.isSpaceAt(worldIn, parBlockPos, parInt1) && this.ensureDirtsUnderneath(parBlockPos, worldIn);
 	}
 
-	protected void func_175925_a(World worldIn, BlockPos parBlockPos, int parInt1) {
+	protected void growLeavesLayerStrict(World worldIn, BlockPos parBlockPos, int parInt1) {
 		int i = parInt1 * parInt1;
 
 		for (int j = -parInt1; j <= parInt1 + 1; ++j) {
@@ -116,7 +116,7 @@ public abstract class WorldGenHugeTrees extends WorldGenAbstractTree {
 
 	}
 
-	protected void func_175928_b(World worldIn, BlockPos parBlockPos, int parInt1) {
+	protected void growLeavesLayer(World worldIn, BlockPos parBlockPos, int parInt1) {
 		int i = parInt1 * parInt1;
 
 		for (int j = -parInt1; j <= parInt1; ++j) {

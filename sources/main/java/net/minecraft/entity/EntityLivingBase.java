@@ -101,8 +101,8 @@ public abstract class EntityLivingBase extends Entity {
 	public int maxHurtResistantTime = 20;
 	public float prevCameraPitch;
 	public float cameraPitch;
-	public float field_70769_ao;
-	public float field_70770_ap;
+	public float randomUnused2;
+	public float randomUnused1;
 	public float renderYawOffset;
 	public float prevRenderYawOffset;
 	public float rotationYawHead;
@@ -120,7 +120,7 @@ public abstract class EntityLivingBase extends Entity {
 	protected float onGroundSpeedFactor;
 	protected float movedDistance;
 	protected float prevMovedDistance;
-	protected float field_70741_aB;
+	protected float unused180;
 	protected int scoreValue;
 	protected float lastDamage;
 	protected boolean isJumping;
@@ -158,9 +158,9 @@ public abstract class EntityLivingBase extends Entity {
 		this.applyEntityAttributes();
 		this.setHealth(this.getMaxHealth());
 		this.preventEntitySpawning = true;
-		this.field_70770_ap = (float) ((Math.random() + 1.0D) * 0.009999999776482582D);
+		this.randomUnused1 = (float) ((Math.random() + 1.0D) * 0.009999999776482582D);
 		this.setPosition(this.posX, this.posY, this.posZ);
-		this.field_70769_ao = (float) Math.random() * 12398.0F;
+		this.randomUnused2 = (float) Math.random() * 12398.0F;
 		this.rotationYaw = (float) (Math.random() * 3.1415927410125732D * 2.0D);
 		this.rotationYawHead = this.rotationYaw;
 		this.stepHeight = 0.6F;
@@ -466,7 +466,7 @@ public abstract class EntityLivingBase extends Entity {
 	public void readEntityFromNBT(NBTTagCompound nbttagcompound) {
 		this.setAbsorptionAmount(nbttagcompound.getFloat("AbsorptionAmount"));
 		if (nbttagcompound.hasKey("Attributes", 9) && this.worldObj != null && !this.worldObj.isRemote) {
-			SharedMonsterAttributes.func_151475_a(this.getAttributeMap(), nbttagcompound.getTagList("Attributes", 10));
+			SharedMonsterAttributes.setAttributeModifiers(this.getAttributeMap(), nbttagcompound.getTagList("Attributes", 10));
 		}
 
 		if (nbttagcompound.hasKey("ActiveEffects", 9)) {
@@ -785,7 +785,7 @@ public abstract class EntityLivingBase extends Entity {
 							d1 = (Math.random() - Math.random()) * 0.01D;
 						}
 
-						this.attackedAtYaw = (float) (MathHelper.func_181159_b(d0, d1) * 180.0D / 3.1415927410125732D
+						this.attackedAtYaw = (float) (MathHelper.atan2(d0, d1) * 180.0D / 3.1415927410125732D
 								- (double) this.rotationYaw);
 						this.knockBack(entity, f, d1, d0);
 					} else {
@@ -838,7 +838,7 @@ public abstract class EntityLivingBase extends Entity {
 	 */
 	public void onDeath(DamageSource damagesource) {
 		Entity entity = damagesource.getEntity();
-		EntityLivingBase entitylivingbase = this.func_94060_bK();
+		EntityLivingBase entitylivingbase = this.getAttackingEntity();
 		if (this.scoreValue >= 0 && entitylivingbase != null) {
 			entitylivingbase.addToPlayerScore(this, this.scoreValue);
 		}
@@ -1066,8 +1066,8 @@ public abstract class EntityLivingBase extends Entity {
 		return this._combatTracker;
 	}
 
-	public EntityLivingBase func_94060_bK() {
-		return (EntityLivingBase) (this._combatTracker.func_94550_c() != null ? this._combatTracker.func_94550_c()
+	public EntityLivingBase getAttackingEntity() {
+		return (EntityLivingBase) (this._combatTracker.getBestAttacker() != null ? this._combatTracker.getBestAttacker()
 				: (this.attackingPlayer != null ? this.attackingPlayer
 						: (this.entityLivingToAttack != null ? this.entityLivingToAttack : null)));
 	}
@@ -1259,7 +1259,7 @@ public abstract class EntityLivingBase extends Entity {
 					int k = (int) (this.posX + (double) i);
 					int l = (int) (this.posZ + (double) j);
 					AxisAlignedBB axisalignedbb = this.getEntityBoundingBox().offset((double) i, 1.0D, (double) j);
-					if (this.worldObj.func_147461_a(axisalignedbb).isEmpty()) {
+					if (this.worldObj.getCollisionBoxes(axisalignedbb).isEmpty()) {
 						if (World.doesBlockHaveSolidTopSurface(this.worldObj, new BlockPos(k, (int) this.posY, l))) {
 							this.setPositionAndUpdate(this.posX + (double) i, this.posY + 1.0D, this.posZ + (double) j);
 							return;
@@ -1519,7 +1519,7 @@ public abstract class EntityLivingBase extends Entity {
 		if (f > 0.0025000002F) {
 			f3 = 1.0F;
 			f2 = (float) Math.sqrt((double) f) * 3.0F;
-			f1 = (float) MathHelper.func_181159_b(d1, d0) * 180.0F / 3.1415927F - 90.0F;
+			f1 = (float) MathHelper.atan2(d1, d0) * 180.0F / 3.1415927F - 90.0F;
 		}
 
 		if (this.swingProgress > 0.0F) {
@@ -1532,7 +1532,7 @@ public abstract class EntityLivingBase extends Entity {
 
 		this.onGroundSpeedFactor += (f3 - this.onGroundSpeedFactor) * 0.3F;
 		this.worldObj.theProfiler.startSection("headTurn");
-		f2 = this.func_110146_f(f1, f2);
+		f2 = this.updateDistance(f1, f2);
 		this.worldObj.theProfiler.endSection();
 		this.worldObj.theProfiler.startSection("rangeChecks");
 
@@ -1572,7 +1572,7 @@ public abstract class EntityLivingBase extends Entity {
 		this.movedDistance += f2;
 	}
 
-	protected float func_110146_f(float parFloat1, float parFloat2) {
+	protected float updateDistance(float parFloat1, float parFloat2) {
 		float f = MathHelper.wrapAngleTo180_float(parFloat1 - this.renderYawOffset);
 		this.renderYawOffset += f * 0.3F;
 		float f1 = MathHelper.wrapAngleTo180_float(this.rotationYaw - this.renderYawOffset);
@@ -1854,7 +1854,7 @@ public abstract class EntityLivingBase extends Entity {
 		this.rotationYawHead = f;
 	}
 
-	public void func_181013_g(float f) {
+	public void setRenderYawOffset(float f) {
 		this.renderYawOffset = f;
 	}
 

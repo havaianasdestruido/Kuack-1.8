@@ -28,12 +28,12 @@ import net.minecraft.world.World;
  * 
  */
 public class WorldGenHellLava extends WorldGenerator {
-	private final Block field_150553_a;
-	private final boolean field_94524_b;
+	private final Block block;
+	private final boolean insideRock;
 
 	public WorldGenHellLava(Block parBlock, boolean parFlag) {
-		this.field_150553_a = parBlock;
-		this.field_94524_b = parFlag;
+		this.block = parBlock;
+		this.insideRock = parFlag;
 	}
 
 	public boolean generate(World world, EaglercraftRandom random, BlockPos blockpos) {
@@ -85,9 +85,9 @@ public class WorldGenHellLava extends WorldGenerator {
 				++j;
 			}
 
-			if (!this.field_94524_b && i == 4 && j == 1 || i == 5) {
-				world.setBlockState(blockpos, this.field_150553_a.getDefaultState(), 2);
-				world.forceBlockUpdateTick(this.field_150553_a, blockpos, random);
+			if (!this.insideRock && i == 4 && j == 1 || i == 5) {
+				world.setBlockState(blockpos, this.block.getDefaultState(), 2);
+				world.forceBlockUpdateTick(this.block, blockpos, random);
 			}
 
 			return true;

@@ -36,7 +36,7 @@ public class S14PacketEntity implements Packet<INetHandlerPlayClient> {
 	protected byte yaw;
 	protected byte pitch;
 	protected boolean onGround;
-	protected boolean field_149069_g;
+	protected boolean rotating;
 
 	public S14PacketEntity() {
 	}
@@ -74,28 +74,28 @@ public class S14PacketEntity implements Packet<INetHandlerPlayClient> {
 		return worldIn.getEntityByID(this.entityId);
 	}
 
-	public byte func_149062_c() {
+	public byte getDeltaX() {
 		return this.posX;
 	}
 
-	public byte func_149061_d() {
+	public byte getDeltaY() {
 		return this.posY;
 	}
 
-	public byte func_149064_e() {
+	public byte getDeltaZ() {
 		return this.posZ;
 	}
 
-	public byte func_149066_f() {
+	public byte getYaw() {
 		return this.yaw;
 	}
 
-	public byte func_149063_g() {
+	public byte getPitch() {
 		return this.pitch;
 	}
 
-	public boolean func_149060_h() {
-		return this.field_149069_g;
+	public boolean isRotating() {
+		return this.rotating;
 	}
 
 	public boolean getOnGround() {
@@ -139,14 +139,14 @@ public class S14PacketEntity implements Packet<INetHandlerPlayClient> {
 
 	public static class S16PacketEntityLook extends S14PacketEntity {
 		public S16PacketEntityLook() {
-			this.field_149069_g = true;
+			this.rotating = true;
 		}
 
 		public S16PacketEntityLook(int entityIdIn, byte yawIn, byte pitchIn, boolean onGroundIn) {
 			super(entityIdIn);
 			this.yaw = yawIn;
 			this.pitch = pitchIn;
-			this.field_149069_g = true;
+			this.rotating = true;
 			this.onGround = onGroundIn;
 		}
 
@@ -173,7 +173,7 @@ public class S14PacketEntity implements Packet<INetHandlerPlayClient> {
 
 	public static class S17PacketEntityLookMove extends S14PacketEntity {
 		public S17PacketEntityLookMove() {
-			this.field_149069_g = true;
+			this.rotating = true;
 		}
 
 		public S17PacketEntityLookMove(int parInt1, byte parByte1, byte parByte2, byte parByte3, byte parByte4,
@@ -185,7 +185,7 @@ public class S14PacketEntity implements Packet<INetHandlerPlayClient> {
 			this.yaw = parByte4;
 			this.pitch = parByte5;
 			this.onGround = parFlag;
-			this.field_149069_g = true;
+			this.rotating = true;
 		}
 
 		/**+

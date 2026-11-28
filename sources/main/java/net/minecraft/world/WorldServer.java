@@ -108,7 +108,7 @@ public class WorldServer extends World implements IThreadListener {
 	private final Teleporter worldTeleporter;
 	private final SpawnerAnimals mobSpawner = new SpawnerAnimals();
 	protected final VillageSiege villageSiege = new VillageSiege(this);
-	private WorldServer.ServerBlockEventList[] field_147490_S = new WorldServer.ServerBlockEventList[] {
+	private WorldServer.ServerBlockEventList[] blockEventQueue = new WorldServer.ServerBlockEventList[] {
 			new WorldServer.ServerBlockEventList(), new WorldServer.ServerBlockEventList() };
 	private int blockEventCacheIndex;
 	private static final List<WeightedRandomChestContent> bonusChestContent = Lists
@@ -306,7 +306,7 @@ public class WorldServer extends World implements IThreadListener {
 	 */
 	public void setInitialSpawnLocation() {
 		if (this.worldInfo.getSpawnY() <= 0) {
-			this.worldInfo.setSpawnY(this.func_181545_F() + 1);
+			this.worldInfo.setSpawnY(this.getSeaLevel() + 1);
 		}
 
 		int i = this.worldInfo.getSpawnX();
@@ -331,7 +331,7 @@ public class WorldServer extends World implements IThreadListener {
 		if (this.worldInfo.getTerrainType() == WorldType.DEBUG_WORLD) {
 			for (ChunkCoordIntPair chunkcoordintpair1 : this.activeChunkSet) {
 				this.getChunkFromChunkCoords(chunkcoordintpair1.chunkXPos, chunkcoordintpair1.chunkZPos)
-						.func_150804_b(false);
+						.onTick(false);
 			}
 
 		} else {
@@ -345,7 +345,7 @@ public class WorldServer extends World implements IThreadListener {
 				Chunk chunk = this.getChunkFromChunkCoords(chunkcoordintpair.chunkXPos, chunkcoordintpair.chunkZPos);
 				this.playMoodSoundAndCheckLight(k, l, chunk);
 				this.theProfiler.endStartSection("tickChunk");
-				chunk.func_150804_b(false);
+				chunk.onTick(false);
 				this.theProfiler.endStartSection("thunder");
 				if (this.rand.nextInt(100000) == 0 && this.isRaining() && this.isThundering()) {
 					this.updateLCG = this.updateLCG * 3 + 1013904223;
@@ -581,10 +581,10 @@ public class WorldServer extends World implements IThreadListener {
 		int j = i + 16 + 2;
 		int k = (chunkcoordintpair.chunkZPos << 4) - 2;
 		int l = k + 16 + 2;
-		return this.func_175712_a(new StructureBoundingBox(i, 0, k, j, 256, l), flag);
+		return this.WorldGetPendingBlockUpdates(new StructureBoundingBox(i, 0, k, j, 256, l), flag);
 	}
 
-	public List<NextTickListEntry> func_175712_a(StructureBoundingBox structureboundingbox, boolean flag) {
+	public List<NextTickListEntry> WorldGetPendingBlockUpdates(StructureBoundingBox structureboundingbox, boolean flag) {
 		ArrayList arraylist = null;
 
 		for (int i = 0; i < 2; ++i) {
@@ -885,7 +885,7 @@ public class WorldServer extends World implements IThreadListener {
 	 * that entity
 	 */
 	public void setEntityState(Entity entity, byte b0) {
-		this.getEntityTracker().func_151248_b(entity, new S19PacketEntityStatus(entity, b0));
+		this.getEntityTracker().sendToTrackingAndSelf(entity, new S19PacketEntityStatus(entity, b0));
 	}
 
 	/**+
@@ -917,22 +917,22 @@ public class WorldServer extends World implements IThreadListener {
 	public void addBlockEvent(BlockPos blockpos, Block block, int i, int j) {
 		BlockEventData blockeventdata = new BlockEventData(blockpos, block, i, j);
 
-		ServerBlockEventList lst = this.field_147490_S[this.blockEventCacheIndex];
+		ServerBlockEventList lst = this.blockEventQueue[this.blockEventCacheIndex];
 		for (int k = 0, l = lst.size(); k < l; ++k) {
 			if (lst.get(k).equals(blockeventdata)) {
 				return;
 			}
 		}
 
-		this.field_147490_S[this.blockEventCacheIndex].add(blockeventdata);
+		this.blockEventQueue[this.blockEventCacheIndex].add(blockeventdata);
 	}
 
 	private void sendQueuedBlockEvents() {
-		while (!this.field_147490_S[this.blockEventCacheIndex].isEmpty()) {
+		while (!this.blockEventQueue[this.blockEventCacheIndex].isEmpty()) {
 			int i = this.blockEventCacheIndex;
 			this.blockEventCacheIndex ^= 1;
 
-			ServerBlockEventList lst = this.field_147490_S[i];
+			ServerBlockEventList lst = this.blockEventQueue[i];
 			for (int k = 0, l = lst.size(); k < l; ++k) {
 				BlockEventData blockeventdata = lst.get(k);
 				if (this.fireBlockEvent(blockeventdata)) {
@@ -944,7 +944,7 @@ public class WorldServer extends World implements IThreadListener {
 				}
 			}
 
-			this.field_147490_S[i].clear();
+			this.blockEventQueue[i].clear();
 		}
 
 	}

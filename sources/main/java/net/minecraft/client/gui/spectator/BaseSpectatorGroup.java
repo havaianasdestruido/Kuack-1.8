@@ -30,18 +30,18 @@ import net.minecraft.util.IChatComponent;
  * 
  */
 public class BaseSpectatorGroup implements ISpectatorMenuView {
-	private final List<ISpectatorMenuObject> field_178671_a = Lists.newArrayList();
+	private final List<ISpectatorMenuObject> items = Lists.newArrayList();
 
 	public BaseSpectatorGroup() {
-		this.field_178671_a.add(new TeleportToPlayer());
-		this.field_178671_a.add(new TeleportToTeam());
+		this.items.add(new TeleportToPlayer());
+		this.items.add(new TeleportToTeam());
 	}
 
-	public List<ISpectatorMenuObject> func_178669_a() {
-		return this.field_178671_a;
+	public List<ISpectatorMenuObject> getItems() {
+		return this.items;
 	}
 
-	public IChatComponent func_178670_b() {
+	public IChatComponent getPrompt() {
 		return new ChatComponentText("Press a key to select a command, and again to use it.");
 	}
 }

@@ -29,13 +29,13 @@ import net.minecraft.world.chunk.ChunkPrimer;
  * 
  */
 public class MapGenRavine extends MapGenBase {
-	private float[] field_75046_d = new float[1024];
+	private float[] rs = new float[1024];
 
 	public MapGenRavine(boolean scramble) {
 		super(scramble);
 	}
 
-	protected void func_180707_a(long parLong1, int parInt1, int parInt2, ChunkPrimer parChunkPrimer, double parDouble1,
+	protected void addTunnel(long parLong1, int parInt1, int parInt2, ChunkPrimer parChunkPrimer, double parDouble1,
 			double parDouble2, double parDouble3, float parFloat1, float parFloat2, float parFloat3, int parInt3,
 			int parInt4, double parDouble4) {
 		EaglercraftRandom random = new EaglercraftRandom(parLong1, this.rand.isScramble());
@@ -61,7 +61,7 @@ public class MapGenRavine extends MapGenBase {
 				f2 = 1.0F + random.nextFloat() * random.nextFloat() * 1.0F;
 			}
 
-			this.field_75046_d[j] = f2 * f2;
+			this.rs[j] = f2 * f2;
 		}
 
 		for (; parInt3 < parInt4; ++parInt3) {
@@ -155,7 +155,7 @@ public class MapGenRavine extends MapGenBase {
 								if (d10 * d10 + d7 * d7 < 1.0D) {
 									for (int j2 = l; j2 > l2; --j2) {
 										double d8 = ((double) (j2 - 1) + 0.5D - parDouble2) / d2;
-										if ((d10 * d10 + d7 * d7) * (double) this.field_75046_d[j2 - 1]
+										if ((d10 * d10 + d7 * d7) * (double) this.rs[j2 - 1]
 												+ d8 * d8 / 6.0D < 1.0D) {
 											IBlockState iblockstate1 = parChunkPrimer.getBlockState(j3, j2, i2);
 											if (iblockstate1.getBlock() == Blocks.grass) {
@@ -173,7 +173,7 @@ public class MapGenRavine extends MapGenBase {
 															Blocks.air.getDefaultState());
 													if (flag && parChunkPrimer.getBlockState(j3, j2 - 1, i2)
 															.getBlock() == Blocks.dirt) {
-														blockpos$mutableblockpos.func_181079_c(j3 + parInt1 * 16, 0,
+														blockpos$mutableblockpos.setPos(j3 + parInt1 * 16, 0,
 																i2 + parInt2 * 16);
 														parChunkPrimer.setBlockState(j3, j2 - 1, i2,
 																this.worldObj.getBiomeGenForCoords(
@@ -212,7 +212,7 @@ public class MapGenRavine extends MapGenBase {
 				float f = this.rand.nextFloat() * 3.1415927F * 2.0F;
 				float f1 = (this.rand.nextFloat() - 0.5F) * 2.0F / 8.0F;
 				float f2 = (this.rand.nextFloat() * 2.0F + this.rand.nextFloat()) * 2.0F;
-				this.func_180707_a(this.rand.nextLong(), chunkPrimerIn, parInt4, parChunkPrimer, d0, d1, d2, f2, f, f1,
+				this.addTunnel(this.rand.nextLong(), chunkPrimerIn, parInt4, parChunkPrimer, d0, d1, d2, f2, f, f1,
 						0, 0, 3.0D);
 			}
 

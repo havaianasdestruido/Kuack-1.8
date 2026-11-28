@@ -295,7 +295,7 @@ public class WorldClient extends World {
 			int j = parInt1 + this.rand.nextInt(b0) - this.rand.nextInt(b0);
 			int k = parInt2 + this.rand.nextInt(b0) - this.rand.nextInt(b0);
 			int l = parInt3 + this.rand.nextInt(b0) - this.rand.nextInt(b0);
-			blockpos$mutableblockpos.func_181079_c(j, k, l);
+			blockpos$mutableblockpos.setPos(j, k, l);
 			IBlockState iblockstate = this.getBlockState(blockpos$mutableblockpos);
 			iblockstate.getBlock().randomDisplayTick(this, blockpos$mutableblockpos, iblockstate, random);
 			if (flag && iblockstate.getBlock() == Blocks.barrier) {

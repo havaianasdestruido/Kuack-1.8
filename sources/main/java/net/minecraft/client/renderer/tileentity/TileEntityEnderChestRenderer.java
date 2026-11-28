@@ -29,7 +29,7 @@ import net.minecraft.util.ResourceLocation;
  */
 public class TileEntityEnderChestRenderer extends TileEntitySpecialRenderer<TileEntityEnderChest> {
 	private static final ResourceLocation ENDER_CHEST_TEXTURE = new ResourceLocation("textures/entity/chest/ender.png");
-	private ModelChest field_147521_c = new ModelChest();
+	private ModelChest modelChest = new ModelChest();
 
 	public void renderTileEntityAt(TileEntityEnderChest tileentityenderchest, double d0, double d1, double d2, float f,
 			int i) {
@@ -78,8 +78,8 @@ public class TileEntityEnderChestRenderer extends TileEntitySpecialRenderer<Tile
 				+ (tileentityenderchest.lidAngle - tileentityenderchest.prevLidAngle) * f;
 		f1 = 1.0F - f1;
 		f1 = 1.0F - f1 * f1 * f1;
-		this.field_147521_c.chestLid.rotateAngleX = -(f1 * 3.1415927F / 2.0F);
-		this.field_147521_c.renderAll();
+		this.modelChest.chestLid.rotateAngleX = -(f1 * 3.1415927F / 2.0F);
+		this.modelChest.renderAll();
 		GlStateManager.disableRescaleNormal();
 		GlStateManager.popMatrix();
 		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);

@@ -38,15 +38,15 @@ public abstract class BlockContainer extends Block implements ITileEntityProvide
 		this.isBlockContainer = true;
 	}
 
-	protected boolean func_181086_a(World parWorld, BlockPos parBlockPos, EnumFacing parEnumFacing) {
+	protected boolean isInvalidNeighbor(World parWorld, BlockPos parBlockPos, EnumFacing parEnumFacing) {
 		return parWorld.getBlockState(parBlockPos.offset(parEnumFacing)).getBlock().getMaterial() == Material.cactus;
 	}
 
-	protected boolean func_181087_e(World parWorld, BlockPos parBlockPos) {
-		return this.func_181086_a(parWorld, parBlockPos, EnumFacing.NORTH)
-				|| this.func_181086_a(parWorld, parBlockPos, EnumFacing.SOUTH)
-				|| this.func_181086_a(parWorld, parBlockPos, EnumFacing.WEST)
-				|| this.func_181086_a(parWorld, parBlockPos, EnumFacing.EAST);
+	protected boolean hasInvalidNeighbor(World parWorld, BlockPos parBlockPos) {
+		return this.isInvalidNeighbor(parWorld, parBlockPos, EnumFacing.NORTH)
+				|| this.isInvalidNeighbor(parWorld, parBlockPos, EnumFacing.SOUTH)
+				|| this.isInvalidNeighbor(parWorld, parBlockPos, EnumFacing.WEST)
+				|| this.isInvalidNeighbor(parWorld, parBlockPos, EnumFacing.EAST);
 	}
 
 	/**+

@@ -148,7 +148,7 @@ public class BlockRedstoneComparator extends BlockRedstoneDiode implements ITile
 			} else if (block.getMaterial() == Material.air) {
 				EntityItemFrame entityitemframe = this.findItemFrame(worldIn, enumfacing, blockpos);
 				if (entityitemframe != null) {
-					i = entityitemframe.func_174866_q();
+					i = entityitemframe.getAnalogOutput();
 				}
 			}
 		}

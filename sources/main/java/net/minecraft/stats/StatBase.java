@@ -36,7 +36,7 @@ public class StatBase {
 	private final IChatComponent statName;
 	public boolean isIndependent;
 	private final IStatType type;
-	private final IScoreObjectiveCriteria field_150957_c;
+	private final IScoreObjectiveCriteria objectiveCriteria;
 	private Class<? extends IJsonSerializable> field_150956_d;
 	private static NumberFormat numberFormat = NumberFormat.getIntegerInstance(Locale.US);
 	public static IStatType simpleStatType = new IStatType() {
@@ -66,7 +66,7 @@ public class StatBase {
 					: (d0 > 0.5D ? StatBase.decimalFormat.format(d0) + " m" : i + " cm");
 		}
 	};
-	public static IStatType field_111202_k = new IStatType() {
+	public static IStatType divideByTen = new IStatType() {
 		public String format(int i) {
 			return StatBase.decimalFormat.format((double) i * 0.1D);
 		}
@@ -76,8 +76,8 @@ public class StatBase {
 		this.statId = statIdIn;
 		this.statName = statNameIn;
 		this.type = typeIn;
-		this.field_150957_c = new ObjectiveStat(this);
-		IScoreObjectiveCriteria.INSTANCES.put(this.field_150957_c.getName(), this.field_150957_c);
+		this.objectiveCriteria = new ObjectiveStat(this);
+		IScoreObjectiveCriteria.INSTANCES.put(this.objectiveCriteria.getName(), this.objectiveCriteria);
 	}
 
 	public StatBase(String statIdIn, IChatComponent statNameIn) {
@@ -129,7 +129,7 @@ public class StatBase {
 		return ichatcomponent;
 	}
 
-	public IChatComponent func_150955_j() {
+	public IChatComponent createChatComponent() {
 		IChatComponent ichatcomponent = this.getStatName();
 		IChatComponent ichatcomponent1 = (new ChatComponentText("[")).appendSibling(ichatcomponent).appendText("]");
 		ichatcomponent1.setChatStyle(ichatcomponent.getChatStyle());
@@ -153,18 +153,18 @@ public class StatBase {
 
 	public String toString() {
 		return "Stat{id=" + this.statId + ", nameId=" + this.statName + ", awardLocallyOnly=" + this.isIndependent
-				+ ", formatter=" + this.type + ", objectiveCriteria=" + this.field_150957_c + '}';
+				+ ", formatter=" + this.type + ", objectiveCriteria=" + this.objectiveCriteria + '}';
 	}
 
-	public IScoreObjectiveCriteria func_150952_k() {
-		return this.field_150957_c;
+	public IScoreObjectiveCriteria getCriteria() {
+		return this.objectiveCriteria;
 	}
 
 	public Class<? extends IJsonSerializable> func_150954_l() {
 		return this.field_150956_d;
 	}
 
-	public StatBase func_150953_b(Class<? extends IJsonSerializable> oclass) {
+	public StatBase setSerializableClazz(Class<? extends IJsonSerializable> oclass) {
 		this.field_150956_d = oclass;
 		return this;
 	}

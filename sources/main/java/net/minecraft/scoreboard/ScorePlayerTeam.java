@@ -163,7 +163,7 @@ public class ScorePlayerTeam extends Team {
 		return i;
 	}
 
-	public void func_98298_a(int parInt1) {
+	public void setFriendlyFlags(int parInt1) {
 		this.setAllowFriendlyFire((parInt1 & 1) > 0);
 		this.setSeeFriendlyInvisiblesEnabled((parInt1 & 2) > 0);
 	}

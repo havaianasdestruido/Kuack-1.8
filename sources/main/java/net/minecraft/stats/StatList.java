@@ -141,12 +141,12 @@ public class StatList {
 	 * the amount of damage you've dealt
 	 */
 	public static StatBase damageDealtStat = (new StatBasic("stat.damageDealt",
-			new ChatComponentTranslation("stat.damageDealt", new Object[0]), StatBase.field_111202_k)).registerStat();
+			new ChatComponentTranslation("stat.damageDealt", new Object[0]), StatBase.divideByTen)).registerStat();
 	/**+
 	 * the amount of damage you have taken
 	 */
 	public static StatBase damageTakenStat = (new StatBasic("stat.damageTaken",
-			new ChatComponentTranslation("stat.damageTaken", new Object[0]), StatBase.field_111202_k)).registerStat();
+			new ChatComponentTranslation("stat.damageTaken", new Object[0]), StatBase.divideByTen)).registerStat();
 	/**+
 	 * the number of times you have died
 	 */
@@ -240,7 +240,7 @@ public class StatList {
 		initItemDepleteStats();
 		initCraftableStats();
 		AchievementList.init();
-		EntityList.func_151514_a();
+		EntityList.registerEntities();
 	}
 
 	/**+
@@ -263,7 +263,7 @@ public class StatList {
 		for (Item item : (HashSet<Item>) hashset) {
 			if (item != null) {
 				int i = Item.getIdFromItem(item);
-				String s = func_180204_a(item);
+				String s = getItemName(item);
 				if (s != null) {
 					objectCraftStats[i] = (new StatCrafting("stat.craftItem.", s, new ChatComponentTranslation(
 							"stat.craftItem", new Object[] { (new ItemStack(item)).getChatComponent() }), item))
@@ -280,7 +280,7 @@ public class StatList {
 			Item item = Item.getItemFromBlock(block);
 			if (item != null) {
 				int i = Block.getIdFromBlock(block);
-				String s = func_180204_a(item);
+				String s = getItemName(item);
 				if (s != null && block.getEnableStats()) {
 					mineBlockStatArray[i] = (new StatCrafting("stat.mineBlock.", s, new ChatComponentTranslation(
 							"stat.mineBlock", new Object[] { (new ItemStack(block)).getChatComponent() }), item))
@@ -297,7 +297,7 @@ public class StatList {
 		for (Item item : Item.itemRegistry) {
 			if (item != null) {
 				int i = Item.getIdFromItem(item);
-				String s = func_180204_a(item);
+				String s = getItemName(item);
 				if (s != null) {
 					objectUseStats[i] = (new StatCrafting("stat.useItem.", s, new ChatComponentTranslation(
 							"stat.useItem", new Object[] { (new ItemStack(item)).getChatComponent() }), item))
@@ -316,7 +316,7 @@ public class StatList {
 		for (Item item : Item.itemRegistry) {
 			if (item != null) {
 				int i = Item.getIdFromItem(item);
-				String s = func_180204_a(item);
+				String s = getItemName(item);
 				if (s != null && item.isDamageable()) {
 					objectBreakStats[i] = (new StatCrafting("stat.breakItem.", s, new ChatComponentTranslation(
 							"stat.breakItem", new Object[] { (new ItemStack(item)).getChatComponent() }), item))
@@ -328,7 +328,7 @@ public class StatList {
 		replaceAllSimilarBlocks(objectBreakStats);
 	}
 
-	private static String func_180204_a(Item parItem) {
+	private static String getItemName(Item parItem) {
 		ResourceLocation resourcelocation = (ResourceLocation) Item.itemRegistry.getNameForObject(parItem);
 		return resourcelocation != null ? resourcelocation.toString().replace(':', '.') : null;
 	}

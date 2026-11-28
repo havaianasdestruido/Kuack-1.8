@@ -51,7 +51,7 @@ public class ItemModelGenerator {
 			hashmap.put(s, s1);
 			EaglerTextureAtlasSprite textureatlassprite = textureMapIn
 					.getAtlasSprite((new ResourceLocation(s1)).toString());
-			arraylist.addAll(this.func_178394_a(i, s, textureatlassprite));
+			arraylist.addAll(this.getBlockParts(i, s, textureatlassprite));
 		}
 
 		if (arraylist.isEmpty()) {
@@ -59,11 +59,11 @@ public class ItemModelGenerator {
 		} else {
 			hashmap.put("particle", blockModel.isTexturePresent("particle") ? blockModel.resolveTextureName("particle")
 					: (String) hashmap.get("layer0"));
-			return new ModelBlock(arraylist, hashmap, false, false, blockModel.func_181682_g());
+			return new ModelBlock(arraylist, hashmap, false, false, blockModel.getAllTransforms());
 		}
 	}
 
-	private List<BlockPart> func_178394_a(int parInt1, String parString1,
+	private List<BlockPart> getBlockParts(int parInt1, String parString1,
 			EaglerTextureAtlasSprite parTextureAtlasSprite) {
 		HashMap hashmap = Maps.newHashMap();
 		hashmap.put(EnumFacing.SOUTH, new BlockPartFace((EnumFacing) null, parInt1, parString1,
@@ -73,17 +73,17 @@ public class ItemModelGenerator {
 		ArrayList arraylist = Lists.newArrayList();
 		arraylist.add(new BlockPart(new Vector3f(0.0F, 0.0F, 7.5F), new Vector3f(16.0F, 16.0F, 8.5F), hashmap,
 				(BlockPartRotation) null, true));
-		arraylist.addAll(this.func_178397_a(parTextureAtlasSprite, parString1, parInt1));
+		arraylist.addAll(this.ItemModelGeneratorGetBlockParts(parTextureAtlasSprite, parString1, parInt1));
 		return arraylist;
 	}
 
-	private List<BlockPart> func_178397_a(EaglerTextureAtlasSprite parTextureAtlasSprite, String parString1,
+	private List<BlockPart> ItemModelGeneratorGetBlockParts(EaglerTextureAtlasSprite parTextureAtlasSprite, String parString1,
 			int parInt1) {
 		float f = (float) parTextureAtlasSprite.getIconWidth();
 		float f1 = (float) parTextureAtlasSprite.getIconHeight();
 		ArrayList arraylist = Lists.newArrayList();
 
-		List<ItemModelGenerator.Span> lst = this.func_178393_a(parTextureAtlasSprite);
+		List<ItemModelGenerator.Span> lst = this.getSpans(parTextureAtlasSprite);
 		for (int i = 0, l = lst.size(); i < l; ++i) {
 			ItemModelGenerator.Span itemmodelgenerator$span = lst.get(i);
 			float f2 = 0.0F;
@@ -96,10 +96,10 @@ public class ItemModelGenerator {
 			float f9 = 0.0F;
 			float f10 = 0.0F;
 			float f11 = 0.0F;
-			float f12 = (float) itemmodelgenerator$span.func_178385_b();
-			float f13 = (float) itemmodelgenerator$span.func_178384_c();
-			float f14 = (float) itemmodelgenerator$span.func_178381_d();
-			ItemModelGenerator.SpanFacing itemmodelgenerator$spanfacing = itemmodelgenerator$span.func_178383_a();
+			float f12 = (float) itemmodelgenerator$span.getMin();
+			float f13 = (float) itemmodelgenerator$span.getMax();
+			float f14 = (float) itemmodelgenerator$span.getAnchor();
+			ItemModelGenerator.SpanFacing itemmodelgenerator$spanfacing = itemmodelgenerator$span.ItemModelGeneratorGetFacing();
 			switch (itemmodelgenerator$spanfacing) {
 			case UP:
 				f6 = f12;
@@ -183,7 +183,7 @@ public class ItemModelGenerator {
 		return arraylist;
 	}
 
-	private List<ItemModelGenerator.Span> func_178393_a(EaglerTextureAtlasSprite parTextureAtlasSprite) {
+	private List<ItemModelGenerator.Span> getSpans(EaglerTextureAtlasSprite parTextureAtlasSprite) {
 		int i = parTextureAtlasSprite.getIconWidth();
 		int j = parTextureAtlasSprite.getIconHeight();
 		ArrayList arraylist = Lists.newArrayList();
@@ -193,11 +193,11 @@ public class ItemModelGenerator {
 
 			for (int l = 0; l < j; ++l) {
 				for (int i1 = 0; i1 < i; ++i1) {
-					boolean flag = !this.func_178391_a(aint, i1, l, i, j);
-					this.func_178396_a(ItemModelGenerator.SpanFacing.UP, arraylist, aint, i1, l, i, j, flag);
-					this.func_178396_a(ItemModelGenerator.SpanFacing.DOWN, arraylist, aint, i1, l, i, j, flag);
-					this.func_178396_a(ItemModelGenerator.SpanFacing.LEFT, arraylist, aint, i1, l, i, j, flag);
-					this.func_178396_a(ItemModelGenerator.SpanFacing.RIGHT, arraylist, aint, i1, l, i, j, flag);
+					boolean flag = !this.isTransparent(aint, i1, l, i, j);
+					this.checkTransition(ItemModelGenerator.SpanFacing.UP, arraylist, aint, i1, l, i, j, flag);
+					this.checkTransition(ItemModelGenerator.SpanFacing.DOWN, arraylist, aint, i1, l, i, j, flag);
+					this.checkTransition(ItemModelGenerator.SpanFacing.LEFT, arraylist, aint, i1, l, i, j, flag);
+					this.checkTransition(ItemModelGenerator.SpanFacing.RIGHT, arraylist, aint, i1, l, i, j, flag);
 				}
 			}
 		}
@@ -205,42 +205,42 @@ public class ItemModelGenerator {
 		return arraylist;
 	}
 
-	private void func_178396_a(ItemModelGenerator.SpanFacing parSpanFacing, List<ItemModelGenerator.Span> parList,
+	private void checkTransition(ItemModelGenerator.SpanFacing parSpanFacing, List<ItemModelGenerator.Span> parList,
 			int[] parArrayOfInt, int parInt1, int parInt2, int parInt3, int parInt4, boolean parFlag) {
-		boolean flag = this.func_178391_a(parArrayOfInt, parInt1 + parSpanFacing.func_178372_b(),
-				parInt2 + parSpanFacing.func_178371_c(), parInt3, parInt4) && parFlag;
+		boolean flag = this.isTransparent(parArrayOfInt, parInt1 + parSpanFacing.getXOffset(),
+				parInt2 + parSpanFacing.getYOffset(), parInt3, parInt4) && parFlag;
 		if (flag) {
-			this.func_178395_a(parList, parSpanFacing, parInt1, parInt2);
+			this.createOrExpandSpan(parList, parSpanFacing, parInt1, parInt2);
 		}
 
 	}
 
-	private void func_178395_a(List<ItemModelGenerator.Span> parList, ItemModelGenerator.SpanFacing parSpanFacing,
+	private void createOrExpandSpan(List<ItemModelGenerator.Span> parList, ItemModelGenerator.SpanFacing parSpanFacing,
 			int parInt1, int parInt2) {
 		ItemModelGenerator.Span itemmodelgenerator$span = null;
 
 		for (int j = 0, l = parList.size(); j < l; ++j) {
 			ItemModelGenerator.Span itemmodelgenerator$span1 = parList.get(j);
-			if (itemmodelgenerator$span1.func_178383_a() == parSpanFacing) {
-				int i = parSpanFacing.func_178369_d() ? parInt2 : parInt1;
-				if (itemmodelgenerator$span1.func_178381_d() == i) {
+			if (itemmodelgenerator$span1.ItemModelGeneratorGetFacing() == parSpanFacing) {
+				int i = parSpanFacing.isHorizontal() ? parInt2 : parInt1;
+				if (itemmodelgenerator$span1.getAnchor() == i) {
 					itemmodelgenerator$span = itemmodelgenerator$span1;
 					break;
 				}
 			}
 		}
 
-		int j = parSpanFacing.func_178369_d() ? parInt2 : parInt1;
-		int k = parSpanFacing.func_178369_d() ? parInt1 : parInt2;
+		int j = parSpanFacing.isHorizontal() ? parInt2 : parInt1;
+		int k = parSpanFacing.isHorizontal() ? parInt1 : parInt2;
 		if (itemmodelgenerator$span == null) {
 			parList.add(new ItemModelGenerator.Span(parSpanFacing, k, j));
 		} else {
-			itemmodelgenerator$span.func_178382_a(k);
+			itemmodelgenerator$span.expand(k);
 		}
 
 	}
 
-	private boolean func_178391_a(int[] parArrayOfInt, int parInt1, int parInt2, int parInt3, int parInt4) {
+	private boolean isTransparent(int[] parArrayOfInt, int parInt1, int parInt2, int parInt3, int parInt4) {
 		return parInt1 >= 0 && parInt2 >= 0 && parInt1 < parInt3 && parInt2 < parInt4
 				? (parArrayOfInt[parInt2 * parInt3 + parInt1] >> 24 & 255) == 0
 				: true;
@@ -248,40 +248,40 @@ public class ItemModelGenerator {
 
 	static class Span {
 		private final ItemModelGenerator.SpanFacing spanFacing;
-		private int field_178387_b;
-		private int field_178388_c;
-		private final int field_178386_d;
+		private int min;
+		private int max;
+		private final int anchor;
 
 		public Span(ItemModelGenerator.SpanFacing spanFacingIn, int parInt1, int parInt2) {
 			this.spanFacing = spanFacingIn;
-			this.field_178387_b = parInt1;
-			this.field_178388_c = parInt1;
-			this.field_178386_d = parInt2;
+			this.min = parInt1;
+			this.max = parInt1;
+			this.anchor = parInt2;
 		}
 
-		public void func_178382_a(int parInt1) {
-			if (parInt1 < this.field_178387_b) {
-				this.field_178387_b = parInt1;
-			} else if (parInt1 > this.field_178388_c) {
-				this.field_178388_c = parInt1;
+		public void expand(int parInt1) {
+			if (parInt1 < this.min) {
+				this.min = parInt1;
+			} else if (parInt1 > this.max) {
+				this.max = parInt1;
 			}
 
 		}
 
-		public ItemModelGenerator.SpanFacing func_178383_a() {
+		public ItemModelGenerator.SpanFacing ItemModelGeneratorGetFacing() {
 			return this.spanFacing;
 		}
 
-		public int func_178385_b() {
-			return this.field_178387_b;
+		public int getMin() {
+			return this.min;
 		}
 
-		public int func_178384_c() {
-			return this.field_178388_c;
+		public int getMax() {
+			return this.max;
 		}
 
-		public int func_178381_d() {
-			return this.field_178386_d;
+		public int getAnchor() {
+			return this.anchor;
 		}
 	}
 
@@ -290,28 +290,28 @@ public class ItemModelGenerator {
 		RIGHT(EnumFacing.WEST, 1, 0);
 
 		private final EnumFacing facing;
-		private final int field_178373_f;
-		private final int field_178374_g;
+		private final int xOffset;
+		private final int yOffset;
 
 		private SpanFacing(EnumFacing facing, int parInt2, int parInt3) {
 			this.facing = facing;
-			this.field_178373_f = parInt2;
-			this.field_178374_g = parInt3;
+			this.xOffset = parInt2;
+			this.yOffset = parInt3;
 		}
 
 		public EnumFacing getFacing() {
 			return this.facing;
 		}
 
-		public int func_178372_b() {
-			return this.field_178373_f;
+		public int getXOffset() {
+			return this.xOffset;
 		}
 
-		public int func_178371_c() {
-			return this.field_178374_g;
+		public int getYOffset() {
+			return this.yOffset;
 		}
 
-		private boolean func_178369_d() {
+		private boolean isHorizontal() {
 			return this == DOWN || this == UP;
 		}
 	}

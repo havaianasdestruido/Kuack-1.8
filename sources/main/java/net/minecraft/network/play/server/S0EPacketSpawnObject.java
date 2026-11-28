@@ -39,7 +39,7 @@ public class S0EPacketSpawnObject implements Packet<INetHandlerPlayClient> {
 	private int pitch;
 	private int yaw;
 	private int type;
-	private int field_149020_k;
+	private int data;
 
 	public S0EPacketSpawnObject() {
 	}
@@ -56,7 +56,7 @@ public class S0EPacketSpawnObject implements Packet<INetHandlerPlayClient> {
 		this.pitch = MathHelper.floor_float(entityIn.rotationPitch * 256.0F / 360.0F);
 		this.yaw = MathHelper.floor_float(entityIn.rotationYaw * 256.0F / 360.0F);
 		this.type = typeIn;
-		this.field_149020_k = parInt1;
+		this.data = parInt1;
 		if (parInt1 > 0) {
 			double d0 = entityIn.motionX;
 			double d1 = entityIn.motionY;
@@ -104,8 +104,8 @@ public class S0EPacketSpawnObject implements Packet<INetHandlerPlayClient> {
 		this.z = parPacketBuffer.readInt();
 		this.pitch = parPacketBuffer.readByte();
 		this.yaw = parPacketBuffer.readByte();
-		this.field_149020_k = parPacketBuffer.readInt();
-		if (this.field_149020_k > 0) {
+		this.data = parPacketBuffer.readInt();
+		if (this.data > 0) {
 			this.speedX = parPacketBuffer.readShort();
 			this.speedY = parPacketBuffer.readShort();
 			this.speedZ = parPacketBuffer.readShort();
@@ -124,8 +124,8 @@ public class S0EPacketSpawnObject implements Packet<INetHandlerPlayClient> {
 		parPacketBuffer.writeInt(this.z);
 		parPacketBuffer.writeByte(this.pitch);
 		parPacketBuffer.writeByte(this.yaw);
-		parPacketBuffer.writeInt(this.field_149020_k);
-		if (this.field_149020_k > 0) {
+		parPacketBuffer.writeInt(this.data);
+		if (this.data > 0) {
 			parPacketBuffer.writeShort(this.speedX);
 			parPacketBuffer.writeShort(this.speedY);
 			parPacketBuffer.writeShort(this.speedZ);
@@ -180,8 +180,8 @@ public class S0EPacketSpawnObject implements Packet<INetHandlerPlayClient> {
 		return this.type;
 	}
 
-	public int func_149009_m() {
-		return this.field_149020_k;
+	public int getData() {
+		return this.data;
 	}
 
 	public void setX(int newX) {
@@ -208,7 +208,7 @@ public class S0EPacketSpawnObject implements Packet<INetHandlerPlayClient> {
 		this.speedZ = newSpeedZ;
 	}
 
-	public void func_149002_g(int parInt1) {
-		this.field_149020_k = parInt1;
+	public void setData(int parInt1) {
+		this.data = parInt1;
 	}
 }

@@ -33,7 +33,7 @@ import com.google.common.collect.Sets;
  * 
  */
 public class ClassInheritanceMultiMap<T> extends AbstractSet<T> {
-	private static final Set<Class<?>> field_181158_a = Sets.newHashSet();
+	private static final Set<Class<?>> KNOWN_CLASSES = Sets.newHashSet();
 	/**+
 	 * EAGLER: memo of "which of this map's knownKeys isAssignableFrom this concrete class".
 	 * add()/remove() used to run Class.isAssignableFrom() against EVERY key in knownKeys for EVERY
@@ -50,14 +50,14 @@ public class ClassInheritanceMultiMap<T> extends AbstractSet<T> {
 	private final Map<Class<?>, List<T>> map = Maps.newHashMap();
 	private final Set<Class<?>> knownKeys = Sets.newIdentityHashSet();
 	private final Class<T> baseClass;
-	private final List<T> field_181745_e = Lists.newArrayList();
+	private final List<T> values = Lists.newArrayList();
 
 	public ClassInheritanceMultiMap(Class<T> baseClassIn) {
 		this.baseClass = baseClassIn;
 		this.knownKeys.add(baseClassIn);
-		this.map.put(baseClassIn, this.field_181745_e);
+		this.map.put(baseClassIn, this.values);
 
-		for (Class oclass : field_181158_a) {
+		for (Class oclass : KNOWN_CLASSES) {
 			this.createLookup(oclass);
 		}
 
@@ -87,12 +87,12 @@ public class ClassInheritanceMultiMap<T> extends AbstractSet<T> {
 	}
 
 	protected void createLookup(Class<?> clazz) {
-		field_181158_a.add(clazz);
+		KNOWN_CLASSES.add(clazz);
 
-		for (int i = 0, l = this.field_181745_e.size(); i < l; ++i) {
-			T object = this.field_181745_e.get(i);
+		for (int i = 0, l = this.values.size(); i < l; ++i) {
+			T object = this.values.get(i);
 			if (clazz.isAssignableFrom(object.getClass())) {
-				this.func_181743_a(object, clazz);
+				this.addForClass(object, clazz);
 			}
 		}
 
@@ -103,7 +103,7 @@ public class ClassInheritanceMultiMap<T> extends AbstractSet<T> {
 		}
 	}
 
-	protected Class<?> func_181157_b(Class<?> parClass1) {
+	protected Class<?> initializeClassLookup(Class<?> parClass1) {
 		if (this.baseClass.isAssignableFrom(parClass1)) {
 			if (!this.knownKeys.contains(parClass1)) {
 				this.createLookup(parClass1);
@@ -118,13 +118,13 @@ public class ClassInheritanceMultiMap<T> extends AbstractSet<T> {
 	public boolean add(T parObject) {
 		List<Class<?>> assignable = func_181156_a(parObject.getClass());
 		for (int i = 0, l = assignable.size(); i < l; ++i) {
-			this.func_181743_a(parObject, assignable.get(i));
+			this.addForClass(parObject, assignable.get(i));
 		}
 
 		return true;
 	}
 
-	private void func_181743_a(T parObject, Class<?> parClass1) {
+	private void addForClass(T parObject, Class<?> parClass1) {
 		List list = (List) this.map.get(parClass1);
 		if (list == null) {
 			this.map.put(parClass1, (List<T>) Lists.newArrayList(new Object[] { parObject }));
@@ -157,7 +157,7 @@ public class ClassInheritanceMultiMap<T> extends AbstractSet<T> {
 		return new Iterable<S>() {
 			public Iterator<S> iterator() {
 				List list = (List) ClassInheritanceMultiMap.this.map
-						.get(ClassInheritanceMultiMap.this.func_181157_b(clazz));
+						.get(ClassInheritanceMultiMap.this.initializeClassLookup(clazz));
 				if (list == null) {
 					return Iterators.emptyIterator();
 				} else {
@@ -169,11 +169,11 @@ public class ClassInheritanceMultiMap<T> extends AbstractSet<T> {
 	}
 
 	public Iterator<T> iterator() {
-		return this.field_181745_e.isEmpty() ? Iterators.emptyIterator()
-				: Iterators.unmodifiableIterator(this.field_181745_e.iterator());
+		return this.values.isEmpty() ? Iterators.emptyIterator()
+				: Iterators.unmodifiableIterator(this.values.iterator());
 	}
 
 	public int size() {
-		return this.field_181745_e.size();
+		return this.values.size();
 	}
 }

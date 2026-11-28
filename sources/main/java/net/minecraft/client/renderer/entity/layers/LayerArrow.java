@@ -31,10 +31,10 @@ import net.minecraft.util.MathHelper;
  * 
  */
 public class LayerArrow implements LayerRenderer<EntityLivingBase> {
-	private final RendererLivingEntity field_177168_a;
+	private final RendererLivingEntity renderer;
 
 	public LayerArrow(RendererLivingEntity parRendererLivingEntity) {
-		this.field_177168_a = parRendererLivingEntity;
+		this.renderer = parRendererLivingEntity;
 	}
 
 	public void doRenderLayer(EntityLivingBase entitylivingbase, float var2, float var3, float f, float var5,
@@ -48,7 +48,7 @@ public class LayerArrow implements LayerRenderer<EntityLivingBase> {
 
 			for (int j = 0; j < i; ++j) {
 				GlStateManager.pushMatrix();
-				ModelRenderer modelrenderer = this.field_177168_a.getMainModel().getRandomModelBox(random);
+				ModelRenderer modelrenderer = this.renderer.getMainModel().getRandomModelBox(random);
 				ModelBox modelbox = (ModelBox) modelrenderer.cubeList
 						.get(random.nextInt(modelrenderer.cubeList.size()));
 				modelrenderer.postRender(0.0625F);
@@ -73,7 +73,7 @@ public class LayerArrow implements LayerRenderer<EntityLivingBase> {
 				double d0 = 0.0D;
 				double d1 = 0.0D;
 				double d2 = 0.0D;
-				this.field_177168_a.getRenderManager().renderEntityWithPosYaw(entityarrow, d0, d1, d2, 0.0F, f);
+				this.renderer.getRenderManager().renderEntityWithPosYaw(entityarrow, d0, d1, d2, 0.0F, f);
 				GlStateManager.popMatrix();
 			}
 

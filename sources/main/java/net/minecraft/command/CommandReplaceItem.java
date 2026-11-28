@@ -143,7 +143,7 @@ public class CommandReplaceItem extends CommandBase {
 					iinventory.setInventorySlotContents(j, itemstack);
 				}
 			} else {
-				Entity entity = func_175768_b(parICommandSender, parArrayOfString[1]);
+				Entity entity = CommandBaseGetEntity(parICommandSender, parArrayOfString[1]);
 				parICommandSender.setCommandStat(CommandResultStats.Type.AFFECTED_ITEMS, 0);
 				if (entity instanceof EntityPlayer) {
 					((EntityPlayer) entity).inventoryContainer.detectAndSendChanges();
@@ -181,7 +181,7 @@ public class CommandReplaceItem extends CommandBase {
 				: (astring.length == 2 && astring[0].equals("entity")
 						? getListOfStringsMatchingLastWord(astring, this.getUsernames())
 						: (astring.length >= 2 && astring.length <= 4 && astring[0].equals("block")
-								? func_175771_a(astring, 1, blockpos)
+								? getTabCompletionCoordinate(astring, 1, blockpos)
 								: ((astring.length != 3 || !astring[0].equals("entity"))
 										&& (astring.length != 5 || !astring[0].equals("block"))
 												? ((astring.length != 4 || !astring[0].equals("entity"))

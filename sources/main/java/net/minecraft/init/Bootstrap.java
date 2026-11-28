@@ -116,8 +116,8 @@ public class Bootstrap {
 				return new EntityExpBottle(world, iposition.getX(), iposition.getY(), iposition.getZ());
 			}
 
-			protected float func_82498_a() {
-				return super.func_82498_a() * 0.5F;
+			protected float getProjectileInaccuracy() {
+				return super.getProjectileInaccuracy() * 0.5F;
 			}
 
 			protected float func_82500_b() {
@@ -134,8 +134,8 @@ public class Bootstrap {
 								itemstack.copy());
 					}
 
-					protected float func_82498_a() {
-						return super.func_82498_a() * 0.5F;
+					protected float getProjectileInaccuracy() {
+						return super.getProjectileInaccuracy() * 0.5F;
 					}
 
 					protected float func_82500_b() {
@@ -232,7 +232,7 @@ public class Bootstrap {
 			}
 		});
 		BehaviorDefaultDispenseItem behaviordefaultdispenseitem = new BehaviorDefaultDispenseItem() {
-			private final BehaviorDefaultDispenseItem field_150841_b = new BehaviorDefaultDispenseItem();
+			private final BehaviorDefaultDispenseItem dispenseBehavior = new BehaviorDefaultDispenseItem();
 
 			public ItemStack dispenseStack(IBlockSource iblocksource, ItemStack itemstack) {
 				ItemBucket itembucket = (ItemBucket) itemstack.getItem();
@@ -243,14 +243,14 @@ public class Bootstrap {
 					itemstack.stackSize = 1;
 					return itemstack;
 				} else {
-					return this.field_150841_b.dispense(iblocksource, itemstack);
+					return this.dispenseBehavior.dispense(iblocksource, itemstack);
 				}
 			}
 		};
 		BlockDispenser.dispenseBehaviorRegistry.putObject(Items.lava_bucket, behaviordefaultdispenseitem);
 		BlockDispenser.dispenseBehaviorRegistry.putObject(Items.water_bucket, behaviordefaultdispenseitem);
 		BlockDispenser.dispenseBehaviorRegistry.putObject(Items.bucket, new BehaviorDefaultDispenseItem() {
-			private final BehaviorDefaultDispenseItem field_150840_b = new BehaviorDefaultDispenseItem();
+			private final BehaviorDefaultDispenseItem BootstrapDispenseBehavior = new BehaviorDefaultDispenseItem();
 
 			public ItemStack dispenseStack(IBlockSource iblocksource, ItemStack itemstack) {
 				World world = iblocksource.getWorld();
@@ -278,14 +278,14 @@ public class Bootstrap {
 					itemstack.stackSize = 1;
 				} else if (((TileEntityDispenser) iblocksource.getBlockTileEntity())
 						.addItemStack(new ItemStack(item)) < 0) {
-					this.field_150840_b.dispense(iblocksource, new ItemStack(item));
+					this.BootstrapDispenseBehavior.dispense(iblocksource, new ItemStack(item));
 				}
 
 				return itemstack;
 			}
 		});
 		BlockDispenser.dispenseBehaviorRegistry.putObject(Items.flint_and_steel, new BehaviorDefaultDispenseItem() {
-			private boolean field_150839_b = true;
+			private boolean succeeded = true;
 
 			protected ItemStack dispenseStack(IBlockSource iblocksource, ItemStack itemstack) {
 				World world = iblocksource.getWorld();
@@ -301,14 +301,14 @@ public class Bootstrap {
 							Blocks.tnt.getDefaultState().withProperty(BlockTNT.EXPLODE, Boolean.valueOf(true)));
 					world.setBlockToAir(blockpos);
 				} else {
-					this.field_150839_b = false;
+					this.succeeded = false;
 				}
 
 				return itemstack;
 			}
 
 			protected void playDispenseSound(IBlockSource iblocksource) {
-				if (this.field_150839_b) {
+				if (this.succeeded) {
 					iblocksource.getWorld().playAuxSFX(1000, iblocksource.getBlockPos(), 0);
 				} else {
 					iblocksource.getWorld().playAuxSFX(1001, iblocksource.getBlockPos(), 0);
@@ -317,7 +317,7 @@ public class Bootstrap {
 			}
 		});
 		BlockDispenser.dispenseBehaviorRegistry.putObject(Items.dye, new BehaviorDefaultDispenseItem() {
-			private boolean field_150838_b = true;
+			private boolean BootstrapSucceeded = true;
 
 			protected ItemStack dispenseStack(IBlockSource iblocksource, ItemStack itemstack) {
 				if (EnumDyeColor.WHITE == EnumDyeColor.byDyeDamage(itemstack.getMetadata())) {
@@ -327,7 +327,7 @@ public class Bootstrap {
 					if (ItemDye.applyBonemeal(itemstack, world, blockpos)) {
 						world.playAuxSFX(2005, blockpos, 0);
 					} else {
-						this.field_150838_b = false;
+						this.BootstrapSucceeded = false;
 					}
 
 					return itemstack;
@@ -337,7 +337,7 @@ public class Bootstrap {
 			}
 
 			protected void playDispenseSound(IBlockSource iblocksource) {
-				if (this.field_150838_b) {
+				if (this.BootstrapSucceeded) {
 					iblocksource.getWorld().playAuxSFX(1000, iblocksource.getBlockPos(), 0);
 				} else {
 					iblocksource.getWorld().playAuxSFX(1001, iblocksource.getBlockPos(), 0);

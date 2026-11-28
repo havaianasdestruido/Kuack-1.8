@@ -56,11 +56,11 @@ public class TileEntityCommandBlock extends TileEntity {
 			TileEntityCommandBlock.this.getWorld().markBlockForUpdate(TileEntityCommandBlock.this.pos);
 		}
 
-		public int func_145751_f() {
+		public int getCommandBlockType() {
 			return 0;
 		}
 
-		public void func_145757_a(ByteBuf bytebuf) {
+		public void fillInInfo(ByteBuf bytebuf) {
 			bytebuf.writeInt(TileEntityCommandBlock.this.pos.getX());
 			bytebuf.writeInt(TileEntityCommandBlock.this.pos.getY());
 			bytebuf.writeInt(TileEntityCommandBlock.this.pos.getZ());
@@ -93,7 +93,7 @@ public class TileEntityCommandBlock extends TileEntity {
 		return new S35PacketUpdateTileEntity(this.pos, 2, nbttagcompound);
 	}
 
-	public boolean func_183000_F() {
+	public boolean onlyOpsCanSetNbt() {
 		return true;
 	}
 

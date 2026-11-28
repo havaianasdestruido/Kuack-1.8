@@ -39,11 +39,11 @@ import net.minecraft.util.ResourceLocation;
 public abstract class ResourcePackListEntry implements GuiListExtended.IGuiListEntry {
 	private static final ResourceLocation RESOURCE_PACKS_TEXTURE = new ResourceLocation(
 			"textures/gui/resource_packs.png");
-	private static final IChatComponent field_183020_d = new ChatComponentTranslation("resourcePack.incompatible",
+	private static final IChatComponent INCOMPATIBLE = new ChatComponentTranslation("resourcePack.incompatible",
 			new Object[0]);
-	private static final IChatComponent field_183021_e = new ChatComponentTranslation("resourcePack.incompatible.old",
+	private static final IChatComponent INCOMPATIBLE_OLD = new ChatComponentTranslation("resourcePack.incompatible.old",
 			new Object[0]);
-	private static final IChatComponent field_183022_f = new ChatComponentTranslation("resourcePack.incompatible.new",
+	private static final IChatComponent INCOMPATIBLE_NEW = new ChatComponentTranslation("resourcePack.incompatible.new",
 			new Object[0]);
 	protected final Minecraft mc;
 	protected final GuiScreenResourcePacks resourcePacksGUI;
@@ -54,39 +54,39 @@ public abstract class ResourcePackListEntry implements GuiListExtended.IGuiListE
 	}
 
 	public void drawEntry(int var1, int i, int j, int k, int l, int i1, int j1, boolean flag) {
-		int k1 = this.func_183019_a();
+		int k1 = this.getResourcePackFormat();
 		if (k1 != 1) {
 			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 			Gui.drawRect(i - 1, j - 1, i + k - 9, j + l + 1, -8978432);
 		}
 
-		this.func_148313_c();
+		this.bindResourcePackIcon();
 		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 		Gui.drawModalRectWithCustomSizedTexture(i, j, 0.0F, 0.0F, 32, 32, 32.0F, 32.0F);
-		String s = this.func_148312_b();
-		String s1 = this.func_148311_a();
-		if ((this.mc.gameSettings.touchscreen || flag) && this.func_148310_d()) {
+		String s = this.getResourcePackName();
+		String s1 = this.getResourcePackDescription();
+		if ((this.mc.gameSettings.touchscreen || flag) && this.showHoverOverlay()) {
 			this.mc.getTextureManager().bindTexture(RESOURCE_PACKS_TEXTURE);
 			Gui.drawRect(i, j, i + 32, j + 32, -1601138544);
 			GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 			int l1 = i1 - i;
 			int i2 = j1 - j;
 			if (k1 < 1) {
-				s = field_183020_d.getFormattedText();
-				s1 = field_183021_e.getFormattedText();
+				s = INCOMPATIBLE.getFormattedText();
+				s1 = INCOMPATIBLE_OLD.getFormattedText();
 			} else if (k1 > 1) {
-				s = field_183020_d.getFormattedText();
-				s1 = field_183022_f.getFormattedText();
+				s = INCOMPATIBLE.getFormattedText();
+				s1 = INCOMPATIBLE_NEW.getFormattedText();
 			}
 
-			if (this.func_148309_e()) {
+			if (this.canMoveRight()) {
 				if (l1 < 32) {
 					Gui.drawModalRectWithCustomSizedTexture(i, j, 0.0F, 32.0F, 32, 32, 256.0F, 256.0F);
 				} else {
 					Gui.drawModalRectWithCustomSizedTexture(i, j, 0.0F, 0.0F, 32, 32, 256.0F, 256.0F);
 				}
 			} else {
-				if (this.func_148308_f()) {
+				if (this.canMoveLeft()) {
 					if (l1 < 16) {
 						Gui.drawModalRectWithCustomSizedTexture(i, j, 32.0F, 32.0F, 32, 32, 256.0F, 256.0F);
 					} else {
@@ -94,7 +94,7 @@ public abstract class ResourcePackListEntry implements GuiListExtended.IGuiListE
 					}
 				}
 
-				if (this.func_148314_g()) {
+				if (this.canMoveUp()) {
 					if (l1 < 32 && l1 > 16 && i2 < 16) {
 						Gui.drawModalRectWithCustomSizedTexture(i, j, 96.0F, 32.0F, 32, 32, 256.0F, 256.0F);
 					} else {
@@ -102,7 +102,7 @@ public abstract class ResourcePackListEntry implements GuiListExtended.IGuiListE
 					}
 				}
 
-				if (this.func_148307_h()) {
+				if (this.canMoveDown()) {
 					if (l1 < 32 && l1 > 16 && i2 > 16) {
 						Gui.drawModalRectWithCustomSizedTexture(i, j, 64.0F, 32.0F, 32, 32, 256.0F, 256.0F);
 					} else {
@@ -128,38 +128,38 @@ public abstract class ResourcePackListEntry implements GuiListExtended.IGuiListE
 
 	}
 
-	protected abstract int func_183019_a();
+	protected abstract int getResourcePackFormat();
 
-	protected abstract String func_148311_a();
+	protected abstract String getResourcePackDescription();
 
-	protected abstract String func_148312_b();
+	protected abstract String getResourcePackName();
 
-	protected abstract void func_148313_c();
+	protected abstract void bindResourcePackIcon();
 
 	protected abstract String getEaglerFolderName();
 
-	protected boolean func_148310_d() {
+	protected boolean showHoverOverlay() {
 		return true;
 	}
 
-	protected boolean func_148309_e() {
+	protected boolean canMoveRight() {
 		return !this.resourcePacksGUI.hasResourcePackEntry(this);
 	}
 
-	protected boolean func_148308_f() {
+	protected boolean canMoveLeft() {
 		return this.resourcePacksGUI.hasResourcePackEntry(this);
 	}
 
-	protected boolean func_148314_g() {
+	protected boolean canMoveUp() {
 		List list = this.resourcePacksGUI.getListContaining(this);
 		int i = list.indexOf(this);
-		return i > 0 && ((ResourcePackListEntry) list.get(i - 1)).func_148310_d();
+		return i > 0 && ((ResourcePackListEntry) list.get(i - 1)).showHoverOverlay();
 	}
 
-	protected boolean func_148307_h() {
+	protected boolean canMoveDown() {
 		List list = this.resourcePacksGUI.getListContaining(this);
 		int i = list.indexOf(this);
-		return i >= 0 && i < list.size() - 1 && ((ResourcePackListEntry) list.get(i + 1)).func_148310_d();
+		return i >= 0 && i < list.size() - 1 && ((ResourcePackListEntry) list.get(i + 1)).showHoverOverlay();
 	}
 
 	private void proceedWithBs(int l, boolean deleteInstead) {
@@ -183,7 +183,7 @@ public abstract class ResourcePackListEntry implements GuiListExtended.IGuiListE
 			this.mc.displayGuiScreen(this.resourcePacksGUI);
 			this.resourcePacksGUI.getListContaining(this).remove(this);
 			if (deleteInstead) {
-				this.mc.loadingScreen.eaglerShow(I18n.format("resourcePack.load.deleting"), this.func_148312_b());
+				this.mc.loadingScreen.eaglerShow(I18n.format("resourcePack.load.deleting"), this.getResourcePackName());
 				EaglerFolderResourcePack.deleteResourcePack(EaglerFolderResourcePack.RESOURCE_PACKS,
 						this.getEaglerFolderName());
 			} else {
@@ -196,10 +196,10 @@ public abstract class ResourcePackListEntry implements GuiListExtended.IGuiListE
 	 * Returns true if the mouse has been pressed on this control.
 	 */
 	public boolean mousePressed(int var1, int var2, int var3, int var4, int i, int j) {
-		if (this.func_148310_d() && i <= 32) {
-			if (this.func_148309_e()) {
+		if (this.showHoverOverlay() && i <= 32) {
+			if (this.canMoveRight()) {
 				this.resourcePacksGUI.markChanged();
-				int l = this.func_183019_a();
+				int l = this.getResourcePackFormat();
 				if (Keyboard.isKeyDown(KeyboardConstants.KEY_LSHIFT)
 						|| Keyboard.isKeyDown(KeyboardConstants.KEY_RSHIFT)) {
 					proceedWithBs(l, false);
@@ -209,7 +209,7 @@ public abstract class ResourcePackListEntry implements GuiListExtended.IGuiListE
 							proceedWithBs(l, flag);
 
 						}
-					}, I18n.format("resourcePack.prompt.title", this.func_148312_b()),
+					}, I18n.format("resourcePack.prompt.title", this.getResourcePackName()),
 							I18n.format("resourcePack.prompt.text", new Object[0]),
 							I18n.format("resourcePack.prompt.delete", new Object[0]),
 							I18n.format("resourcePack.prompt.add", new Object[0]), 0).withOpaqueBackground());
@@ -217,14 +217,14 @@ public abstract class ResourcePackListEntry implements GuiListExtended.IGuiListE
 				return true;
 			}
 
-			if (i < 16 && this.func_148308_f()) {
+			if (i < 16 && this.canMoveLeft()) {
 				this.resourcePacksGUI.getListContaining(this).remove(this);
 				this.resourcePacksGUI.getAvailableResourcePacks().add(0, this);
 				this.resourcePacksGUI.markChanged();
 				return true;
 			}
 
-			if (i > 16 && j < 16 && this.func_148314_g()) {
+			if (i > 16 && j < 16 && this.canMoveUp()) {
 				List list1 = this.resourcePacksGUI.getListContaining(this);
 				int i1 = list1.indexOf(this);
 				list1.remove(this);
@@ -233,7 +233,7 @@ public abstract class ResourcePackListEntry implements GuiListExtended.IGuiListE
 				return true;
 			}
 
-			if (i > 16 && j > 16 && this.func_148307_h()) {
+			if (i > 16 && j > 16 && this.canMoveDown()) {
 				List list = this.resourcePacksGUI.getListContaining(this);
 				int k = list.indexOf(this);
 				list.remove(this);

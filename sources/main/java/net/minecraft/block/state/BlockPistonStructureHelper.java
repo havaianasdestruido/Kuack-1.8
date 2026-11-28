@@ -73,13 +73,13 @@ public class BlockPistonStructureHelper {
 				this.toDestroy.add(this.blockToMove);
 				return true;
 			}
-		} else if (!this.func_177251_a(this.blockToMove)) {
+		} else if (!this.addBlockLine(this.blockToMove)) {
 			return false;
 		} else {
 			for (int i = 0; i < this.toMove.size(); ++i) {
 				BlockPos blockpos = (BlockPos) this.toMove.get(i);
 				if (this.world.getBlockState(blockpos).getBlock() == Blocks.slime_block
-						&& !this.func_177250_b(blockpos)) {
+						&& !this.addBranchingBlocks(blockpos)) {
 					return false;
 				}
 			}
@@ -88,7 +88,7 @@ public class BlockPistonStructureHelper {
 		}
 	}
 
-	private boolean func_177251_a(BlockPos origin) {
+	private boolean addBlockLine(BlockPos origin) {
 		Block block = this.world.getBlockState(origin).getBlock();
 		if (block.getMaterial() == Material.air) {
 			return true;
@@ -131,12 +131,12 @@ public class BlockPistonStructureHelper {
 					BlockPos blockpos1 = origin.offset(this.moveDirection, j1);
 					int k = this.toMove.indexOf(blockpos1);
 					if (k > -1) {
-						this.func_177255_a(i1, k);
+						this.reorderListAtCollision(i1, k);
 
 						for (int l = 0; l <= k + i1; ++l) {
 							BlockPos blockpos2 = (BlockPos) this.toMove.get(l);
 							if (this.world.getBlockState(blockpos2).getBlock() == Blocks.slime_block
-									&& !this.func_177250_b(blockpos2)) {
+									&& !this.addBranchingBlocks(blockpos2)) {
 								return false;
 							}
 						}
@@ -171,7 +171,7 @@ public class BlockPistonStructureHelper {
 		}
 	}
 
-	private void func_177255_a(int parInt1, int parInt2) {
+	private void reorderListAtCollision(int parInt1, int parInt2) {
 		ArrayList arraylist = Lists.newArrayList();
 		ArrayList arraylist1 = Lists.newArrayList();
 		ArrayList arraylist2 = Lists.newArrayList();
@@ -184,12 +184,12 @@ public class BlockPistonStructureHelper {
 		this.toMove.addAll(arraylist2);
 	}
 
-	private boolean func_177250_b(BlockPos parBlockPos) {
+	private boolean addBranchingBlocks(BlockPos parBlockPos) {
 		EnumFacing[] facings = EnumFacing._VALUES;
 		for (int i = 0; i < facings.length; ++i) {
 			EnumFacing enumfacing = facings[i];
 			if (enumfacing.getAxis() != this.moveDirection.getAxis()
-					&& !this.func_177251_a(parBlockPos.offset(enumfacing))) {
+					&& !this.addBlockLine(parBlockPos.offset(enumfacing))) {
 				return false;
 			}
 		}

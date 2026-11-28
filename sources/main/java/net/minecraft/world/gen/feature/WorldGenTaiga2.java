@@ -33,9 +33,9 @@ import net.minecraft.world.World;
  * 
  */
 public class WorldGenTaiga2 extends WorldGenAbstractTree {
-	private static final IBlockState field_181645_a = Blocks.log.getDefaultState().withProperty(BlockOldLog.VARIANT,
+	private static final IBlockState TRUNK = Blocks.log.getDefaultState().withProperty(BlockOldLog.VARIANT,
 			BlockPlanks.EnumType.SPRUCE);
-	private static final IBlockState field_181646_b = Blocks.leaves.getDefaultState()
+	private static final IBlockState LEAF = Blocks.leaves.getDefaultState()
 			.withProperty(BlockOldLeaf.VARIANT, BlockPlanks.EnumType.SPRUCE)
 			.withProperty(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
 
@@ -63,7 +63,7 @@ public class WorldGenTaiga2 extends WorldGenAbstractTree {
 				for (int k1 = blockpos.getX() - j1; k1 <= blockpos.getX() + j1 && flag; ++k1) {
 					for (int l1 = blockpos.getZ() - j1; l1 <= blockpos.getZ() + j1 && flag; ++l1) {
 						if (i1 >= 0 && i1 < 256) {
-							Block block = world.getBlockState(blockpos$mutableblockpos.func_181079_c(k1, i1, l1))
+							Block block = world.getBlockState(blockpos$mutableblockpos.setPos(k1, i1, l1))
 									.getBlock();
 							if (block.getMaterial() != Material.air && block.getMaterial() != Material.leaves) {
 								flag = false;
@@ -81,7 +81,7 @@ public class WorldGenTaiga2 extends WorldGenAbstractTree {
 				Block block1 = world.getBlockState(blockpos.down()).getBlock();
 				if ((block1 == Blocks.grass || block1 == Blocks.dirt || block1 == Blocks.farmland)
 						&& blockpos.getY() < 256 - i - 1) {
-					this.func_175921_a(world, blockpos.down());
+					this.setDirtAt(world, blockpos.down());
 					int i3 = random.nextInt(2);
 					int j3 = 1;
 					byte b0 = 0;
@@ -97,7 +97,7 @@ public class WorldGenTaiga2 extends WorldGenAbstractTree {
 								if (Math.abs(j2) != i3 || Math.abs(l2) != i3 || i3 <= 0) {
 									BlockPos blockpos1 = new BlockPos(i2, i4, k2);
 									if (!world.getBlockState(blockpos1).getBlock().isFullBlock()) {
-										this.setBlockAndNotifyAdequately(world, blockpos1, field_181646_b);
+										this.setBlockAndNotifyAdequately(world, blockpos1, LEAF);
 									}
 								}
 							}
@@ -120,7 +120,7 @@ public class WorldGenTaiga2 extends WorldGenAbstractTree {
 					for (int j4 = 0; j4 < i - l3; ++j4) {
 						Block block2 = world.getBlockState(blockpos.up(j4)).getBlock();
 						if (block2.getMaterial() == Material.air || block2.getMaterial() == Material.leaves) {
-							this.setBlockAndNotifyAdequately(world, blockpos.up(j4), field_181645_a);
+							this.setBlockAndNotifyAdequately(world, blockpos.up(j4), TRUNK);
 						}
 					}
 

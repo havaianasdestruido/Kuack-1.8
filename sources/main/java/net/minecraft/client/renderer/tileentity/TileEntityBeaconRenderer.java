@@ -72,7 +72,7 @@ public class TileEntityBeaconRenderer extends TileEntitySpecialRenderer<TileEnti
 				GlStateManager.depthMask(true);
 				GlStateManager.tryBlendFuncSeparate(GL_SRC_ALPHA, 1, 1, 0);
 				double d3 = (double) tileentitybeacon.getWorld().getTotalWorldTime() + (double) f;
-				double d4 = MathHelper.func_181162_h(-d3 * 0.2D - (double) MathHelper.floor_double(-d3 * 0.1D));
+				double d4 = MathHelper.frac(-d3 * 0.2D - (double) MathHelper.floor_double(-d3 * 0.1D));
 				float f2 = tileentitybeacon$beamsegment.getColors()[0];
 				float f3 = tileentitybeacon$beamsegment.getColors()[1];
 				float f4 = tileentitybeacon$beamsegment.getColors()[2];
@@ -227,7 +227,7 @@ public class TileEntityBeaconRenderer extends TileEntitySpecialRenderer<TileEnti
 
 										double d3 = (double) tileentitybeacon.getWorld().getTotalWorldTime()
 												+ (double) f;
-										double d4 = MathHelper.func_181162_h(
+										double d4 = MathHelper.frac(
 												-d3 * 0.2D - (double) MathHelper.floor_double(-d3 * 0.1D));
 										float f2 = tileentitybeacon$beamsegment.getColors()[0];
 										float f3 = tileentitybeacon$beamsegment.getColors()[1];
@@ -292,7 +292,7 @@ public class TileEntityBeaconRenderer extends TileEntitySpecialRenderer<TileEnti
 
 	}
 
-	public boolean func_181055_a() {
+	public boolean forceTileEntityRender() {
 		return true;
 	}
 }

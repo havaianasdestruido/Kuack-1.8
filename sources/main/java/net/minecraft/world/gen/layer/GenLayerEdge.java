@@ -21,12 +21,12 @@ package net.minecraft.world.gen.layer;
  * 
  */
 public class GenLayerEdge extends GenLayer {
-	private final GenLayerEdge.Mode field_151627_c;
+	private final GenLayerEdge.Mode mode;
 
 	public GenLayerEdge(long parLong1, GenLayer parGenLayer, GenLayerEdge.Mode parMode) {
 		super(parLong1);
 		this.parent = parGenLayer;
-		this.field_151627_c = parMode;
+		this.mode = parMode;
 	}
 
 	/**+
@@ -36,7 +36,7 @@ public class GenLayerEdge extends GenLayer {
 	 * subclass.
 	 */
 	public int[] getInts(int i, int j, int k, int l) {
-		switch (this.field_151627_c) {
+		switch (this.mode) {
 		case COOL_WARM:
 		default:
 			return this.getIntsCoolWarm(i, j, k, l);

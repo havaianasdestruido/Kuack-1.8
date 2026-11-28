@@ -52,26 +52,26 @@ public abstract class Team {
 		HIDE_FOR_OWN_TEAM("hideForOwnTeam", 3);
 
 		private static Map<String, Team.EnumVisible> field_178828_g = Maps.newHashMap();
-		public final String field_178830_e;
-		public final int field_178827_f;
+		public final String internalName;
+		public final int id;
 
-		public static String[] func_178825_a() {
+		public static String[] getNames() {
 			return (String[]) field_178828_g.keySet().toArray(new String[field_178828_g.size()]);
 		}
 
-		public static Team.EnumVisible func_178824_a(String parString1) {
+		public static Team.EnumVisible getByName(String parString1) {
 			return (Team.EnumVisible) field_178828_g.get(parString1);
 		}
 
 		private EnumVisible(String parString2, int parInt2) {
-			this.field_178830_e = parString2;
-			this.field_178827_f = parInt2;
+			this.internalName = parString2;
+			this.id = parInt2;
 		}
 
 		static {
 			Team.EnumVisible[] types = values();
 			for (int i = 0; i < types.length; ++i) {
-				field_178828_g.put(types[i].field_178830_e, types[i]);
+				field_178828_g.put(types[i].internalName, types[i]);
 			}
 
 		}

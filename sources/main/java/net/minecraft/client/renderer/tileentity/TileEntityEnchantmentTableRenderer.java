@@ -33,7 +33,7 @@ public class TileEntityEnchantmentTableRenderer extends TileEntitySpecialRendere
 	 */
 	private static final ResourceLocation TEXTURE_BOOK = new ResourceLocation(
 			"textures/entity/enchanting_table_book.png");
-	private ModelBook field_147541_c = new ModelBook();
+	private ModelBook modelBook = new ModelBook();
 
 	public void renderTileEntityAt(TileEntityEnchantmentTable tileentityenchantmenttable, double d0, double d1,
 			double d2, float f, int var9) {
@@ -81,7 +81,7 @@ public class TileEntityEnchantmentTableRenderer extends TileEntitySpecialRendere
 		float f6 = tileentityenchantmenttable.bookSpreadPrev
 				+ (tileentityenchantmenttable.bookSpread - tileentityenchantmenttable.bookSpreadPrev) * f;
 		GlStateManager.enableCull();
-		this.field_147541_c.render((Entity) null, f1, f4, f5, f6, 0.0F, 0.0625F);
+		this.modelBook.render((Entity) null, f1, f4, f5, f6, 0.0F, 0.0625F);
 		GlStateManager.popMatrix();
 	}
 }

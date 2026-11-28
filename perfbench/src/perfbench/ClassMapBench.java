@@ -11,7 +11,7 @@ import java.util.Set;
 
 /**
  * Models the cost profile of ClassInheritanceMultiMap.add/remove, which iterates EVERY class key
- * known to the (process-wide, monotonically growing) static field_181158_a set and calls
+ * known to the (process-wide, monotonically growing) static KNOWN_CLASSES set and calls
  * isAssignableFrom on it for every single entity add.
  */
 public class ClassMapBench {

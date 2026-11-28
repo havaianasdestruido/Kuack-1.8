@@ -59,7 +59,7 @@ public class CommandListPlayers extends CommandBase {
 		parICommandSender.addChatMessage(new ChatComponentTranslation("commands.players.list",
 				new Object[] { Integer.valueOf(i), Integer.valueOf(MinecraftServer.getServer().getMaxPlayers()) }));
 		parICommandSender.addChatMessage(new ChatComponentText(MinecraftServer.getServer().getConfigurationManager()
-				.func_181058_b(parArrayOfString.length > 0 && "uuids".equalsIgnoreCase(parArrayOfString[0]))));
+				.getFormattedListOfPlayers(parArrayOfString.length > 0 && "uuids".equalsIgnoreCase(parArrayOfString[0]))));
 		parICommandSender.setCommandStat(CommandResultStats.Type.QUERY_RESULT, i);
 	}
 }

@@ -134,12 +134,12 @@ public class BlockQuartz extends Block {
 
 		private static final BlockQuartz.EnumType[] META_LOOKUP = new BlockQuartz.EnumType[5];
 		private final int meta;
-		private final String field_176805_h;
+		private final String serializedName;
 		private final String unlocalizedName;
 
 		private EnumType(int meta, String name, String unlocalizedName) {
 			this.meta = meta;
-			this.field_176805_h = name;
+			this.serializedName = name;
 			this.unlocalizedName = unlocalizedName;
 		}
 
@@ -160,7 +160,7 @@ public class BlockQuartz extends Block {
 		}
 
 		public String getName() {
-			return this.field_176805_h;
+			return this.serializedName;
 		}
 
 		static {

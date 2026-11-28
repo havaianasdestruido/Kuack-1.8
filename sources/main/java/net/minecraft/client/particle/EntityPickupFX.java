@@ -29,20 +29,20 @@ import net.minecraft.world.World;
  * 
  */
 public class EntityPickupFX extends EntityFX {
-	private Entity field_174840_a;
-	private Entity field_174843_ax;
+	private Entity item;
+	private Entity target;
 	private int age;
 	private int maxAge;
-	private float field_174841_aA;
-	private RenderManager field_174842_aB = Minecraft.getMinecraft().getRenderManager();
+	private float yOffset;
+	private RenderManager renderManager = Minecraft.getMinecraft().getRenderManager();
 
 	public EntityPickupFX(World worldIn, Entity parEntity, Entity parEntity2, float parFloat1) {
 		super(worldIn, parEntity.posX, parEntity.posY, parEntity.posZ, parEntity.motionX, parEntity.motionY,
 				parEntity.motionZ);
-		this.field_174840_a = parEntity;
-		this.field_174843_ax = parEntity2;
+		this.item = parEntity;
+		this.target = parEntity2;
 		this.maxAge = 3;
-		this.field_174841_aA = parFloat1;
+		this.yOffset = parFloat1;
 	}
 
 	/**+
@@ -52,16 +52,16 @@ public class EntityPickupFX extends EntityFX {
 			float var8) {
 		float f1 = ((float) this.age + f) / (float) this.maxAge;
 		f1 = f1 * f1;
-		double d0 = this.field_174840_a.posX;
-		double d1 = this.field_174840_a.posY;
-		double d2 = this.field_174840_a.posZ;
-		double d3 = this.field_174843_ax.lastTickPosX
-				+ (this.field_174843_ax.posX - this.field_174843_ax.lastTickPosX) * (double) f;
-		double d4 = this.field_174843_ax.lastTickPosY
-				+ (this.field_174843_ax.posY - this.field_174843_ax.lastTickPosY) * (double) f
-				+ (double) this.field_174841_aA;
-		double d5 = this.field_174843_ax.lastTickPosZ
-				+ (this.field_174843_ax.posZ - this.field_174843_ax.lastTickPosZ) * (double) f;
+		double d0 = this.item.posX;
+		double d1 = this.item.posY;
+		double d2 = this.item.posZ;
+		double d3 = this.target.lastTickPosX
+				+ (this.target.posX - this.target.lastTickPosX) * (double) f;
+		double d4 = this.target.lastTickPosY
+				+ (this.target.posY - this.target.lastTickPosY) * (double) f
+				+ (double) this.yOffset;
+		double d5 = this.target.lastTickPosZ
+				+ (this.target.posZ - this.target.lastTickPosZ) * (double) f;
 		double d6 = d0 + (d3 - d0) * (double) f1;
 		double d7 = d1 + (d4 - d1) * (double) f1;
 		double d8 = d2 + (d5 - d2) * (double) f1;
@@ -73,8 +73,8 @@ public class EntityPickupFX extends EntityFX {
 		d6 = d6 - interpPosX;
 		d7 = d7 - interpPosY;
 		d8 = d8 - interpPosZ;
-		this.field_174842_aB.renderEntityWithPosYaw(this.field_174840_a, (double) ((float) d6), (double) ((float) d7),
-				(double) ((float) d8), this.field_174840_a.rotationYaw, f);
+		this.renderManager.renderEntityWithPosYaw(this.item, (double) ((float) d6), (double) ((float) d7),
+				(double) ((float) d8), this.item.rotationYaw, f);
 	}
 
 	/**+

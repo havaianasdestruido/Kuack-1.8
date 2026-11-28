@@ -43,7 +43,7 @@ public class Scoreboard {
 	private final ScoreObjective[] objectiveDisplaySlots = new ScoreObjective[19];
 	private final Map<String, ScorePlayerTeam> teams = Maps.newHashMap();
 	private final Map<String, ScorePlayerTeam> teamMemberships = Maps.newHashMap();
-	private static String[] field_178823_g = null;
+	private static String[] displaySlots = null;
 
 	/**+
 	 * Returns a ScoreObjective for the objective name
@@ -169,7 +169,7 @@ public class Scoreboard {
 						this.func_96516_a(name);
 					}
 				} else if (score != null) {
-					this.func_178820_a(name, objective);
+					this.broadcastScoreUpdate(name, objective);
 				}
 			}
 		}
@@ -354,7 +354,7 @@ public class Scoreboard {
 	public void func_96516_a(String parString1) {
 	}
 
-	public void func_178820_a(String parString1, ScoreObjective parScoreObjective) {
+	public void broadcastScoreUpdate(String parString1, ScoreObjective parScoreObjective) {
 	}
 
 	/**+
@@ -387,7 +387,7 @@ public class Scoreboard {
 			return "belowName";
 		default:
 			if (parInt1 >= 3 && parInt1 <= 18) {
-				EnumChatFormatting enumchatformatting = EnumChatFormatting.func_175744_a(parInt1 - 3);
+				EnumChatFormatting enumchatformatting = EnumChatFormatting.fromColorIndex(parInt1 - 3);
 				if (enumchatformatting != null && enumchatformatting != EnumChatFormatting.RESET) {
 					return "sidebar.team." + enumchatformatting.getFriendlyName();
 				}
@@ -422,18 +422,18 @@ public class Scoreboard {
 	}
 
 	public static String[] getDisplaySlotStrings() {
-		if (field_178823_g == null) {
-			field_178823_g = new String[19];
+		if (displaySlots == null) {
+			displaySlots = new String[19];
 
 			for (int i = 0; i < 19; ++i) {
-				field_178823_g[i] = getObjectiveDisplaySlot(i);
+				displaySlots[i] = getObjectiveDisplaySlot(i);
 			}
 		}
 
-		return field_178823_g;
+		return displaySlots;
 	}
 
-	public void func_181140_a(Entity parEntity) {
+	public void removeEntity(Entity parEntity) {
 		if (parEntity != null && !(parEntity instanceof EntityPlayer) && !parEntity.isEntityAlive()) {
 			String s = parEntity.getUniqueID().toString();
 			this.removeObjectiveFromEntity(s, (ScoreObjective) null);

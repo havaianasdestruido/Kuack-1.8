@@ -34,18 +34,18 @@ import net.minecraft.world.World;
  */
 public class EntityLargeExplodeFX extends EntityFX {
 	private static final ResourceLocation EXPLOSION_TEXTURE = new ResourceLocation("textures/entity/explosion.png");
-	private int field_70581_a;
-	private int field_70584_aq;
+	private int life;
+	private int lifeTime;
 	private TextureManager theRenderEngine;
-	private float field_70582_as;
+	private float size;
 
 	protected EntityLargeExplodeFX(TextureManager renderEngine, World worldIn, double xCoordIn, double yCoordIn,
 			double zCoordIn, double parDouble1, double parDouble2, double parDouble3) {
 		super(worldIn, xCoordIn, yCoordIn, zCoordIn, 0.0D, 0.0D, 0.0D);
 		this.theRenderEngine = renderEngine;
-		this.field_70584_aq = 6 + this.rand.nextInt(4);
+		this.lifeTime = 6 + this.rand.nextInt(4);
 		this.particleRed = this.particleGreen = this.particleBlue = this.rand.nextFloat() * 0.6F + 0.4F;
-		this.field_70582_as = 1.0F - (float) parDouble1 * 0.5F;
+		this.size = 1.0F - (float) parDouble1 * 0.5F;
 	}
 
 	/**+
@@ -53,14 +53,14 @@ public class EntityLargeExplodeFX extends EntityFX {
 	 */
 	public void renderParticle(WorldRenderer worldrenderer, Entity var2, float f, float f1, float f2, float f3,
 			float f4, float f5) {
-		int i = (int) (((float) this.field_70581_a + f) * 15.0F / (float) this.field_70584_aq);
+		int i = (int) (((float) this.life + f) * 15.0F / (float) this.lifeTime);
 		if (i <= 15) {
 			this.theRenderEngine.bindTexture(EXPLOSION_TEXTURE);
 			float f6 = (float) (i % 4) / 4.0F;
 			float f7 = f6 + 0.24975F;
 			float f8 = (float) (i / 4) / 4.0F;
 			float f9 = f8 + 0.24975F;
-			float f10 = 2.0F * this.field_70582_as;
+			float f10 = 2.0F * this.size;
 			float f11 = (float) (this.prevPosX + (this.posX - this.prevPosX) * (double) f - interpPosX);
 			float f12 = (float) (this.prevPosY + (this.posY - this.prevPosY) * (double) f - interpPosY);
 			float f13 = (float) (this.prevPosZ + (this.posZ - this.prevPosZ) * (double) f - interpPosZ);
@@ -105,8 +105,8 @@ public class EntityLargeExplodeFX extends EntityFX {
 		this.prevPosX = this.posX;
 		this.prevPosY = this.posY;
 		this.prevPosZ = this.posZ;
-		++this.field_70581_a;
-		if (this.field_70581_a == this.field_70584_aq) {
+		++this.life;
+		if (this.life == this.lifeTime) {
 			this.setDead();
 		}
 

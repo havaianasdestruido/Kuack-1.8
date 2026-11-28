@@ -112,7 +112,7 @@ public abstract class BlockLeaves extends BlockLeavesBase {
 						for (int l1 = -b0; l1 <= b0; ++l1) {
 							for (int i2 = -b0; i2 <= b0; ++i2) {
 								Block block = world
-										.getBlockState(blockpos$mutableblockpos.func_181079_c(j + k1, k + l1, l + i2))
+										.getBlockState(blockpos$mutableblockpos.setPos(j + k1, k + l1, l + i2))
 										.getBlock();
 								if (block != Blocks.log && block != Blocks.log2) {
 									if (block.getMaterial() == Material.leaves) {

@@ -155,7 +155,7 @@ public class BlockDynamicLiquid extends BlockLiquid {
 
 	}
 
-	private int func_176374_a(World worldIn, BlockPos pos, int distance, EnumFacing calculateFlowCost) {
+	private int getSlopeDistance(World worldIn, BlockPos pos, int distance, EnumFacing calculateFlowCost) {
 		int i = 1000;
 
 		EnumFacing[] facings = EnumFacing.Plane.HORIZONTAL.facingsArray;
@@ -172,7 +172,7 @@ public class BlockDynamicLiquid extends BlockLiquid {
 					}
 
 					if (distance < 4) {
-						int j = this.func_176374_a(worldIn, blockpos, distance + 1, enumfacing.getOpposite());
+						int j = this.getSlopeDistance(worldIn, blockpos, distance + 1, enumfacing.getOpposite());
 						if (j < i) {
 							i = j;
 						}
@@ -201,7 +201,7 @@ public class BlockDynamicLiquid extends BlockLiquid {
 							|| ((Integer) iblockstate.getValue(LEVEL)).intValue() > 0)) {
 				int j;
 				if (this.isBlocked(worldIn, blockpos.down(), worldIn.getBlockState(blockpos.down()))) {
-					j = this.func_176374_a(worldIn, blockpos, 1, enumfacing.getOpposite());
+					j = this.getSlopeDistance(worldIn, blockpos, 1, enumfacing.getOpposite());
 				} else {
 					j = 0;
 				}

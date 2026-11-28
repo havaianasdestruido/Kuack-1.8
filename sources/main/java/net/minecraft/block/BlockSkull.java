@@ -228,7 +228,7 @@ public class BlockSkull extends BlockContainer {
 				entitywither.renderYawOffset = blockpattern$patternhelper.getFinger().getAxis() == EnumFacing.Axis.X
 						? 0.0F
 						: 90.0F;
-				entitywither.func_82206_m();
+				entitywither.ignite();
 
 				List<EntityPlayer> list = worldIn.getEntitiesWithinAABB(EntityPlayer.class,
 						entitywither.getEntityBoundingBox().expand(50.0D, 50.0D, 50.0D));

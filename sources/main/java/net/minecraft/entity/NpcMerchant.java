@@ -32,11 +32,11 @@ public class NpcMerchant implements IMerchant {
 	private InventoryMerchant theMerchantInventory;
 	private EntityPlayer customer;
 	private MerchantRecipeList recipeList;
-	private IChatComponent field_175548_d;
+	private IChatComponent name;
 
 	public NpcMerchant(EntityPlayer parEntityPlayer, IChatComponent parIChatComponent) {
 		this.customer = parEntityPlayer;
-		this.field_175548_d = parIChatComponent;
+		this.name = parIChatComponent;
 		this.theMerchantInventory = new InventoryMerchant(parEntityPlayer, this);
 	}
 
@@ -72,7 +72,7 @@ public class NpcMerchant implements IMerchant {
 	 * sender's username in chat
 	 */
 	public IChatComponent getDisplayName() {
-		return (IChatComponent) (this.field_175548_d != null ? this.field_175548_d
+		return (IChatComponent) (this.name != null ? this.name
 				: new ChatComponentTranslation("entity.Villager.name", new Object[0]));
 	}
 }

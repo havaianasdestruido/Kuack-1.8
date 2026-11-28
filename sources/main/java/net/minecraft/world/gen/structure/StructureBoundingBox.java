@@ -83,7 +83,7 @@ public class StructureBoundingBox {
 		}
 	}
 
-	public static StructureBoundingBox func_175899_a(int parInt1, int parInt2, int parInt3, int parInt4, int parInt5,
+	public static StructureBoundingBox createProper(int parInt1, int parInt2, int parInt3, int parInt4, int parInt5,
 			int parInt6) {
 		return new StructureBoundingBox(Math.min(parInt1, parInt4), Math.min(parInt2, parInt5),
 				Math.min(parInt3, parInt6), Math.max(parInt1, parInt4), Math.max(parInt2, parInt5),
@@ -175,7 +175,7 @@ public class StructureBoundingBox {
 				&& vec.getY() >= this.minY && vec.getY() <= this.maxY;
 	}
 
-	public Vec3i func_175896_b() {
+	public Vec3i getLength() {
 		return new Vec3i(this.maxX - this.minX, this.maxY - this.minY, this.maxZ - this.minZ);
 	}
 

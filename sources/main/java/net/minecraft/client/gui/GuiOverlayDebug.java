@@ -81,8 +81,8 @@ public class GuiOverlayDebug extends Gui {
 			this.renderDebugInfoLeft();
 			this.renderDebugInfoRight(scaledResolutionIn);
 			GlStateManager.popMatrix();
-			if (this.mc.gameSettings.field_181657_aC) {
-				this.func_181554_e();
+			if (this.mc.gameSettings.showLagometer) {
+				this.renderLagometer();
 			}
 		} else {
 			int i = 2;
@@ -478,23 +478,23 @@ public class GuiOverlayDebug extends Gui {
 		}
 	}
 
-	private void func_181554_e() {
+	private void renderLagometer() {
 		GlStateManager.disableDepth();
-		FrameTimer frametimer = this.mc.func_181539_aj();
-		int i = frametimer.func_181749_a();
-		int j = frametimer.func_181750_b();
-		long[] along = frametimer.func_181746_c();
+		FrameTimer frametimer = this.mc.getFrameTimer();
+		int i = frametimer.getLastIndex();
+		int j = frametimer.getIndex();
+		long[] along = frametimer.getFrames();
 		ScaledResolution scaledresolution = new ScaledResolution(this.mc);
 		int k = i;
 		int l = 0;
 		drawRect(0, scaledresolution.getScaledHeight() - 60, 240, scaledresolution.getScaledHeight(), -1873784752);
 
 		while (k != j) {
-			int i1 = frametimer.func_181748_a(along[k], 30);
-			int j1 = this.func_181552_c(MathHelper.clamp_int(i1, 0, 60), 0, 30, 60);
+			int i1 = frametimer.getLagometerValue(along[k], 30);
+			int j1 = this.getFrameColor(MathHelper.clamp_int(i1, 0, 60), 0, 30, 60);
 			this.drawVerticalLine(l, scaledresolution.getScaledHeight(), scaledresolution.getScaledHeight() - i1, j1);
 			++l;
-			k = frametimer.func_181751_b(k + 1);
+			k = frametimer.parseIndex(k + 1);
 		}
 
 		drawRect(1, scaledresolution.getScaledHeight() - 30 + 1, 14, scaledresolution.getScaledHeight() - 30 + 10,
@@ -516,12 +516,12 @@ public class GuiOverlayDebug extends Gui {
 		GlStateManager.enableDepth();
 	}
 
-	private int func_181552_c(int parInt1, int parInt2, int parInt3, int parInt4) {
-		return parInt1 < parInt3 ? this.func_181553_a(-16711936, -256, (float) parInt1 / (float) parInt3)
-				: this.func_181553_a(-256, -65536, (float) (parInt1 - parInt3) / (float) (parInt4 - parInt3));
+	private int getFrameColor(int parInt1, int parInt2, int parInt3, int parInt4) {
+		return parInt1 < parInt3 ? this.blendColors(-16711936, -256, (float) parInt1 / (float) parInt3)
+				: this.blendColors(-256, -65536, (float) (parInt1 - parInt3) / (float) (parInt4 - parInt3));
 	}
 
-	private int func_181553_a(int parInt1, int parInt2, float parFloat1) {
+	private int blendColors(int parInt1, int parInt2, float parFloat1) {
 		int i = parInt1 >> 24 & 255;
 		int j = parInt1 >> 16 & 255;
 		int k = parInt1 >> 8 & 255;

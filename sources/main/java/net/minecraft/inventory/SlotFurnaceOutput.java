@@ -30,7 +30,7 @@ import net.minecraft.util.MathHelper;
  */
 public class SlotFurnaceOutput extends Slot {
 	private EntityPlayer thePlayer;
-	private int field_75228_b;
+	private int removeCount;
 
 	public SlotFurnaceOutput(EntityPlayer player, IInventory inventoryIn, int slotIndex, int xPosition, int yPosition) {
 		super(inventoryIn, slotIndex, xPosition, yPosition);
@@ -51,7 +51,7 @@ public class SlotFurnaceOutput extends Slot {
 	 */
 	public ItemStack decrStackSize(int i) {
 		if (this.getHasStack()) {
-			this.field_75228_b += Math.min(i, this.getStack().stackSize);
+			this.removeCount += Math.min(i, this.getStack().stackSize);
 		}
 
 		return super.decrStackSize(i);
@@ -68,7 +68,7 @@ public class SlotFurnaceOutput extends Slot {
 	 * count then calls onCrafting(item).
 	 */
 	protected void onCrafting(ItemStack stack, int amount) {
-		this.field_75228_b += amount;
+		this.removeCount += amount;
 		this.onCrafting(stack);
 	}
 
@@ -78,9 +78,9 @@ public class SlotFurnaceOutput extends Slot {
 	 * count then calls onCrafting(item).
 	 */
 	protected void onCrafting(ItemStack stack) {
-		stack.onCrafting(this.thePlayer.worldObj, this.thePlayer, this.field_75228_b);
+		stack.onCrafting(this.thePlayer.worldObj, this.thePlayer, this.removeCount);
 		if (!this.thePlayer.worldObj.isRemote) {
-			int i = this.field_75228_b;
+			int i = this.removeCount;
 			float f = FurnaceRecipes.instance().getSmeltingExperience(stack);
 			if (f == 0.0F) {
 				i = 0;
@@ -102,7 +102,7 @@ public class SlotFurnaceOutput extends Slot {
 			}
 		}
 
-		this.field_75228_b = 0;
+		this.removeCount = 0;
 		if (stack.getItem() == Items.iron_ingot) {
 			this.thePlayer.triggerAchievement(AchievementList.acquireIron);
 		}

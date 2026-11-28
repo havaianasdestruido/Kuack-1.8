@@ -171,24 +171,24 @@ public class Profiler {
 	}
 
 	public static final class Result implements Comparable<Profiler.Result> {
-		public double field_76332_a;
-		public double field_76330_b;
-		public String field_76331_c;
+		public double usePercentage;
+		public double totalUsePercentage;
+		public String profilerName;
 
 		public Result(String parString1, double parDouble1, double parDouble2) {
-			this.field_76331_c = parString1;
-			this.field_76332_a = parDouble1;
-			this.field_76330_b = parDouble2;
+			this.profilerName = parString1;
+			this.usePercentage = parDouble1;
+			this.totalUsePercentage = parDouble2;
 		}
 
 		public int compareTo(Profiler.Result profiler$result) {
-			return profiler$result.field_76332_a < this.field_76332_a ? -1
-					: (profiler$result.field_76332_a > this.field_76332_a ? 1
-							: profiler$result.field_76331_c.compareTo(this.field_76331_c));
+			return profiler$result.usePercentage < this.usePercentage ? -1
+					: (profiler$result.usePercentage > this.usePercentage ? 1
+							: profiler$result.profilerName.compareTo(this.profilerName));
 		}
 
-		public int func_76329_a() {
-			return (this.field_76331_c.hashCode() & 11184810) + 4473924;
+		public int getColor() {
+			return (this.profilerName.hashCode() & 11184810) + 4473924;
 		}
 	}
 }

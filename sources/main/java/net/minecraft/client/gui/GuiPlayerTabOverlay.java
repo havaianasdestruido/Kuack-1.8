@@ -45,7 +45,7 @@ import net.minecraft.world.WorldSettings;
  * 
  */
 public class GuiPlayerTabOverlay extends Gui {
-	private static final Ordering<NetworkPlayerInfo> field_175252_a = Ordering
+	private static final Ordering<NetworkPlayerInfo> ENTRY_ORDERING = Ordering
 			.from(new GuiPlayerTabOverlay.PlayerComparator());
 	private final Minecraft mc;
 	private final GuiIngame guiIngame;
@@ -86,7 +86,7 @@ public class GuiPlayerTabOverlay extends Gui {
 	 */
 	public void renderPlayerlist(int width, Scoreboard scoreboardIn, ScoreObjective scoreObjectiveIn) {
 		NetHandlerPlayClient nethandlerplayclient = this.mc.thePlayer.sendQueue;
-		List list = field_175252_a.sortedCopy(nethandlerplayclient.getPlayerInfoMap());
+		List list = ENTRY_ORDERING.sortedCopy(nethandlerplayclient.getPlayerInfoMap());
 		int i = 0;
 		int j = 0;
 
@@ -257,30 +257,30 @@ public class GuiPlayerTabOverlay extends Gui {
 		int i = parScoreObjective.getScoreboard().getValueFromObjective(parString1, parScoreObjective).getScorePoints();
 		if (parScoreObjective.getRenderType() == IScoreObjectiveCriteria.EnumRenderType.HEARTS) {
 			this.mc.getTextureManager().bindTexture(icons);
-			if (this.lastTimeOpened == parNetworkPlayerInfo.func_178855_p()) {
-				if (i < parNetworkPlayerInfo.func_178835_l()) {
-					parNetworkPlayerInfo.func_178846_a(Minecraft.getSystemTime());
-					parNetworkPlayerInfo.func_178844_b((long) (this.guiIngame.getUpdateCounter() + 20));
-				} else if (i > parNetworkPlayerInfo.func_178835_l()) {
-					parNetworkPlayerInfo.func_178846_a(Minecraft.getSystemTime());
-					parNetworkPlayerInfo.func_178844_b((long) (this.guiIngame.getUpdateCounter() + 10));
+			if (this.lastTimeOpened == parNetworkPlayerInfo.getRenderVisibilityId()) {
+				if (i < parNetworkPlayerInfo.getLastHealth()) {
+					parNetworkPlayerInfo.setLastHealthTime(Minecraft.getSystemTime());
+					parNetworkPlayerInfo.setHealthBlinkTime((long) (this.guiIngame.getUpdateCounter() + 20));
+				} else if (i > parNetworkPlayerInfo.getLastHealth()) {
+					parNetworkPlayerInfo.setLastHealthTime(Minecraft.getSystemTime());
+					parNetworkPlayerInfo.setHealthBlinkTime((long) (this.guiIngame.getUpdateCounter() + 10));
 				}
 			}
 
-			if (Minecraft.getSystemTime() - parNetworkPlayerInfo.func_178847_n() > 1000L
-					|| this.lastTimeOpened != parNetworkPlayerInfo.func_178855_p()) {
-				parNetworkPlayerInfo.func_178836_b(i);
-				parNetworkPlayerInfo.func_178857_c(i);
-				parNetworkPlayerInfo.func_178846_a(Minecraft.getSystemTime());
+			if (Minecraft.getSystemTime() - parNetworkPlayerInfo.getLastHealthTime() > 1000L
+					|| this.lastTimeOpened != parNetworkPlayerInfo.getRenderVisibilityId()) {
+				parNetworkPlayerInfo.setLastHealth(i);
+				parNetworkPlayerInfo.setDisplayHealth(i);
+				parNetworkPlayerInfo.setLastHealthTime(Minecraft.getSystemTime());
 			}
 
-			parNetworkPlayerInfo.func_178843_c(this.lastTimeOpened);
-			parNetworkPlayerInfo.func_178836_b(i);
-			int j = MathHelper.ceiling_float_int((float) Math.max(i, parNetworkPlayerInfo.func_178860_m()) / 2.0F);
+			parNetworkPlayerInfo.setRenderVisibilityId(this.lastTimeOpened);
+			parNetworkPlayerInfo.setLastHealth(i);
+			int j = MathHelper.ceiling_float_int((float) Math.max(i, parNetworkPlayerInfo.getDisplayHealth()) / 2.0F);
 			int k = Math.max(MathHelper.ceiling_float_int((float) (i / 2)),
-					Math.max(MathHelper.ceiling_float_int((float) (parNetworkPlayerInfo.func_178860_m() / 2)), 10));
-			boolean flag = parNetworkPlayerInfo.func_178858_o() > (long) this.guiIngame.getUpdateCounter()
-					&& (parNetworkPlayerInfo.func_178858_o() - (long) this.guiIngame.getUpdateCounter()) / 3L
+					Math.max(MathHelper.ceiling_float_int((float) (parNetworkPlayerInfo.getDisplayHealth() / 2)), 10));
+			boolean flag = parNetworkPlayerInfo.getHealthBlinkTime() > (long) this.guiIngame.getUpdateCounter()
+					&& (parNetworkPlayerInfo.getHealthBlinkTime() - (long) this.guiIngame.getUpdateCounter()) / 3L
 							% 2L == 1L;
 			if (j > 0) {
 				float f = Math.min((float) (parInt3 - parInt2 - 4) / (float) k, 9.0F);
@@ -294,12 +294,12 @@ public class GuiPlayerTabOverlay extends Gui {
 						this.drawTexturedModalRect((float) parInt2 + (float) j1 * f, (float) parInt1, flag ? 25 : 16, 0,
 								9, 9);
 						if (flag) {
-							if (j1 * 2 + 1 < parNetworkPlayerInfo.func_178860_m()) {
+							if (j1 * 2 + 1 < parNetworkPlayerInfo.getDisplayHealth()) {
 								this.drawTexturedModalRect((float) parInt2 + (float) j1 * f, (float) parInt1, 70, 0, 9,
 										9);
 							}
 
-							if (j1 * 2 + 1 == parNetworkPlayerInfo.func_178860_m()) {
+							if (j1 * 2 + 1 == parNetworkPlayerInfo.getDisplayHealth()) {
 								this.drawTexturedModalRect((float) parInt2 + (float) j1 * f, (float) parInt1, 79, 0, 9,
 										9);
 							}
@@ -344,7 +344,7 @@ public class GuiPlayerTabOverlay extends Gui {
 		this.header = headerIn;
 	}
 
-	public void func_181030_a() {
+	public void resetFooterHeader() {
 		this.header = null;
 		this.footer = null;
 	}

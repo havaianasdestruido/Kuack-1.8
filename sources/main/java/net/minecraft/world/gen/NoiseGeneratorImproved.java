@@ -27,15 +27,15 @@ public class NoiseGeneratorImproved extends NoiseGenerator {
 	public double xCoord;
 	public double yCoord;
 	public double zCoord;
-	private static final double[] field_152381_e = new double[] { 1.0D, -1.0D, 1.0D, -1.0D, 1.0D, -1.0D, 1.0D, -1.0D,
+	private static final double[] GRAD_X = new double[] { 1.0D, -1.0D, 1.0D, -1.0D, 1.0D, -1.0D, 1.0D, -1.0D,
 			0.0D, 0.0D, 0.0D, 0.0D, 1.0D, 0.0D, -1.0D, 0.0D };
-	private static final double[] field_152382_f = new double[] { 1.0D, 1.0D, -1.0D, -1.0D, 0.0D, 0.0D, 0.0D, 0.0D,
+	private static final double[] GRAD_Y = new double[] { 1.0D, 1.0D, -1.0D, -1.0D, 0.0D, 0.0D, 0.0D, 0.0D,
 			1.0D, -1.0D, 1.0D, -1.0D, 1.0D, -1.0D, 1.0D, -1.0D };
-	private static final double[] field_152383_g = new double[] { 0.0D, 0.0D, 0.0D, 0.0D, 1.0D, 1.0D, -1.0D, -1.0D,
+	private static final double[] GRAD_Z = new double[] { 0.0D, 0.0D, 0.0D, 0.0D, 1.0D, 1.0D, -1.0D, -1.0D,
 			1.0D, 1.0D, -1.0D, -1.0D, 0.0D, 1.0D, 0.0D, -1.0D };
-	private static final double[] field_152384_h = new double[] { 1.0D, -1.0D, 1.0D, -1.0D, 1.0D, -1.0D, 1.0D, -1.0D,
+	private static final double[] GRAD_2X = new double[] { 1.0D, -1.0D, 1.0D, -1.0D, 1.0D, -1.0D, 1.0D, -1.0D,
 			0.0D, 0.0D, 0.0D, 0.0D, 1.0D, 0.0D, -1.0D, 0.0D };
-	private static final double[] field_152385_i = new double[] { 0.0D, 0.0D, 0.0D, 0.0D, 1.0D, 1.0D, -1.0D, -1.0D,
+	private static final double[] GRAD_2Z = new double[] { 0.0D, 0.0D, 0.0D, 0.0D, 1.0D, 1.0D, -1.0D, -1.0D,
 			1.0D, 1.0D, -1.0D, -1.0D, 0.0D, 1.0D, 0.0D, -1.0D };
 
 	public NoiseGeneratorImproved() {
@@ -66,14 +66,14 @@ public class NoiseGeneratorImproved extends NoiseGenerator {
 		return parDouble2 + parDouble1 * (parDouble3 - parDouble2);
 	}
 
-	public final double func_76309_a(int parInt1, double parDouble1, double parDouble2) {
+	public final double grad2(int parInt1, double parDouble1, double parDouble2) {
 		int i = parInt1 & 15;
-		return field_152384_h[i] * parDouble1 + field_152385_i[i] * parDouble2;
+		return GRAD_2X[i] * parDouble1 + GRAD_2Z[i] * parDouble2;
 	}
 
 	public final double grad(int parInt1, double parDouble1, double parDouble2, double parDouble3) {
 		int i = parInt1 & 15;
-		return field_152381_e[i] * parDouble1 + field_152382_f[i] * parDouble2 + field_152383_g[i] * parDouble3;
+		return GRAD_X[i] * parDouble1 + GRAD_Y[i] * parDouble2 + GRAD_Z[i] * parDouble3;
 	}
 
 	/**+
@@ -119,7 +119,7 @@ public class NoiseGeneratorImproved extends NoiseGenerator {
 					j5 = this.permutations[i5] + l6;
 					j = this.permutations[k2 + 1] + 0;
 					k5 = this.permutations[j] + l6;
-					d14 = this.lerp(d18, this.func_76309_a(this.permutations[j5], d17, d19),
+					d14 = this.lerp(d18, this.grad2(this.permutations[j5], d17, d19),
 							this.grad(this.permutations[k5], d17 - 1.0D, 0.0D, d19));
 					d15 = this.lerp(d18, this.grad(this.permutations[j5 + 1], d17, 0.0D, d19 - 1.0D),
 							this.grad(this.permutations[k5 + 1], d17 - 1.0D, 0.0D, d19 - 1.0D));

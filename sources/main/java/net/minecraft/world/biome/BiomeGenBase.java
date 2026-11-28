@@ -130,7 +130,7 @@ public abstract class BiomeGenBase {
 	public static BiomeGenBase mesa;
 	public static BiomeGenBase mesaPlateau_F;
 	public static BiomeGenBase mesaPlateau;
-	public static BiomeGenBase field_180279_ad;
+	public static BiomeGenBase DEFAULT;
 	protected static NoiseGeneratorPerlin temperatureNoise;
 	protected static NoiseGeneratorPerlin GRASS_COLOR_NOISE;
 	protected static WorldGenDoublePlant DOUBLE_PLANT_GENERATOR;
@@ -291,7 +291,7 @@ public abstract class BiomeGenBase {
 	public int getSkyColorByTemp(float parFloat1) {
 		parFloat1 = parFloat1 / 3.0F;
 		parFloat1 = MathHelper.clamp_float(parFloat1, -1.0F, 1.0F);
-		return MathHelper.func_181758_c(0.62222224F - parFloat1 * 0.05F, 0.5F + parFloat1 * 0.1F, 1.0F);
+		return MathHelper.hsvToRGB(0.62222224F - parFloat1 * 0.05F, 0.5F + parFloat1 * 0.1F, 1.0F);
 	}
 
 	/**+
@@ -364,7 +364,7 @@ public abstract class BiomeGenBase {
 	 */
 	public final float getFloatTemperature(BlockPos pos) {
 		if (pos.getY() > 64) {
-			float f = (float) (temperatureNoise.func_151601_a((double) pos.getX() * 1.0D / 8.0D,
+			float f = (float) (temperatureNoise.getValue((double) pos.getX() * 1.0D / 8.0D,
 					(double) pos.getZ() * 1.0D / 8.0D) * 4.0D);
 			return this.temperature - (f + (float) pos.getY() - 64.0F) * 0.05F / 30.0F;
 		} else {
@@ -399,7 +399,7 @@ public abstract class BiomeGenBase {
 
 	public final void generateBiomeTerrain(World worldIn, EaglercraftRandom rand, ChunkPrimer chunkPrimerIn,
 			int parInt1, int parInt2, double parDouble1) {
-		int i = worldIn.func_181545_F();
+		int i = worldIn.getSeaLevel();
 		IBlockState iblockstate = this.topBlock;
 		IBlockState iblockstate1 = this.fillerBlock;
 		int j = -1;
@@ -427,7 +427,7 @@ public abstract class BiomeGenBase {
 
 						if (j1 < i && (iblockstate == null || iblockstate.getBlock().getMaterial() == Material.air)) {
 							if (this.getFloatTemperature(
-									blockpos$mutableblockpos.func_181079_c(parInt1, j1, parInt2)) < 0.15F) {
+									blockpos$mutableblockpos.setPos(parInt1, j1, parInt2)) < 0.15F) {
 								iblockstate = Blocks.ice.getDefaultState();
 							} else {
 								iblockstate = Blocks.water.getDefaultState();
@@ -585,7 +585,7 @@ public abstract class BiomeGenBase {
 				.setHeight(height_HighPlateaus);
 		mesaPlateau = (new BiomeGenMesa(39, false, false)).setColor(13274213).setBiomeName("Mesa Plateau")
 				.setHeight(height_HighPlateaus);
-		field_180279_ad = ocean;
+		DEFAULT = ocean;
 
 		plains.createMutation();
 		desert.createMutation();

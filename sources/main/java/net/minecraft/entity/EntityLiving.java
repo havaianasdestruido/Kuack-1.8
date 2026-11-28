@@ -269,7 +269,7 @@ public abstract class EntityLiving extends EntityLivingBase {
 
 	}
 
-	protected float func_110146_f(float var1, float f) {
+	protected float updateDistance(float var1, float f) {
 		this.bodyHelper.updateRenderAngles();
 		return f;
 	}
@@ -467,7 +467,7 @@ public abstract class EntityLiving extends EntityLivingBase {
 				}
 			}
 
-			if (flag && this.func_175448_a(itemstack)) {
+			if (flag && this.canEquipItem(itemstack)) {
 				if (itemstack1 != null && this.rand.nextFloat() - 0.1F < this.equipmentDropChances[i]) {
 					this.entityDropItem(itemstack1, 0.0F);
 				}
@@ -489,7 +489,7 @@ public abstract class EntityLiving extends EntityLivingBase {
 
 	}
 
-	protected boolean func_175448_a(ItemStack stack) {
+	protected boolean canEquipItem(ItemStack stack) {
 		return true;
 	}
 
@@ -589,8 +589,8 @@ public abstract class EntityLiving extends EntityLivingBase {
 		}
 
 		double d3 = (double) MathHelper.sqrt_double(d0 * d0 + d2 * d2);
-		float f = (float) (MathHelper.func_181159_b(d2, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
-		float f1 = (float) (-(MathHelper.func_181159_b(d1, d3) * 180.0D / 3.1415927410125732D));
+		float f = (float) (MathHelper.atan2(d2, d0) * 180.0D / 3.1415927410125732D) - 90.0F;
+		float f1 = (float) (-(MathHelper.atan2(d1, d3) * 180.0D / 3.1415927410125732D));
 		this.rotationPitch = this.updateRotation(this.rotationPitch, f1, parFloat2);
 		this.rotationYaw = this.updateRotation(this.rotationYaw, f, parFloat1);
 	}

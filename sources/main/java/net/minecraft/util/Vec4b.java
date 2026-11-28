@@ -21,39 +21,39 @@ package net.minecraft.util;
  * 
  */
 public class Vec4b {
-	private byte field_176117_a;
-	private byte field_176115_b;
-	private byte field_176116_c;
-	private byte field_176114_d;
+	private byte type;
+	private byte x;
+	private byte y;
+	private byte rotation;
 
 	public Vec4b(byte parByte1, byte parByte2, byte parByte3, byte parByte4) {
-		this.field_176117_a = parByte1;
-		this.field_176115_b = parByte2;
-		this.field_176116_c = parByte3;
-		this.field_176114_d = parByte4;
+		this.type = parByte1;
+		this.x = parByte2;
+		this.y = parByte3;
+		this.rotation = parByte4;
 	}
 
 	public Vec4b(Vec4b parVec4b) {
-		this.field_176117_a = parVec4b.field_176117_a;
-		this.field_176115_b = parVec4b.field_176115_b;
-		this.field_176116_c = parVec4b.field_176116_c;
-		this.field_176114_d = parVec4b.field_176114_d;
+		this.type = parVec4b.type;
+		this.x = parVec4b.x;
+		this.y = parVec4b.y;
+		this.rotation = parVec4b.rotation;
 	}
 
-	public byte func_176110_a() {
-		return this.field_176117_a;
+	public byte getType() {
+		return this.type;
 	}
 
-	public byte func_176112_b() {
-		return this.field_176115_b;
+	public byte getX() {
+		return this.x;
 	}
 
-	public byte func_176113_c() {
-		return this.field_176116_c;
+	public byte getY() {
+		return this.y;
 	}
 
-	public byte func_176111_d() {
-		return this.field_176114_d;
+	public byte getRotation() {
+		return this.rotation;
 	}
 
 	public boolean equals(Object object) {
@@ -63,18 +63,18 @@ public class Vec4b {
 			return false;
 		} else {
 			Vec4b vec4b = (Vec4b) object;
-			return this.field_176117_a != vec4b.field_176117_a ? false
-					: (this.field_176114_d != vec4b.field_176114_d ? false
-							: (this.field_176115_b != vec4b.field_176115_b ? false
-									: this.field_176116_c == vec4b.field_176116_c));
+			return this.type != vec4b.type ? false
+					: (this.rotation != vec4b.rotation ? false
+							: (this.x != vec4b.x ? false
+									: this.y == vec4b.y));
 		}
 	}
 
 	public int hashCode() {
-		int i = this.field_176117_a;
-		i = 31 * i + this.field_176115_b;
-		i = 31 * i + this.field_176116_c;
-		i = 31 * i + this.field_176114_d;
+		int i = this.type;
+		i = 31 * i + this.x;
+		i = 31 * i + this.y;
+		i = 31 * i + this.rotation;
 		return i;
 	}
 }

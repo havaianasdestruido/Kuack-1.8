@@ -37,13 +37,13 @@ public class MapGenCaves extends MapGenBase {
 		super(scramble);
 	}
 
-	protected void func_180703_a(long parLong1, int parInt1, int parInt2, ChunkPrimer parChunkPrimer, double parDouble1,
+	protected void addRoom(long parLong1, int parInt1, int parInt2, ChunkPrimer parChunkPrimer, double parDouble1,
 			double parDouble2, double parDouble3) {
-		this.func_180702_a(parLong1, parInt1, parInt2, parChunkPrimer, parDouble1, parDouble2, parDouble3,
+		this.addTunnel(parLong1, parInt1, parInt2, parChunkPrimer, parDouble1, parDouble2, parDouble3,
 				1.0F + this.rand.nextFloat() * 6.0F, 0.0F, 0.0F, -1, -1, 0.5D);
 	}
 
-	protected void func_180702_a(long parLong1, int parInt1, int parInt2, ChunkPrimer parChunkPrimer, double parDouble1,
+	protected void addTunnel(long parLong1, int parInt1, int parInt2, ChunkPrimer parChunkPrimer, double parDouble1,
 			double parDouble2, double parDouble3, float parFloat1, float parFloat2, float parFloat3, int parInt3,
 			int parInt4, double parDouble4) {
 		double d0 = (double) (parInt1 * 16 + 8);
@@ -86,10 +86,10 @@ public class MapGenCaves extends MapGenBase {
 			f1 = f1 + (random.nextFloat() - random.nextFloat()) * random.nextFloat() * 2.0F;
 			f = f + (random.nextFloat() - random.nextFloat()) * random.nextFloat() * 4.0F;
 			if (!flag2 && parInt3 == j && parFloat1 > 1.0F && parInt4 > 0) {
-				this.func_180702_a(random.nextLong(), parInt1, parInt2, parChunkPrimer, parDouble1, parDouble2,
+				this.addTunnel(random.nextLong(), parInt1, parInt2, parChunkPrimer, parDouble1, parDouble2,
 						parDouble3, random.nextFloat() * 0.5F + 0.5F, parFloat2 - 1.5707964F, parFloat3 / 3.0F, parInt3,
 						parInt4, 1.0D);
-				this.func_180702_a(random.nextLong(), parInt1, parInt2, parChunkPrimer, parDouble1, parDouble2,
+				this.addTunnel(random.nextLong(), parInt1, parInt2, parChunkPrimer, parDouble1, parDouble2,
 						parDouble3, random.nextFloat() * 0.5F + 0.5F, parFloat2 + 1.5707964F, parFloat3 / 3.0F, parInt3,
 						parInt4, 1.0D);
 				return;
@@ -178,7 +178,7 @@ public class MapGenCaves extends MapGenBase {
 												flag1 = true;
 											}
 
-											if (this.func_175793_a(iblockstate1, iblockstate2)) {
+											if (this.canReplaceBlock(iblockstate1, iblockstate2)) {
 												if (j2 - 1 < 10) {
 													parChunkPrimer.setBlockState(j3, j2, i2,
 															Blocks.lava.getDefaultState());
@@ -195,7 +195,7 @@ public class MapGenCaves extends MapGenBase {
 
 													if (flag1 && parChunkPrimer.getBlockState(j3, j2 - 1, i2)
 															.getBlock() == Blocks.dirt) {
-														blockpos$mutableblockpos.func_181079_c(j3 + parInt1 * 16, 0,
+														blockpos$mutableblockpos.setPos(j3 + parInt1 * 16, 0,
 																i2 + parInt2 * 16);
 														parChunkPrimer.setBlockState(j3, j2 - 1, i2,
 																this.worldObj.getBiomeGenForCoords(
@@ -220,7 +220,7 @@ public class MapGenCaves extends MapGenBase {
 
 	}
 
-	protected boolean func_175793_a(IBlockState parIBlockState, IBlockState parIBlockState2) {
+	protected boolean canReplaceBlock(IBlockState parIBlockState, IBlockState parIBlockState2) {
 		return parIBlockState.getBlock() == Blocks.stone ? true
 				: (parIBlockState.getBlock() == Blocks.dirt ? true
 						: (parIBlockState.getBlock() == Blocks.grass ? true
@@ -256,7 +256,7 @@ public class MapGenCaves extends MapGenBase {
 			double d2 = (double) (j * 16 + this.rand.nextInt(16));
 			int k1 = 1;
 			if (this.rand.nextInt(4) == 0) {
-				this.func_180703_a(this.rand.nextLong(), k, l, chunkprimer, d0, d1, d2);
+				this.addRoom(this.rand.nextLong(), k, l, chunkprimer, d0, d1, d2);
 				k1 += this.rand.nextInt(4);
 			}
 
@@ -268,7 +268,7 @@ public class MapGenCaves extends MapGenBase {
 					f2 *= this.rand.nextFloat() * this.rand.nextFloat() * 3.0F + 1.0F;
 				}
 
-				this.func_180702_a(this.rand.nextLong(), k, l, chunkprimer, d0, d1, d2, f2, f, f1, 0, 0, 1.0D);
+				this.addTunnel(this.rand.nextLong(), k, l, chunkprimer, d0, d1, d2, f2, f, f1, 0, 0, 1.0D);
 			}
 		}
 

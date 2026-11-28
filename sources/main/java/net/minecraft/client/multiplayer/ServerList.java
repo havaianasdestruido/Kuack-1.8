@@ -195,11 +195,11 @@ public class ServerList {
 		this.saveServerList();
 	}
 
-	public void func_147413_a(int parInt1, ServerData parServerData) {
+	public void set(int parInt1, ServerData parServerData) {
 		this.servers.set(parInt1, parServerData);
 	}
 
-	public static void func_147414_b(ServerData parServerData) {
+	public static void saveSingleServer(ServerData parServerData) {
 		ServerList serverlist = new ServerList(Minecraft.getMinecraft());
 		serverlist.loadServerList();
 
@@ -207,7 +207,7 @@ public class ServerList {
 			ServerData serverdata = serverlist.getServerData(i);
 			if (serverdata.serverName.equals(parServerData.serverName)
 					&& serverdata.serverIP.equals(parServerData.serverIP)) {
-				serverlist.func_147413_a(i, parServerData);
+				serverlist.set(i, parServerData);
 				break;
 			}
 		}
@@ -255,7 +255,7 @@ public class ServerList {
 					dat.serverMOTD = EnumChatFormatting.RED + "Too Many Requests!\nTry again later";
 					dat.pingToServer = -1l;
 					dat.hasPing = true;
-					dat.field_78841_f = true;
+					dat.pinged = true;
 				} else {
 					dat.pingToServer = -2l;
 					String addr = AddressResolver.resolveURI(dat.serverIP);
@@ -263,7 +263,7 @@ public class ServerList {
 					if (dat.currentQuery == null) {
 						dat.pingToServer = -1l;
 						dat.hasPing = true;
-						dat.field_78841_f = true;
+						dat.pinged = true;
 					} else {
 						++total;
 					}

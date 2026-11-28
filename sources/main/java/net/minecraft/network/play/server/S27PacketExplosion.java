@@ -37,9 +37,9 @@ public class S27PacketExplosion implements Packet<INetHandlerPlayClient> {
 	private double posZ;
 	private float strength;
 	private List<BlockPos> affectedBlockPositions;
-	private float field_149152_f;
-	private float field_149153_g;
-	private float field_149159_h;
+	private float motionX;
+	private float motionY;
+	private float motionZ;
 
 	public S27PacketExplosion() {
 	}
@@ -52,9 +52,9 @@ public class S27PacketExplosion implements Packet<INetHandlerPlayClient> {
 		this.strength = strengthIn;
 		this.affectedBlockPositions = Lists.newArrayList(affectedBlocksIn);
 		if (parVec3_1 != null) {
-			this.field_149152_f = (float) parVec3_1.xCoord;
-			this.field_149153_g = (float) parVec3_1.yCoord;
-			this.field_149159_h = (float) parVec3_1.zCoord;
+			this.motionX = (float) parVec3_1.xCoord;
+			this.motionY = (float) parVec3_1.yCoord;
+			this.motionZ = (float) parVec3_1.zCoord;
 		}
 
 	}
@@ -80,9 +80,9 @@ public class S27PacketExplosion implements Packet<INetHandlerPlayClient> {
 			this.affectedBlockPositions.add(new BlockPos(j1, k1, l1));
 		}
 
-		this.field_149152_f = parPacketBuffer.readFloat();
-		this.field_149153_g = parPacketBuffer.readFloat();
-		this.field_149159_h = parPacketBuffer.readFloat();
+		this.motionX = parPacketBuffer.readFloat();
+		this.motionY = parPacketBuffer.readFloat();
+		this.motionZ = parPacketBuffer.readFloat();
 	}
 
 	/**+
@@ -108,9 +108,9 @@ public class S27PacketExplosion implements Packet<INetHandlerPlayClient> {
 			parPacketBuffer.writeByte(j1);
 		}
 
-		parPacketBuffer.writeFloat(this.field_149152_f);
-		parPacketBuffer.writeFloat(this.field_149153_g);
-		parPacketBuffer.writeFloat(this.field_149159_h);
+		parPacketBuffer.writeFloat(this.motionX);
+		parPacketBuffer.writeFloat(this.motionY);
+		parPacketBuffer.writeFloat(this.motionZ);
 	}
 
 	/**+
@@ -120,16 +120,16 @@ public class S27PacketExplosion implements Packet<INetHandlerPlayClient> {
 		inethandlerplayclient.handleExplosion(this);
 	}
 
-	public float func_149149_c() {
-		return this.field_149152_f;
+	public float getMotionX() {
+		return this.motionX;
 	}
 
-	public float func_149144_d() {
-		return this.field_149153_g;
+	public float getMotionY() {
+		return this.motionY;
 	}
 
-	public float func_149147_e() {
-		return this.field_149159_h;
+	public float getMotionZ() {
+		return this.motionZ;
 	}
 
 	public double getX() {

@@ -53,7 +53,7 @@ public class BlockRailPowered extends BlockRailBase {
 				});
 	}
 
-	protected boolean func_176566_a(World worldIn, BlockPos pos, IBlockState state, boolean parFlag, int parInt1) {
+	protected boolean findPoweredRailSignal(World worldIn, BlockPos pos, IBlockState state, boolean parFlag, int parInt1) {
 		if (parInt1 >= 8) {
 			return false;
 		} else {
@@ -123,14 +123,14 @@ public class BlockRailPowered extends BlockRailBase {
 				blockrailbase$enumraildirection = BlockRailBase.EnumRailDirection.NORTH_SOUTH;
 			}
 
-			return this.func_176567_a(worldIn, new BlockPos(i, j, k), parFlag, parInt1, blockrailbase$enumraildirection)
+			return this.isSameRailWithPower(worldIn, new BlockPos(i, j, k), parFlag, parInt1, blockrailbase$enumraildirection)
 					? true
-					: flag && this.func_176567_a(worldIn, new BlockPos(i, j - 1, k), parFlag, parInt1,
+					: flag && this.isSameRailWithPower(worldIn, new BlockPos(i, j - 1, k), parFlag, parInt1,
 							blockrailbase$enumraildirection);
 		}
 	}
 
-	protected boolean func_176567_a(World worldIn, BlockPos distance, boolean parFlag, int parInt1,
+	protected boolean isSameRailWithPower(World worldIn, BlockPos distance, boolean parFlag, int parInt1,
 			BlockRailBase.EnumRailDirection parEnumRailDirection) {
 		IBlockState iblockstate = worldIn.getBlockState(distance);
 		if (iblockstate.getBlock() != this) {
@@ -148,7 +148,7 @@ public class BlockRailPowered extends BlockRailBase {
 													&& blockrailbase$enumraildirection != BlockRailBase.EnumRailDirection.ASCENDING_WEST
 															? (((Boolean) iblockstate.getValue(POWERED)).booleanValue()
 																	? (worldIn.isBlockPowered(distance) ? true
-																			: this.func_176566_a(worldIn, distance,
+																			: this.findPoweredRailSignal(worldIn, distance,
 																					iblockstate, parFlag, parInt1 + 1))
 																	: false)
 															: false)
@@ -158,8 +158,8 @@ public class BlockRailPowered extends BlockRailBase {
 
 	protected void onNeighborChangedInternal(World world, BlockPos blockpos, IBlockState iblockstate, Block var4) {
 		boolean flag = ((Boolean) iblockstate.getValue(POWERED)).booleanValue();
-		boolean flag1 = world.isBlockPowered(blockpos) || this.func_176566_a(world, blockpos, iblockstate, true, 0)
-				|| this.func_176566_a(world, blockpos, iblockstate, false, 0);
+		boolean flag1 = world.isBlockPowered(blockpos) || this.findPoweredRailSignal(world, blockpos, iblockstate, true, 0)
+				|| this.findPoweredRailSignal(world, blockpos, iblockstate, false, 0);
 		if (flag1 != flag) {
 			world.setBlockState(blockpos, iblockstate.withProperty(POWERED, Boolean.valueOf(flag1)), 3);
 			world.notifyNeighborsOfStateChange(blockpos.down(), this);

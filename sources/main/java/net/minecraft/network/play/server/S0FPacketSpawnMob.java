@@ -43,7 +43,7 @@ public class S0FPacketSpawnMob implements Packet<INetHandlerPlayClient> {
 	private byte yaw;
 	private byte pitch;
 	private byte headPitch;
-	private DataWatcher field_149043_l;
+	private DataWatcher dataManager;
 	private List<DataWatcher.WatchableObject> watcher;
 
 	public S0FPacketSpawnMob() {
@@ -89,7 +89,7 @@ public class S0FPacketSpawnMob implements Packet<INetHandlerPlayClient> {
 		this.velocityX = (int) (d1 * 8000.0D);
 		this.velocityY = (int) (d2 * 8000.0D);
 		this.velocityZ = (int) (d3 * 8000.0D);
-		this.field_149043_l = entityIn.getDataWatcher();
+		this.dataManager = entityIn.getDataWatcher();
 	}
 
 	/**+
@@ -125,7 +125,7 @@ public class S0FPacketSpawnMob implements Packet<INetHandlerPlayClient> {
 		parPacketBuffer.writeShort(this.velocityX);
 		parPacketBuffer.writeShort(this.velocityY);
 		parPacketBuffer.writeShort(this.velocityZ);
-		this.field_149043_l.writeTo(parPacketBuffer);
+		this.dataManager.writeTo(parPacketBuffer);
 	}
 
 	/**+
@@ -135,9 +135,9 @@ public class S0FPacketSpawnMob implements Packet<INetHandlerPlayClient> {
 		inethandlerplayclient.handleSpawnMob(this);
 	}
 
-	public List<DataWatcher.WatchableObject> func_149027_c() {
+	public List<DataWatcher.WatchableObject> getDataManagerEntries() {
 		if (this.watcher == null) {
-			this.watcher = this.field_149043_l.getAllWatched();
+			this.watcher = this.dataManager.getAllWatched();
 		}
 
 		return this.watcher;

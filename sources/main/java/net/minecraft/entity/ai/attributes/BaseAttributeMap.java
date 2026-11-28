@@ -51,12 +51,12 @@ public abstract class BaseAttributeMap {
 		if (this.attributesByName.containsKey(attribute.getAttributeUnlocalizedName())) {
 			throw new IllegalArgumentException("Attribute is already registered!");
 		} else {
-			IAttributeInstance iattributeinstance = this.func_180376_c(attribute);
+			IAttributeInstance iattributeinstance = this.createInstance(attribute);
 			this.attributesByName.put(attribute.getAttributeUnlocalizedName(), iattributeinstance);
 			this.attributes.put(attribute, iattributeinstance);
 
-			for (IAttribute iattribute = attribute.func_180372_d(); iattribute != null; iattribute = iattribute
-					.func_180372_d()) {
+			for (IAttribute iattribute = attribute.getParent(); iattribute != null; iattribute = iattribute
+					.getParent()) {
 				this.field_180377_c.put(iattribute, attribute);
 			}
 
@@ -64,13 +64,13 @@ public abstract class BaseAttributeMap {
 		}
 	}
 
-	protected abstract IAttributeInstance func_180376_c(IAttribute var1);
+	protected abstract IAttributeInstance createInstance(IAttribute var1);
 
 	public Collection<IAttributeInstance> getAllAttributes() {
 		return this.attributesByName.values();
 	}
 
-	public void func_180794_a(IAttributeInstance parIAttributeInstance) {
+	public void onAttributeModified(IAttributeInstance parIAttributeInstance) {
 	}
 
 	public void removeAttributeModifiers(Multimap<String, AttributeModifier> parMultimap) {

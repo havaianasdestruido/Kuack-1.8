@@ -275,7 +275,7 @@ public class ChunkProviderEnd implements IChunkProvider {
 		BlockFalling.fallInstantly = false;
 	}
 
-	public boolean func_177460_a(IChunkProvider var1, Chunk var2, int var3, int var4) {
+	public boolean populateChunk(IChunkProvider var1, Chunk var2, int var3, int var4) {
 		return false;
 	}
 

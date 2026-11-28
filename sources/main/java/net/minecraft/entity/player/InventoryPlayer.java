@@ -192,7 +192,7 @@ public class InventoryPlayer implements IInventory {
 			ItemStack itemstack = this.mainInventory[j];
 			if (itemstack != null && (itemIn == null || itemstack.getItem() == itemIn)
 					&& (metadataIn <= -1 || itemstack.getMetadata() == metadataIn)
-					&& (itemNBT == null || NBTUtil.func_181123_a(itemNBT, itemstack.getTagCompound(), true))) {
+					&& (itemNBT == null || NBTUtil.areNBTEquals(itemNBT, itemstack.getTagCompound(), true))) {
 				int k = removeCount <= 0 ? itemstack.stackSize : Math.min(removeCount - i, itemstack.stackSize);
 				i += k;
 				if (removeCount != 0) {
@@ -212,7 +212,7 @@ public class InventoryPlayer implements IInventory {
 			ItemStack itemstack1 = this.armorInventory[l];
 			if (itemstack1 != null && (itemIn == null || itemstack1.getItem() == itemIn)
 					&& (metadataIn <= -1 || itemstack1.getMetadata() == metadataIn)
-					&& (itemNBT == null || NBTUtil.func_181123_a(itemNBT, itemstack1.getTagCompound(), false))) {
+					&& (itemNBT == null || NBTUtil.areNBTEquals(itemNBT, itemstack1.getTagCompound(), false))) {
 				int j1 = removeCount <= 0 ? itemstack1.stackSize : Math.min(removeCount - i, itemstack1.stackSize);
 				i += j1;
 				if (removeCount != 0) {
@@ -237,7 +237,7 @@ public class InventoryPlayer implements IInventory {
 				return i;
 			}
 
-			if (itemNBT != null && !NBTUtil.func_181123_a(itemNBT, this.itemStack.getTagCompound(), false)) {
+			if (itemNBT != null && !NBTUtil.areNBTEquals(itemNBT, this.itemStack.getTagCompound(), false)) {
 				return i;
 			}
 

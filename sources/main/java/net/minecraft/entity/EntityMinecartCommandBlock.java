@@ -40,11 +40,11 @@ public class EntityMinecartCommandBlock extends EntityMinecart {
 					IChatComponent.Serializer.componentToJson(this.getLastOutput()));
 		}
 
-		public int func_145751_f() {
+		public int getCommandBlockType() {
 			return 1;
 		}
 
-		public void func_145757_a(ByteBuf bytebuf) {
+		public void fillInInfo(ByteBuf bytebuf) {
 			bytebuf.writeInt(EntityMinecartCommandBlock.this.getEntityId());
 		}
 

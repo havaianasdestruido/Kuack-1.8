@@ -103,14 +103,14 @@ public class ChunkProviderFlat implements IChunkProvider {
 
 		for (FlatLayerInfo flatlayerinfo : this.flatWorldGenInfo.getFlatLayers()) {
 			for (int i = flatlayerinfo.getMinY(); i < flatlayerinfo.getMinY() + flatlayerinfo.getLayerCount(); ++i) {
-				IBlockState iblockstate = flatlayerinfo.func_175900_c();
+				IBlockState iblockstate = flatlayerinfo.getLayerMaterial();
 				if (iblockstate.getBlock() != Blocks.air) {
 					flag = false;
 					this.cachedBlockIDs[i] = iblockstate;
 				}
 			}
 
-			if (flatlayerinfo.func_175900_c().getBlock() == Blocks.air) {
+			if (flatlayerinfo.getLayerMaterial().getBlock() == Blocks.air) {
 				k += flatlayerinfo.getLayerCount();
 			} else {
 				j += flatlayerinfo.getLayerCount() + k;
@@ -118,7 +118,7 @@ public class ChunkProviderFlat implements IChunkProvider {
 			}
 		}
 
-		worldIn.func_181544_b(j);
+		worldIn.setSeaLevel(j);
 		this.hasDecoration = flag ? false : this.flatWorldGenInfo.getWorldFeatures().containsKey("decoration");
 	}
 
@@ -196,7 +196,7 @@ public class ChunkProviderFlat implements IChunkProvider {
 		if (this.lavaLakeGenerator != null && !flag && this.random.nextInt(8) == 0) {
 			BlockPos blockpos1 = blockpos.add(this.random.nextInt(16) + 8,
 					this.random.nextInt(this.random.nextInt(248) + 8), this.random.nextInt(16) + 8);
-			if (blockpos1.getY() < this.worldObj.func_181545_F() || this.random.nextInt(10) == 0) {
+			if (blockpos1.getY() < this.worldObj.getSeaLevel() || this.random.nextInt(10) == 0) {
 				this.lavaLakeGenerator.generate(this.worldObj, this.random, blockpos1);
 			}
 		}
@@ -214,7 +214,7 @@ public class ChunkProviderFlat implements IChunkProvider {
 
 	}
 
-	public boolean func_177460_a(IChunkProvider var1, Chunk var2, int var3, int var4) {
+	public boolean populateChunk(IChunkProvider var1, Chunk var2, int var3, int var4) {
 		return false;
 	}
 

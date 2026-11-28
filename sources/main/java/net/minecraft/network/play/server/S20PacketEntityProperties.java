@@ -36,7 +36,7 @@ import net.minecraft.network.play.INetHandlerPlayClient;
  */
 public class S20PacketEntityProperties implements Packet<INetHandlerPlayClient> {
 	private int entityId;
-	private final List<S20PacketEntityProperties.Snapshot> field_149444_b = Lists.newArrayList();
+	private final List<S20PacketEntityProperties.Snapshot> snapshots = Lists.newArrayList();
 
 	public S20PacketEntityProperties() {
 	}
@@ -45,9 +45,9 @@ public class S20PacketEntityProperties implements Packet<INetHandlerPlayClient> 
 		this.entityId = entityIdIn;
 
 		for (IAttributeInstance iattributeinstance : parCollection) {
-			this.field_149444_b.add(new S20PacketEntityProperties.Snapshot(
+			this.snapshots.add(new S20PacketEntityProperties.Snapshot(
 					iattributeinstance.getAttribute().getAttributeUnlocalizedName(), iattributeinstance.getBaseValue(),
-					iattributeinstance.func_111122_c()));
+					iattributeinstance.getModifiers()));
 		}
 
 	}
@@ -71,7 +71,7 @@ public class S20PacketEntityProperties implements Packet<INetHandlerPlayClient> 
 						parPacketBuffer.readDouble(), parPacketBuffer.readByte()));
 			}
 
-			this.field_149444_b.add(new S20PacketEntityProperties.Snapshot(s, d0, arraylist));
+			this.snapshots.add(new S20PacketEntityProperties.Snapshot(s, d0, arraylist));
 		}
 
 	}
@@ -81,14 +81,14 @@ public class S20PacketEntityProperties implements Packet<INetHandlerPlayClient> 
 	 */
 	public void writePacketData(PacketBuffer parPacketBuffer) throws IOException {
 		parPacketBuffer.writeVarIntToBuffer(this.entityId);
-		parPacketBuffer.writeInt(this.field_149444_b.size());
+		parPacketBuffer.writeInt(this.snapshots.size());
 
-		for (S20PacketEntityProperties.Snapshot s20packetentityproperties$snapshot : this.field_149444_b) {
-			parPacketBuffer.writeString(s20packetentityproperties$snapshot.func_151409_a());
-			parPacketBuffer.writeDouble(s20packetentityproperties$snapshot.func_151410_b());
-			parPacketBuffer.writeVarIntToBuffer(s20packetentityproperties$snapshot.func_151408_c().size());
+		for (S20PacketEntityProperties.Snapshot s20packetentityproperties$snapshot : this.snapshots) {
+			parPacketBuffer.writeString(s20packetentityproperties$snapshot.getName());
+			parPacketBuffer.writeDouble(s20packetentityproperties$snapshot.getBaseValue());
+			parPacketBuffer.writeVarIntToBuffer(s20packetentityproperties$snapshot.getModifiers().size());
 
-			for (AttributeModifier attributemodifier : s20packetentityproperties$snapshot.func_151408_c()) {
+			for (AttributeModifier attributemodifier : s20packetentityproperties$snapshot.getModifiers()) {
 				parPacketBuffer.writeUuid(attributemodifier.getID());
 				parPacketBuffer.writeDouble(attributemodifier.getAmount());
 				parPacketBuffer.writeByte(attributemodifier.getOperation());
@@ -108,31 +108,31 @@ public class S20PacketEntityProperties implements Packet<INetHandlerPlayClient> 
 		return this.entityId;
 	}
 
-	public List<S20PacketEntityProperties.Snapshot> func_149441_d() {
-		return this.field_149444_b;
+	public List<S20PacketEntityProperties.Snapshot> getSnapshots() {
+		return this.snapshots;
 	}
 
 	public class Snapshot {
-		private final String field_151412_b;
-		private final double field_151413_c;
-		private final Collection<AttributeModifier> field_151411_d;
+		private final String name;
+		private final double baseValue;
+		private final Collection<AttributeModifier> modifiers;
 
 		public Snapshot(String parString1, double parDouble1, Collection<AttributeModifier> parCollection) {
-			this.field_151412_b = parString1;
-			this.field_151413_c = parDouble1;
-			this.field_151411_d = parCollection;
+			this.name = parString1;
+			this.baseValue = parDouble1;
+			this.modifiers = parCollection;
 		}
 
-		public String func_151409_a() {
-			return this.field_151412_b;
+		public String getName() {
+			return this.name;
 		}
 
-		public double func_151410_b() {
-			return this.field_151413_c;
+		public double getBaseValue() {
+			return this.baseValue;
 		}
 
-		public Collection<AttributeModifier> func_151408_c() {
-			return this.field_151411_d;
+		public Collection<AttributeModifier> getModifiers() {
+			return this.modifiers;
 		}
 	}
 }

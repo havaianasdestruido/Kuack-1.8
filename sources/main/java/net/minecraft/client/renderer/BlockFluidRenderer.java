@@ -157,7 +157,7 @@ public class BlockFluidRenderer {
 					worldRendererIn.genNormals(true, f12 <= -999.0F ? BlockVertexIDs.builtin_water_still_vertex_id
 							: BlockVertexIDs.builtin_water_flow_vertex_id);
 
-				if (blockliquid.func_176364_g(blockAccess, blockPosIn.up(tmp))) {
+				if (blockliquid.shouldRenderSides(blockAccess, blockPosIn.up(tmp))) {
 					worldRendererIn.pos(d0 + 0.0D, d1 + (double) f7, d2 + 0.0D).color(f24, f25, f26, 1.0F)
 							.tex((double) f13, (double) f17).lightmap(l2, i3).endVertex();
 					worldRendererIn.pos(d0 + 1.0D, d1 + (double) f10, d2 + 0.0D).color(f24, f25, f26, 1.0F)

@@ -53,7 +53,7 @@ public interface IChunkProvider {
 	 */
 	void populate(IChunkProvider var1, int var2, int var3);
 
-	boolean func_177460_a(IChunkProvider var1, Chunk var2, int var3, int var4);
+	boolean populateChunk(IChunkProvider var1, Chunk var2, int var3, int var4);
 
 	/**+
 	 * Two modes of operation: if passed true, save all Chunks in

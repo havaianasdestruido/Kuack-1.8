@@ -46,7 +46,7 @@ public class StatFileWriter {
 		return achievementIn.parentAchievement == null || this.hasAchievementUnlocked(achievementIn.parentAchievement);
 	}
 
-	public int func_150874_c(Achievement parAchievement) {
+	public int countRequirementsUntilAvailable(Achievement parAchievement) {
 		if (this.hasAchievementUnlocked(parAchievement)) {
 			return 0;
 		} else {
@@ -89,12 +89,12 @@ public class StatFileWriter {
 		return tupleintjsonserializable == null ? 0 : tupleintjsonserializable.getIntegerValue();
 	}
 
-	public <T extends IJsonSerializable> T func_150870_b(StatBase parStatBase) {
+	public <T extends IJsonSerializable> T getProgress(StatBase parStatBase) {
 		TupleIntJsonSerializable tupleintjsonserializable = (TupleIntJsonSerializable) this.statsData.get(parStatBase);
 		return (T) (tupleintjsonserializable != null ? tupleintjsonserializable.getJsonSerializableValue() : null);
 	}
 
-	public <T extends IJsonSerializable> T func_150872_a(StatBase parStatBase, T parIJsonSerializable) {
+	public <T extends IJsonSerializable> T setProgress(StatBase parStatBase, T parIJsonSerializable) {
 		TupleIntJsonSerializable tupleintjsonserializable = (TupleIntJsonSerializable) this.statsData.get(parStatBase);
 		if (tupleintjsonserializable == null) {
 			tupleintjsonserializable = new TupleIntJsonSerializable();

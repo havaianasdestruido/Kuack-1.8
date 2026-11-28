@@ -73,10 +73,10 @@ public class EnchantmentThorns extends Enchantment {
 	public void onUserHurt(EntityLivingBase entitylivingbase, Entity entity, int i) {
 		EaglercraftRandom random = entitylivingbase.getRNG();
 		ItemStack itemstack = EnchantmentHelper.getEnchantedItem(Enchantment.thorns, entitylivingbase);
-		if (func_92094_a(i, random)) {
+		if (shouldHit(i, random)) {
 			if (entity != null) {
 				entity.attackEntityFrom(DamageSource.causeThornsDamage(entitylivingbase),
-						(float) func_92095_b(i, random));
+						(float) getDamage(i, random));
 				entity.playSound("damage.thorns", 0.5F, 1.0F);
 			}
 
@@ -89,11 +89,11 @@ public class EnchantmentThorns extends Enchantment {
 
 	}
 
-	public static boolean func_92094_a(int parInt1, EaglercraftRandom parRandom) {
+	public static boolean shouldHit(int parInt1, EaglercraftRandom parRandom) {
 		return parInt1 <= 0 ? false : parRandom.nextFloat() < 0.15F * (float) parInt1;
 	}
 
-	public static int func_92095_b(int parInt1, EaglercraftRandom parRandom) {
+	public static int getDamage(int parInt1, EaglercraftRandom parRandom) {
 		return parInt1 > 10 ? parInt1 - 10 : 1 + parRandom.nextInt(4);
 	}
 }

@@ -465,10 +465,10 @@ public class RenderManager {
 				axisalignedbb.minY - entityIn.posY + parDouble2, axisalignedbb.minZ - entityIn.posZ + parDouble3,
 				axisalignedbb.maxX - entityIn.posX + parDouble1, axisalignedbb.maxY - entityIn.posY + parDouble2,
 				axisalignedbb.maxZ - entityIn.posZ + parDouble3);
-		RenderGlobal.func_181563_a(axisalignedbb1, 255, 255, 255, 255);
+		RenderGlobal.drawOutlinedBoundingBox(axisalignedbb1, 255, 255, 255, 255);
 		if (entityIn instanceof EntityLivingBase) {
 			float f1 = 0.01F;
-			RenderGlobal.func_181563_a(new AxisAlignedBB(parDouble1 - (double) f,
+			RenderGlobal.drawOutlinedBoundingBox(new AxisAlignedBB(parDouble1 - (double) f,
 					parDouble2 + (double) entityIn.getEyeHeight() - 0.009999999776482582D, parDouble3 - (double) f,
 					parDouble1 + (double) f, parDouble2 + (double) entityIn.getEyeHeight() + 0.009999999776482582D,
 					parDouble3 + (double) f), 255, 0, 0, 255);

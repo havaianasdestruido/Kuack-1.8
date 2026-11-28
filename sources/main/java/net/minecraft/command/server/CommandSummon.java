@@ -147,6 +147,6 @@ public class CommandSummon extends CommandBase {
 	 */
 	public List<String> addTabCompletionOptions(ICommandSender var1, String[] astring, BlockPos blockpos) {
 		return astring.length == 1 ? getListOfStringsMatchingLastWord(astring, EntityList.getEntityNameList())
-				: (astring.length > 1 && astring.length <= 4 ? func_175771_a(astring, 1, blockpos) : null);
+				: (astring.length > 1 && astring.length <= 4 ? getTabCompletionCoordinate(astring, 1, blockpos) : null);
 	}
 }

@@ -37,30 +37,30 @@ public class CombatTracker {
 	 */
 	private final List<CombatEntry> combatEntries = Lists.newArrayList();
 	private final EntityLivingBase fighter;
-	private int field_94555_c;
-	private int field_152775_d;
-	private int field_152776_e;
-	private boolean field_94552_d;
-	private boolean field_94553_e;
-	private String field_94551_f;
+	private int lastDamageTime;
+	private int combatStartTime;
+	private int combatEndTime;
+	private boolean inCombat;
+	private boolean takingDamage;
+	private String fallSuffix;
 
 	public CombatTracker(EntityLivingBase fighterIn) {
 		this.fighter = fighterIn;
 	}
 
-	public void func_94545_a() {
-		this.func_94542_g();
+	public void calculateFallSuffix() {
+		this.resetFallSuffix();
 		if (this.fighter.isOnLadder()) {
 			Block block = this.fighter.worldObj.getBlockState(
 					new BlockPos(this.fighter.posX, this.fighter.getEntityBoundingBox().minY, this.fighter.posZ))
 					.getBlock();
 			if (block == Blocks.ladder) {
-				this.field_94551_f = "ladder";
+				this.fallSuffix = "ladder";
 			} else if (block == Blocks.vine) {
-				this.field_94551_f = "vines";
+				this.fallSuffix = "vines";
 			}
 		} else if (this.fighter.isInWater()) {
-			this.field_94551_f = "water";
+			this.fallSuffix = "water";
 		}
 
 	}
@@ -70,16 +70,16 @@ public class CombatTracker {
 	 */
 	public void trackDamage(DamageSource damageSrc, float healthIn, float damageAmount) {
 		this.reset();
-		this.func_94545_a();
+		this.calculateFallSuffix();
 		CombatEntry combatentry = new CombatEntry(damageSrc, this.fighter.ticksExisted, healthIn, damageAmount,
-				this.field_94551_f, this.fighter.fallDistance);
+				this.fallSuffix, this.fighter.fallDistance);
 		this.combatEntries.add(combatentry);
-		this.field_94555_c = this.fighter.ticksExisted;
-		this.field_94553_e = true;
-		if (combatentry.isLivingDamageSrc() && !this.field_94552_d && this.fighter.isEntityAlive()) {
-			this.field_94552_d = true;
-			this.field_152775_d = this.fighter.ticksExisted;
-			this.field_152776_e = this.field_152775_d;
+		this.lastDamageTime = this.fighter.ticksExisted;
+		this.takingDamage = true;
+		if (combatentry.isLivingDamageSrc() && !this.inCombat && this.fighter.isEntityAlive()) {
+			this.inCombat = true;
+			this.combatStartTime = this.fighter.ticksExisted;
+			this.combatEndTime = this.combatStartTime;
 			this.fighter.sendEnterCombat();
 		}
 
@@ -89,7 +89,7 @@ public class CombatTracker {
 		if (this.combatEntries.size() == 0) {
 			return new ChatComponentTranslation("death.attack.generic", new Object[] { this.fighter.getDisplayName() });
 		} else {
-			CombatEntry combatentry = this.func_94544_f();
+			CombatEntry combatentry = this.getBestCombatEntry();
 			CombatEntry combatentry1 = (CombatEntry) this.combatEntries.get(this.combatEntries.size() - 1);
 			IChatComponent ichatcomponent = combatentry1.getDamageSrcDisplayName();
 			Entity entity = combatentry1.getDamageSrc().getEntity();
@@ -127,7 +127,7 @@ public class CombatTracker {
 								new Object[] { this.fighter.getDisplayName() });
 					}
 				} else {
-					object = new ChatComponentTranslation("death.fell.accident." + this.func_94548_b(combatentry),
+					object = new ChatComponentTranslation("death.fell.accident." + this.getFallSuffix(combatentry),
 							new Object[] { this.fighter.getDisplayName() });
 				}
 			} else {
@@ -138,7 +138,7 @@ public class CombatTracker {
 		}
 	}
 
-	public EntityLivingBase func_94550_c() {
+	public EntityLivingBase getBestAttacker() {
 		EntityLivingBase entitylivingbase = null;
 		EntityPlayer entityplayer = null;
 		float f = 0.0F;
@@ -147,14 +147,14 @@ public class CombatTracker {
 		for (int i = 0, l = this.combatEntries.size(); i < l; ++i) {
 			CombatEntry combatentry = this.combatEntries.get(i);
 			if (combatentry.getDamageSrc().getEntity() instanceof EntityPlayer
-					&& (entityplayer == null || combatentry.func_94563_c() > f1)) {
-				f1 = combatentry.func_94563_c();
+					&& (entityplayer == null || combatentry.getDamage() > f1)) {
+				f1 = combatentry.getDamage();
 				entityplayer = (EntityPlayer) combatentry.getDamageSrc().getEntity();
 			}
 
 			if (combatentry.getDamageSrc().getEntity() instanceof EntityLivingBase
-					&& (entitylivingbase == null || combatentry.func_94563_c() > f)) {
-				f = combatentry.func_94563_c();
+					&& (entitylivingbase == null || combatentry.getDamage() > f)) {
+				f = combatentry.getDamage();
 				entitylivingbase = (EntityLivingBase) combatentry.getDamageSrc().getEntity();
 			}
 		}
@@ -166,7 +166,7 @@ public class CombatTracker {
 		}
 	}
 
-	private CombatEntry func_94544_f() {
+	private CombatEntry getBestCombatEntry() {
 		CombatEntry combatentry = null;
 		CombatEntry combatentry1 = null;
 		byte b0 = 0;
@@ -187,8 +187,8 @@ public class CombatTracker {
 				f = combatentry2.getDamageAmount();
 			}
 
-			if (combatentry2.func_94562_g() != null
-					&& (combatentry1 == null || combatentry2.func_94563_c() > (float) b0)) {
+			if (combatentry2.getFallSuffix() != null
+					&& (combatentry1 == null || combatentry2.getDamage() > (float) b0)) {
 				combatentry1 = combatentry2;
 			}
 		}
@@ -202,30 +202,30 @@ public class CombatTracker {
 		}
 	}
 
-	private String func_94548_b(CombatEntry parCombatEntry) {
-		return parCombatEntry.func_94562_g() == null ? "generic" : parCombatEntry.func_94562_g();
+	private String getFallSuffix(CombatEntry parCombatEntry) {
+		return parCombatEntry.getFallSuffix() == null ? "generic" : parCombatEntry.getFallSuffix();
 	}
 
-	public int func_180134_f() {
-		return this.field_94552_d ? this.fighter.ticksExisted - this.field_152775_d
-				: this.field_152776_e - this.field_152775_d;
+	public int getCombatDuration() {
+		return this.inCombat ? this.fighter.ticksExisted - this.combatStartTime
+				: this.combatEndTime - this.combatStartTime;
 	}
 
-	private void func_94542_g() {
-		this.field_94551_f = null;
+	private void resetFallSuffix() {
+		this.fallSuffix = null;
 	}
 
 	/**+
 	 * Resets this trackers list of combat entries
 	 */
 	public void reset() {
-		int i = this.field_94552_d ? 300 : 100;
-		if (this.field_94553_e
-				&& (!this.fighter.isEntityAlive() || this.fighter.ticksExisted - this.field_94555_c > i)) {
-			boolean flag = this.field_94552_d;
-			this.field_94553_e = false;
-			this.field_94552_d = false;
-			this.field_152776_e = this.fighter.ticksExisted;
+		int i = this.inCombat ? 300 : 100;
+		if (this.takingDamage
+				&& (!this.fighter.isEntityAlive() || this.fighter.ticksExisted - this.lastDamageTime > i)) {
+			boolean flag = this.inCombat;
+			this.takingDamage = false;
+			this.inCombat = false;
+			this.combatEndTime = this.fighter.ticksExisted;
 			if (flag) {
 				this.fighter.sendEndCombat();
 			}

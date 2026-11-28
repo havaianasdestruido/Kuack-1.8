@@ -201,7 +201,7 @@ public class EnchantmentHelper {
 				+ enchantmentRand.nextInt((enchantmentModifierDamage.damageModifier >> 1) + 1);
 	}
 
-	public static float func_152377_a(ItemStack parItemStack, EnumCreatureAttribute parEnumCreatureAttribute) {
+	public static float getModifierForCreature(ItemStack parItemStack, EnumCreatureAttribute parEnumCreatureAttribute) {
 		enchantmentModifierLiving.livingModifier = 0.0F;
 		enchantmentModifierLiving.entityLiving = parEnumCreatureAttribute;
 		applyEnchantmentModifier(enchantmentModifierLiving, parItemStack);

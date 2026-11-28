@@ -79,7 +79,7 @@ public class GuiCustomizeSkin extends GuiScreen {
 			} else if (parGuiButton instanceof GuiCustomizeSkin.ButtonPart) {
 				EnumPlayerModelParts enumplayermodelparts = ((GuiCustomizeSkin.ButtonPart) parGuiButton).playerModelParts;
 				this.mc.gameSettings.switchModelPartEnabled(enumplayermodelparts);
-				parGuiButton.displayString = this.func_175358_a(enumplayermodelparts);
+				parGuiButton.displayString = this.getMessage(enumplayermodelparts);
 			}
 
 		}
@@ -95,7 +95,7 @@ public class GuiCustomizeSkin extends GuiScreen {
 		super.drawScreen(i, j, f);
 	}
 
-	private String func_175358_a(EnumPlayerModelParts playerModelParts) {
+	private String getMessage(EnumPlayerModelParts playerModelParts) {
 		String s;
 		if (this.mc.gameSettings.getModelParts().contains(playerModelParts)) {
 			s = I18n.format("options.on", new Object[0]);
@@ -107,7 +107,7 @@ public class GuiCustomizeSkin extends GuiScreen {
 		 * TODO: I changed this to getUnformattedText() from getFormattedText() because
 		 * the latter was returning a pink formatting code at the end for no reason
 		 */
-		return playerModelParts.func_179326_d().getUnformattedText() + ": " + s;
+		return playerModelParts.getName().getUnformattedText() + ": " + s;
 	}
 
 	class ButtonPart extends GuiButton {
@@ -115,7 +115,7 @@ public class GuiCustomizeSkin extends GuiScreen {
 
 		private ButtonPart(int parInt1, int parInt2, int parInt3, int parInt4, int parInt5,
 				EnumPlayerModelParts playerModelParts) {
-			super(parInt1, parInt2, parInt3, parInt4, parInt5, GuiCustomizeSkin.this.func_175358_a(playerModelParts));
+			super(parInt1, parInt2, parInt3, parInt4, parInt5, GuiCustomizeSkin.this.getMessage(playerModelParts));
 			this.playerModelParts = playerModelParts;
 		}
 	}

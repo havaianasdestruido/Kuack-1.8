@@ -29,23 +29,23 @@ import net.minecraft.client.gui.spectator.SpectatorMenu;
  * 
  */
 public class SpectatorDetails {
-	private final ISpectatorMenuView field_178684_a;
-	private final List<ISpectatorMenuObject> field_178682_b;
-	private final int field_178683_c;
+	private final ISpectatorMenuView category;
+	private final List<ISpectatorMenuObject> items;
+	private final int selectedSlot;
 
 	public SpectatorDetails(ISpectatorMenuView parISpectatorMenuView, List<ISpectatorMenuObject> parList, int parInt1) {
-		this.field_178684_a = parISpectatorMenuView;
-		this.field_178682_b = parList;
-		this.field_178683_c = parInt1;
+		this.category = parISpectatorMenuView;
+		this.items = parList;
+		this.selectedSlot = parInt1;
 	}
 
-	public ISpectatorMenuObject func_178680_a(int parInt1) {
-		return parInt1 >= 0 && parInt1 < this.field_178682_b.size() ? (ISpectatorMenuObject) Objects
-				.firstNonNull(this.field_178682_b.get(parInt1), SpectatorMenu.field_178657_a)
-				: SpectatorMenu.field_178657_a;
+	public ISpectatorMenuObject getObject(int parInt1) {
+		return parInt1 >= 0 && parInt1 < this.items.size() ? (ISpectatorMenuObject) Objects
+				.firstNonNull(this.items.get(parInt1), SpectatorMenu.EMPTY_SLOT)
+				: SpectatorMenu.EMPTY_SLOT;
 	}
 
-	public int func_178681_b() {
-		return this.field_178683_c;
+	public int getSelectedSlot() {
+		return this.selectedSlot;
 	}
 }

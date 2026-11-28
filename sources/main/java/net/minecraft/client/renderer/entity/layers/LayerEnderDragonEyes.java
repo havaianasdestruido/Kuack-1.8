@@ -46,7 +46,7 @@ public class LayerEnderDragonEyes implements LayerRenderer<EntityDragon> {
 			GlStateManager.enablePolygonOffset();
 			GlStateManager.doPolygonOffset(-0.025f, 1.0f);
 			this.dragonRenderer.getMainModel().render(entitydragon, f, f1, f3, f4, f5, f6);
-			this.dragonRenderer.func_177105_a(entitydragon, f2);
+			this.dragonRenderer.setLightmap(entitydragon, f2);
 			GlStateManager.disablePolygonOffset();
 			DeferredStateManager.setEmissionConstant(0.0f);
 			return;
@@ -63,7 +63,7 @@ public class LayerEnderDragonEyes implements LayerRenderer<EntityDragon> {
 		GlStateManager.enableLighting();
 		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 		this.dragonRenderer.getMainModel().render(entitydragon, f, f1, f3, f4, f5, f6);
-		this.dragonRenderer.func_177105_a(entitydragon, f2);
+		this.dragonRenderer.setLightmap(entitydragon, f2);
 		GlStateManager.disableBlend();
 		GlStateManager.enableAlpha();
 		GlStateManager.depthFunc(GL_LEQUAL);

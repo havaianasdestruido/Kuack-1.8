@@ -47,14 +47,14 @@ import net.minecraft.world.biome.BiomeColorHelper;
 public class BlockDoublePlant extends BlockBush implements IGrowable {
 	public static PropertyEnum<BlockDoublePlant.EnumPlantType> VARIANT;
 	public static PropertyEnum<BlockDoublePlant.EnumBlockHalf> HALF;
-	public static final PropertyEnum<EnumFacing> field_181084_N = BlockDirectional.FACING;
+	public static final PropertyEnum<EnumFacing> FACING = BlockDirectional.FACING;
 
 	public BlockDoublePlant() {
 		super(Material.vine);
 		this.setDefaultState(
 				this.blockState.getBaseState().withProperty(VARIANT, BlockDoublePlant.EnumPlantType.SUNFLOWER)
 						.withProperty(HALF, BlockDoublePlant.EnumBlockHalf.LOWER)
-						.withProperty(field_181084_N, EnumFacing.NORTH));
+						.withProperty(FACING, EnumFacing.NORTH));
 		this.setHardness(0.0F);
 		this.setStepSound(soundTypeGrass);
 		this.setUnlocalizedName("doublePlant");
@@ -303,12 +303,12 @@ public class BlockDoublePlant extends BlockBush implements IGrowable {
 	 */
 	public int getMetaFromState(IBlockState iblockstate) {
 		return iblockstate.getValue(HALF) == BlockDoublePlant.EnumBlockHalf.UPPER
-				? 8 | ((EnumFacing) iblockstate.getValue(field_181084_N)).getHorizontalIndex()
+				? 8 | ((EnumFacing) iblockstate.getValue(FACING)).getHorizontalIndex()
 				: ((BlockDoublePlant.EnumPlantType) iblockstate.getValue(VARIANT)).getMeta();
 	}
 
 	protected BlockState createBlockState() {
-		return new BlockState(this, new IProperty[] { HALF, VARIANT, field_181084_N });
+		return new BlockState(this, new IProperty[] { HALF, VARIANT, FACING });
 	}
 
 	/**+

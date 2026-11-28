@@ -34,9 +34,9 @@ import net.minecraft.world.World;
  * 
  */
 public class WorldGenCanopyTree extends WorldGenAbstractTree {
-	private static final IBlockState field_181640_a = Blocks.log2.getDefaultState().withProperty(BlockNewLog.VARIANT,
+	private static final IBlockState DARK_OAK_LOG = Blocks.log2.getDefaultState().withProperty(BlockNewLog.VARIANT,
 			BlockPlanks.EnumType.DARK_OAK);
-	private static final IBlockState field_181641_b = Blocks.leaves2.getDefaultState()
+	private static final IBlockState DARK_OAK_LEAVES = Blocks.leaves2.getDefaultState()
 			.withProperty(BlockNewLeaf.VARIANT, BlockPlanks.EnumType.DARK_OAK)
 			.withProperty(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
 
@@ -54,13 +54,13 @@ public class WorldGenCanopyTree extends WorldGenAbstractTree {
 			Block block = world.getBlockState(blockpos1).getBlock();
 			if (block != Blocks.grass && block != Blocks.dirt) {
 				return false;
-			} else if (!this.func_181638_a(world, blockpos, i)) {
+			} else if (!this.placeTreeOfHeight(world, blockpos, i)) {
 				return false;
 			} else {
-				this.func_175921_a(world, blockpos1);
-				this.func_175921_a(world, blockpos1.east());
-				this.func_175921_a(world, blockpos1.south());
-				this.func_175921_a(world, blockpos1.south().east());
+				this.setDirtAt(world, blockpos1);
+				this.setDirtAt(world, blockpos1.east());
+				this.setDirtAt(world, blockpos1.south());
+				this.setDirtAt(world, blockpos1.south().east());
 				EnumFacing enumfacing = EnumFacing.Plane.HORIZONTAL.random(random);
 				int i1 = i - random.nextInt(4);
 				int j1 = 2 - random.nextInt(3);
@@ -79,42 +79,42 @@ public class WorldGenCanopyTree extends WorldGenAbstractTree {
 					BlockPos blockpos2 = new BlockPos(k1, k2, l1);
 					Material material = world.getBlockState(blockpos2).getBlock().getMaterial();
 					if (material == Material.air || material == Material.leaves) {
-						this.func_181639_b(world, blockpos2);
-						this.func_181639_b(world, blockpos2.east());
-						this.func_181639_b(world, blockpos2.south());
-						this.func_181639_b(world, blockpos2.east().south());
+						this.placeLogAt(world, blockpos2);
+						this.placeLogAt(world, blockpos2.east());
+						this.placeLogAt(world, blockpos2.south());
+						this.placeLogAt(world, blockpos2.east().south());
 					}
 				}
 
 				for (int i3 = -2; i3 <= 0; ++i3) {
 					for (int l3 = -2; l3 <= 0; ++l3) {
 						byte b0 = -1;
-						this.func_150526_a(world, k1 + i3, i2 + b0, l1 + l3);
-						this.func_150526_a(world, 1 + k1 - i3, i2 + b0, l1 + l3);
-						this.func_150526_a(world, k1 + i3, i2 + b0, 1 + l1 - l3);
-						this.func_150526_a(world, 1 + k1 - i3, i2 + b0, 1 + l1 - l3);
+						this.placeLeafAt(world, k1 + i3, i2 + b0, l1 + l3);
+						this.placeLeafAt(world, 1 + k1 - i3, i2 + b0, l1 + l3);
+						this.placeLeafAt(world, k1 + i3, i2 + b0, 1 + l1 - l3);
+						this.placeLeafAt(world, 1 + k1 - i3, i2 + b0, 1 + l1 - l3);
 						if ((i3 > -2 || l3 > -1) && (i3 != -1 || l3 != -2)) {
 							b0 = 1;
-							this.func_150526_a(world, k1 + i3, i2 + b0, l1 + l3);
-							this.func_150526_a(world, 1 + k1 - i3, i2 + b0, l1 + l3);
-							this.func_150526_a(world, k1 + i3, i2 + b0, 1 + l1 - l3);
-							this.func_150526_a(world, 1 + k1 - i3, i2 + b0, 1 + l1 - l3);
+							this.placeLeafAt(world, k1 + i3, i2 + b0, l1 + l3);
+							this.placeLeafAt(world, 1 + k1 - i3, i2 + b0, l1 + l3);
+							this.placeLeafAt(world, k1 + i3, i2 + b0, 1 + l1 - l3);
+							this.placeLeafAt(world, 1 + k1 - i3, i2 + b0, 1 + l1 - l3);
 						}
 					}
 				}
 
 				if (random.nextBoolean()) {
-					this.func_150526_a(world, k1, i2 + 2, l1);
-					this.func_150526_a(world, k1 + 1, i2 + 2, l1);
-					this.func_150526_a(world, k1 + 1, i2 + 2, l1 + 1);
-					this.func_150526_a(world, k1, i2 + 2, l1 + 1);
+					this.placeLeafAt(world, k1, i2 + 2, l1);
+					this.placeLeafAt(world, k1 + 1, i2 + 2, l1);
+					this.placeLeafAt(world, k1 + 1, i2 + 2, l1 + 1);
+					this.placeLeafAt(world, k1, i2 + 2, l1 + 1);
 				}
 
 				for (int j3 = -3; j3 <= 4; ++j3) {
 					for (int i4 = -3; i4 <= 4; ++i4) {
 						if ((j3 != -3 || i4 != -3) && (j3 != -3 || i4 != 4) && (j3 != 4 || i4 != -3)
 								&& (j3 != 4 || i4 != 4) && (Math.abs(j3) < 3 || Math.abs(i4) < 3)) {
-							this.func_150526_a(world, k1 + j3, i2, l1 + i4);
+							this.placeLeafAt(world, k1 + j3, i2, l1 + i4);
 						}
 					}
 				}
@@ -125,19 +125,19 @@ public class WorldGenCanopyTree extends WorldGenAbstractTree {
 							int k4 = random.nextInt(3) + 2;
 
 							for (int l4 = 0; l4 < k4; ++l4) {
-								this.func_181639_b(world, new BlockPos(j + k3, i2 - l4 - 1, l + j4));
+								this.placeLogAt(world, new BlockPos(j + k3, i2 - l4 - 1, l + j4));
 							}
 
 							for (int i5 = -1; i5 <= 1; ++i5) {
 								for (int l2 = -1; l2 <= 1; ++l2) {
-									this.func_150526_a(world, k1 + k3 + i5, i2, l1 + j4 + l2);
+									this.placeLeafAt(world, k1 + k3 + i5, i2, l1 + j4 + l2);
 								}
 							}
 
 							for (int j5 = -2; j5 <= 2; ++j5) {
 								for (int k5 = -2; k5 <= 2; ++k5) {
 									if (Math.abs(j5) != 2 || Math.abs(k5) != 2) {
-										this.func_150526_a(world, k1 + k3 + j5, i2 - 1, l1 + j4 + k5);
+										this.placeLeafAt(world, k1 + k3 + j5, i2 - 1, l1 + j4 + k5);
 									}
 								}
 							}
@@ -152,7 +152,7 @@ public class WorldGenCanopyTree extends WorldGenAbstractTree {
 		}
 	}
 
-	private boolean func_181638_a(World parWorld, BlockPos parBlockPos, int parInt1) {
+	private boolean placeTreeOfHeight(World parWorld, BlockPos parBlockPos, int parInt1) {
 		int i = parBlockPos.getX();
 		int j = parBlockPos.getY();
 		int k = parBlockPos.getZ();
@@ -170,8 +170,8 @@ public class WorldGenCanopyTree extends WorldGenAbstractTree {
 
 			for (int i1 = -b0; i1 <= b0; ++i1) {
 				for (int j1 = -b0; j1 <= b0; ++j1) {
-					if (!this.func_150523_a(parWorld
-							.getBlockState(blockpos$mutableblockpos.func_181079_c(i + i1, j + l, k + j1)).getBlock())) {
+					if (!this.canGrowInto(parWorld
+							.getBlockState(blockpos$mutableblockpos.setPos(i + i1, j + l, k + j1)).getBlock())) {
 						return false;
 					}
 				}
@@ -181,18 +181,18 @@ public class WorldGenCanopyTree extends WorldGenAbstractTree {
 		return true;
 	}
 
-	private void func_181639_b(World parWorld, BlockPos parBlockPos) {
-		if (this.func_150523_a(parWorld.getBlockState(parBlockPos).getBlock())) {
-			this.setBlockAndNotifyAdequately(parWorld, parBlockPos, field_181640_a);
+	private void placeLogAt(World parWorld, BlockPos parBlockPos) {
+		if (this.canGrowInto(parWorld.getBlockState(parBlockPos).getBlock())) {
+			this.setBlockAndNotifyAdequately(parWorld, parBlockPos, DARK_OAK_LOG);
 		}
 
 	}
 
-	private void func_150526_a(World worldIn, int parInt1, int parInt2, int parInt3) {
+	private void placeLeafAt(World worldIn, int parInt1, int parInt2, int parInt3) {
 		BlockPos blockpos = new BlockPos(parInt1, parInt2, parInt3);
 		Block block = worldIn.getBlockState(blockpos).getBlock();
 		if (block.getMaterial() == Material.air) {
-			this.setBlockAndNotifyAdequately(worldIn, blockpos, field_181641_b);
+			this.setBlockAndNotifyAdequately(worldIn, blockpos, DARK_OAK_LEAVES);
 		}
 
 	}

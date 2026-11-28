@@ -80,14 +80,14 @@ public abstract class BlockButton extends Block {
 	 * Check whether this Block can be placed on the given side
 	 */
 	public boolean canPlaceBlockOnSide(World world, BlockPos blockpos, EnumFacing enumfacing) {
-		return func_181088_a(world, blockpos, enumfacing.getOpposite());
+		return canPlaceBlock(world, blockpos, enumfacing.getOpposite());
 	}
 
 	public boolean canPlaceBlockAt(World world, BlockPos blockpos) {
 		EnumFacing[] facings = EnumFacing._VALUES;
 		for (int i = 0; i < facings.length; ++i) {
 			EnumFacing enumfacing = facings[i];
-			if (func_181088_a(world, blockpos, enumfacing)) {
+			if (canPlaceBlock(world, blockpos, enumfacing)) {
 				return true;
 			}
 		}
@@ -95,7 +95,7 @@ public abstract class BlockButton extends Block {
 		return false;
 	}
 
-	protected static boolean func_181088_a(World parWorld, BlockPos parBlockPos, EnumFacing parEnumFacing) {
+	protected static boolean canPlaceBlock(World parWorld, BlockPos parBlockPos, EnumFacing parEnumFacing) {
 		BlockPos blockpos = parBlockPos.offset(parEnumFacing);
 		return parEnumFacing == EnumFacing.DOWN ? World.doesBlockHaveSolidTopSurface(parWorld, blockpos)
 				: parWorld.getBlockState(blockpos).getBlock().isNormalCube();
@@ -107,7 +107,7 @@ public abstract class BlockButton extends Block {
 	 */
 	public IBlockState onBlockPlaced(World world, BlockPos blockpos, EnumFacing enumfacing, float var4, float var5,
 			float var6, int var7, EntityLivingBase var8) {
-		return func_181088_a(world, blockpos, enumfacing.getOpposite())
+		return canPlaceBlock(world, blockpos, enumfacing.getOpposite())
 				? this.getDefaultState().withProperty(FACING, enumfacing).withProperty(POWERED, Boolean.valueOf(false))
 				: this.getDefaultState().withProperty(FACING, EnumFacing.DOWN).withProperty(POWERED,
 						Boolean.valueOf(false));
@@ -118,7 +118,7 @@ public abstract class BlockButton extends Block {
 	 */
 	public void onNeighborBlockChange(World world, BlockPos blockpos, IBlockState iblockstate, Block var4) {
 		if (this.checkForDrop(world, blockpos, iblockstate)
-				&& !func_181088_a(world, blockpos, ((EnumFacing) iblockstate.getValue(FACING)).getOpposite())) {
+				&& !canPlaceBlock(world, blockpos, ((EnumFacing) iblockstate.getValue(FACING)).getOpposite())) {
 			this.dropBlockAsItem(world, blockpos, iblockstate, 0);
 			world.setBlockToAir(blockpos);
 		}

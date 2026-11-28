@@ -81,7 +81,7 @@ import net.minecraft.world.storage.WorldInfo;
  * 
  */
 public abstract class World implements IBlockAccess {
-	private int field_181546_a = 63;
+	private int seaLevel = 63;
 	protected boolean scheduledUpdatesAreImmediate;
 	/**+
 	 * A list of all Entities in all currently-loaded chunks
@@ -215,7 +215,7 @@ public abstract class World implements IBlockAccess {
 
 	public Block getGroundAboveSeaLevel(BlockPos pos) {
 		BlockPos blockpos;
-		for (blockpos = new BlockPos(pos.getX(), this.func_181545_F(), pos.getZ()); !this
+		for (blockpos = new BlockPos(pos.getX(), this.getSeaLevel(), pos.getZ()); !this
 				.isAirBlock(blockpos.up()); blockpos = blockpos.up()) {
 			;
 		}
@@ -498,10 +498,10 @@ public abstract class World implements IBlockAccess {
 	}
 
 	public boolean canBlockSeeSky(BlockPos pos) {
-		if (pos.getY() >= this.func_181545_F()) {
+		if (pos.getY() >= this.getSeaLevel()) {
 			return this.canSeeSky(pos);
 		} else {
-			BlockPos blockpos = new BlockPos(pos.getX(), this.func_181545_F(), pos.getZ());
+			BlockPos blockpos = new BlockPos(pos.getX(), this.getSeaLevel(), pos.getZ());
 			if (!this.canSeeSky(blockpos)) {
 				return false;
 			} else {
@@ -592,7 +592,7 @@ public abstract class World implements IBlockAccess {
 				i = 0;
 			}
 		} else {
-			i = this.func_181545_F() + 1;
+			i = this.getSeaLevel() + 1;
 		}
 
 		return i;
@@ -619,7 +619,7 @@ public abstract class World implements IBlockAccess {
 				return chunk.getLowestHeight();
 			}
 		} else {
-			return this.func_181545_F() + 1;
+			return this.getSeaLevel() + 1;
 		}
 	}
 
@@ -1090,7 +1090,7 @@ public abstract class World implements IBlockAccess {
 
 		for (int k1 = i; k1 < j; ++k1) {
 			for (int l1 = i1; l1 < j1; ++l1) {
-				if (this.isBlockLoaded(blockpos$mutableblockpos.func_181079_c(k1, 64, l1))) {
+				if (this.isBlockLoaded(blockpos$mutableblockpos.setPos(k1, 64, l1))) {
 					if (flag && flag1) {
 						entityIn.setOutsideBorder(false);
 					} else if (!flag && !flag1) {
@@ -1099,7 +1099,7 @@ public abstract class World implements IBlockAccess {
 					boolean inBorder = worldborder.contains((BlockPos) blockpos$mutableblockpos) || !flag1;
 
 					for (int i2 = k - 1; i2 < l; ++i2) {
-						blockpos$mutableblockpos.func_181079_c(k1, i2, l1);
+						blockpos$mutableblockpos.setPos(k1, i2, l1);
 						IBlockState iblockstate1 = inBorder ? this.getBlockState(blockpos$mutableblockpos) : iblockstate;
 
 						iblockstate1.getBlock().addCollisionBoxesToList(this, blockpos$mutableblockpos, iblockstate1,
@@ -1149,7 +1149,7 @@ public abstract class World implements IBlockAccess {
 		return entityIn.posX > d0 && entityIn.posX < d2 && entityIn.posZ > d1 && entityIn.posZ < d3;
 	}
 
-	public List<AxisAlignedBB> func_147461_a(AxisAlignedBB bb) {
+	public List<AxisAlignedBB> getCollisionBoxes(AxisAlignedBB bb) {
 		ArrayList arraylist = Lists.newArrayList();
 		int i = MathHelper.floor_double(bb.minX);
 		int j = MathHelper.floor_double(bb.maxX + 1.0D);
@@ -1161,9 +1161,9 @@ public abstract class World implements IBlockAccess {
 
 		for (int k1 = i; k1 < j; ++k1) {
 			for (int l1 = i1; l1 < j1; ++l1) {
-				if (this.isBlockLoaded(blockpos$mutableblockpos.func_181079_c(k1, 64, l1))) {
+				if (this.isBlockLoaded(blockpos$mutableblockpos.setPos(k1, 64, l1))) {
 					for (int i2 = k - 1; i2 < l; ++i2) {
-						blockpos$mutableblockpos.func_181079_c(k1, i2, l1);
+						blockpos$mutableblockpos.setPos(k1, i2, l1);
 						IBlockState iblockstate;
 						if (k1 >= -30000000 && k1 < 30000000 && l1 >= -30000000 && l1 < 30000000) {
 							iblockstate = this.getBlockState(blockpos$mutableblockpos);
@@ -1681,7 +1681,7 @@ public abstract class World implements IBlockAccess {
 		for (int k1 = i; k1 <= j; ++k1) {
 			for (int l1 = k; l1 <= l; ++l1) {
 				for (int i2 = i1; i2 <= j1; ++i2) {
-					Block block = this.getBlockState(blockpos$mutableblockpos.func_181079_c(k1, l1, i2)).getBlock();
+					Block block = this.getBlockState(blockpos$mutableblockpos.setPos(k1, l1, i2)).getBlock();
 					if (block.getMaterial() != Material.air) {
 						return true;
 					}
@@ -1708,7 +1708,7 @@ public abstract class World implements IBlockAccess {
 		for (int k1 = i; k1 <= j; ++k1) {
 			for (int l1 = k; l1 <= l; ++l1) {
 				for (int i2 = i1; i2 <= j1; ++i2) {
-					Block block = this.getBlockState(blockpos$mutableblockpos.func_181079_c(k1, l1, i2)).getBlock();
+					Block block = this.getBlockState(blockpos$mutableblockpos.setPos(k1, l1, i2)).getBlock();
 					if (block.getMaterial().isLiquid()) {
 						return true;
 					}
@@ -1732,7 +1732,7 @@ public abstract class World implements IBlockAccess {
 			for (int k1 = i; k1 < j; ++k1) {
 				for (int l1 = k; l1 < l; ++l1) {
 					for (int i2 = i1; i2 < j1; ++i2) {
-						Block block = this.getBlockState(blockpos$mutableblockpos.func_181079_c(k1, l1, i2)).getBlock();
+						Block block = this.getBlockState(blockpos$mutableblockpos.setPos(k1, l1, i2)).getBlock();
 						if (block == Blocks.fire || block == Blocks.flowing_lava || block == Blocks.lava) {
 							return true;
 						}
@@ -1765,7 +1765,7 @@ public abstract class World implements IBlockAccess {
 			for (int k1 = i; k1 < j; ++k1) {
 				for (int l1 = k; l1 < l; ++l1) {
 					for (int i2 = i1; i2 < j1; ++i2) {
-						blockpos$mutableblockpos.func_181079_c(k1, l1, i2);
+						blockpos$mutableblockpos.setPos(k1, l1, i2);
 						IBlockState iblockstate = this.getBlockState(blockpos$mutableblockpos);
 						Block block = iblockstate.getBlock();
 						if (block.getMaterial() == materialIn) {
@@ -1808,7 +1808,7 @@ public abstract class World implements IBlockAccess {
 		for (int k1 = i; k1 < j; ++k1) {
 			for (int l1 = k; l1 < l; ++l1) {
 				for (int i2 = i1; i2 < j1; ++i2) {
-					if (this.getBlockState(blockpos$mutableblockpos.func_181079_c(k1, l1, i2)).getBlock()
+					if (this.getBlockState(blockpos$mutableblockpos.setPos(k1, l1, i2)).getBlock()
 							.getMaterial() == materialIn) {
 						return true;
 					}
@@ -1835,7 +1835,7 @@ public abstract class World implements IBlockAccess {
 		for (int k1 = i; k1 < j; ++k1) {
 			for (int l1 = k; l1 < l; ++l1) {
 				for (int i2 = i1; i2 < j1; ++i2) {
-					IBlockState iblockstate = this.getBlockState(blockpos$mutableblockpos.func_181079_c(k1, l1, i2));
+					IBlockState iblockstate = this.getBlockState(blockpos$mutableblockpos.setPos(k1, l1, i2));
 					Block block = iblockstate.getBlock();
 					if (block.getMaterial() == materialIn) {
 						int j2 = ((Integer) iblockstate.getValue(BlockLiquid.LEVEL)).intValue();
@@ -2395,7 +2395,7 @@ public abstract class World implements IBlockAccess {
 									int i4 = i2 + enumfacing.getFrontOffsetX();
 									int j4 = j2 + enumfacing.getFrontOffsetY();
 									int k4 = k2 + enumfacing.getFrontOffsetZ();
-									blockpos$mutableblockpos.func_181079_c(i4, j4, k4);
+									blockpos$mutableblockpos.setPos(i4, j4, k4);
 									int l4 = Math.max(1,
 											this.getBlockState(blockpos$mutableblockpos).getBlock().getLightOpacity());
 									i3 = this.getLightFor(lightType, blockpos$mutableblockpos);
@@ -2481,7 +2481,7 @@ public abstract class World implements IBlockAccess {
 		return null;
 	}
 
-	public List<NextTickListEntry> func_175712_a(StructureBoundingBox structureBB, boolean parFlag) {
+	public List<NextTickListEntry> WorldGetPendingBlockUpdates(StructureBoundingBox structureBB, boolean parFlag) {
 		return null;
 	}
 
@@ -2649,12 +2649,12 @@ public abstract class World implements IBlockAccess {
 						: block.getMaterial().isReplaceable() && blockIn.canReplace(this, pos, entityIn, parItemStack));
 	}
 
-	public int func_181545_F() {
-		return this.field_181546_a;
+	public int getSeaLevel() {
+		return this.seaLevel;
 	}
 
-	public void func_181544_b(int parInt1) {
-		this.field_181546_a = parInt1;
+	public void setSeaLevel(int parInt1) {
+		this.seaLevel = parInt1;
 	}
 
 	/**+

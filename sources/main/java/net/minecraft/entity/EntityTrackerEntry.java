@@ -343,11 +343,11 @@ public class EntityTrackerEntry {
 
 	public void updatePlayerEntity(EntityPlayerMP playerMP) {
 		if (playerMP != this.trackedEntity) {
-			if (this.func_180233_c(playerMP)) {
+			if (this.isVisibleTo(playerMP)) {
 				if (!this.trackingPlayers.contains(playerMP)
 						&& (this.isPlayerWatchingThisChunk(playerMP) || this.trackedEntity.forceSpawn)) {
 					this.trackingPlayers.add(playerMP);
-					Packet packet = this.func_151260_c();
+					Packet packet = this.createSpawnPacket();
 					playerMP.playerNetServerHandler.sendPacket(packet);
 					if (!this.trackedEntity.getDataWatcher().getIsBlank()) {
 						playerMP.playerNetServerHandler.sendPacket(new S1CPacketEntityMetadata(
@@ -425,7 +425,7 @@ public class EntityTrackerEntry {
 		}
 	}
 
-	public boolean func_180233_c(EntityPlayerMP playerMP) {
+	public boolean isVisibleTo(EntityPlayerMP playerMP) {
 		double d0 = playerMP.posX - (double) (this.encodedPosX / 32);
 		double d1 = playerMP.posZ - (double) (this.encodedPosZ / 32);
 		return d0 >= (double) (-this.trackingDistanceThreshold) && d0 <= (double) this.trackingDistanceThreshold
@@ -445,7 +445,7 @@ public class EntityTrackerEntry {
 
 	}
 
-	private Packet func_151260_c() {
+	private Packet createSpawnPacket() {
 		if (this.trackedEntity.isDead) {
 			logger.warn("Fetching addPacket for removed entity");
 		}

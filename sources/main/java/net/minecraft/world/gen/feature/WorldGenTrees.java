@@ -37,9 +37,9 @@ import net.minecraft.world.World;
  * 
  */
 public class WorldGenTrees extends WorldGenAbstractTree {
-	private static final IBlockState field_181653_a = Blocks.log.getDefaultState().withProperty(BlockOldLog.VARIANT,
+	private static final IBlockState DEFAULT_TRUNK = Blocks.log.getDefaultState().withProperty(BlockOldLog.VARIANT,
 			BlockPlanks.EnumType.OAK);
-	private static final IBlockState field_181654_b = Blocks.leaves.getDefaultState()
+	private static final IBlockState DEFAULT_LEAF = Blocks.leaves.getDefaultState()
 			.withProperty(BlockOldLeaf.VARIANT, BlockPlanks.EnumType.OAK)
 			.withProperty(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
 	private final int minTreeHeight;
@@ -48,7 +48,7 @@ public class WorldGenTrees extends WorldGenAbstractTree {
 	private final IBlockState metaLeaves;
 
 	public WorldGenTrees(boolean parFlag) {
-		this(parFlag, 4, field_181653_a, field_181654_b, false);
+		this(parFlag, 4, DEFAULT_TRUNK, DEFAULT_LEAF, false);
 	}
 
 	public WorldGenTrees(boolean parFlag, int parInt1, IBlockState parIBlockState, IBlockState parIBlockState2,
@@ -79,8 +79,8 @@ public class WorldGenTrees extends WorldGenAbstractTree {
 				for (int k = blockpos.getX() - b0; k <= blockpos.getX() + b0 && flag; ++k) {
 					for (int l = blockpos.getZ() - b0; l <= blockpos.getZ() + b0 && flag; ++l) {
 						if (j >= 0 && j < 256) {
-							if (!this.func_150523_a(
-									world.getBlockState(blockpos$mutableblockpos.func_181079_c(k, j, l)).getBlock())) {
+							if (!this.canGrowInto(
+									world.getBlockState(blockpos$mutableblockpos.setPos(k, j, l)).getBlock())) {
 								flag = false;
 							}
 						} else {
@@ -96,7 +96,7 @@ public class WorldGenTrees extends WorldGenAbstractTree {
 				Block block1 = world.getBlockState(blockpos.down()).getBlock();
 				if ((block1 == Blocks.grass || block1 == Blocks.dirt || block1 == Blocks.farmland)
 						&& blockpos.getY() < 256 - i - 1) {
-					this.func_175921_a(world, blockpos.down());
+					this.setDirtAt(world, blockpos.down());
 					byte b1 = 3;
 					byte b2 = 0;
 
@@ -128,19 +128,19 @@ public class WorldGenTrees extends WorldGenAbstractTree {
 							this.setBlockAndNotifyAdequately(world, blockpos.up(k2), this.metaWood);
 							if (this.vinesGrow && k2 > 0) {
 								if (random.nextInt(3) > 0 && world.isAirBlock(blockpos.add(-1, k2, 0))) {
-									this.func_181651_a(world, blockpos.add(-1, k2, 0), BlockVine.EAST);
+									this.addVine(world, blockpos.add(-1, k2, 0), BlockVine.EAST);
 								}
 
 								if (random.nextInt(3) > 0 && world.isAirBlock(blockpos.add(1, k2, 0))) {
-									this.func_181651_a(world, blockpos.add(1, k2, 0), BlockVine.WEST);
+									this.addVine(world, blockpos.add(1, k2, 0), BlockVine.WEST);
 								}
 
 								if (random.nextInt(3) > 0 && world.isAirBlock(blockpos.add(0, k2, -1))) {
-									this.func_181651_a(world, blockpos.add(0, k2, -1), BlockVine.SOUTH);
+									this.addVine(world, blockpos.add(0, k2, -1), BlockVine.SOUTH);
 								}
 
 								if (random.nextInt(3) > 0 && world.isAirBlock(blockpos.add(0, k2, 1))) {
-									this.func_181651_a(world, blockpos.add(0, k2, 1), BlockVine.NORTH);
+									this.addVine(world, blockpos.add(0, k2, 1), BlockVine.NORTH);
 								}
 							}
 						}
@@ -154,7 +154,7 @@ public class WorldGenTrees extends WorldGenAbstractTree {
 
 							for (int i4 = blockpos.getX() - l3; i4 <= blockpos.getX() + l3; ++i4) {
 								for (int j4 = blockpos.getZ() - l3; j4 <= blockpos.getZ() + l3; ++j4) {
-									blockpos$mutableblockpos1.func_181079_c(i4, l2, j4);
+									blockpos$mutableblockpos1.setPos(i4, l2, j4);
 									if (world.getBlockState(blockpos$mutableblockpos1).getBlock()
 											.getMaterial() == Material.leaves) {
 										BlockPos blockpos3 = blockpos$mutableblockpos1.west();
@@ -163,22 +163,22 @@ public class WorldGenTrees extends WorldGenAbstractTree {
 										BlockPos blockpos2 = blockpos$mutableblockpos1.south();
 										if (random.nextInt(4) == 0 && world.getBlockState(blockpos3).getBlock()
 												.getMaterial() == Material.air) {
-											this.func_181650_b(world, blockpos3, BlockVine.EAST);
+											this.addHangingVine(world, blockpos3, BlockVine.EAST);
 										}
 
 										if (random.nextInt(4) == 0 && world.getBlockState(blockpos4).getBlock()
 												.getMaterial() == Material.air) {
-											this.func_181650_b(world, blockpos4, BlockVine.WEST);
+											this.addHangingVine(world, blockpos4, BlockVine.WEST);
 										}
 
 										if (random.nextInt(4) == 0 && world.getBlockState(blockpos5).getBlock()
 												.getMaterial() == Material.air) {
-											this.func_181650_b(world, blockpos5, BlockVine.SOUTH);
+											this.addHangingVine(world, blockpos5, BlockVine.SOUTH);
 										}
 
 										if (random.nextInt(4) == 0 && world.getBlockState(blockpos2).getBlock()
 												.getMaterial() == Material.air) {
-											this.func_181650_b(world, blockpos2, BlockVine.NORTH);
+											this.addHangingVine(world, blockpos2, BlockVine.NORTH);
 										}
 									}
 								}
@@ -192,7 +192,7 @@ public class WorldGenTrees extends WorldGenAbstractTree {
 									EnumFacing enumfacing = facings[m];
 									if (random.nextInt(4 - i3) == 0) {
 										EnumFacing enumfacing1 = enumfacing.getOpposite();
-										this.func_181652_a(world, random.nextInt(3),
+										this.placeCocoa(world, random.nextInt(3),
 												blockpos.add(enumfacing1.getFrontOffsetX(), i - 5 + i3,
 														enumfacing1.getFrontOffsetZ()),
 												enumfacing);
@@ -212,23 +212,23 @@ public class WorldGenTrees extends WorldGenAbstractTree {
 		}
 	}
 
-	private void func_181652_a(World parWorld, int parInt1, BlockPos parBlockPos, EnumFacing parEnumFacing) {
+	private void placeCocoa(World parWorld, int parInt1, BlockPos parBlockPos, EnumFacing parEnumFacing) {
 		this.setBlockAndNotifyAdequately(parWorld, parBlockPos, Blocks.cocoa.getDefaultState()
 				.withProperty(BlockCocoa.AGE, Integer.valueOf(parInt1)).withProperty(BlockCocoa.FACING, parEnumFacing));
 	}
 
-	private void func_181651_a(World parWorld, BlockPos parBlockPos, PropertyBool parPropertyBool) {
+	private void addVine(World parWorld, BlockPos parBlockPos, PropertyBool parPropertyBool) {
 		this.setBlockAndNotifyAdequately(parWorld, parBlockPos,
 				Blocks.vine.getDefaultState().withProperty(parPropertyBool, Boolean.valueOf(true)));
 	}
 
-	private void func_181650_b(World parWorld, BlockPos parBlockPos, PropertyBool parPropertyBool) {
-		this.func_181651_a(parWorld, parBlockPos, parPropertyBool);
+	private void addHangingVine(World parWorld, BlockPos parBlockPos, PropertyBool parPropertyBool) {
+		this.addVine(parWorld, parBlockPos, parPropertyBool);
 		int i = 4;
 
 		for (parBlockPos = parBlockPos
 				.down(); parWorld.getBlockState(parBlockPos).getBlock().getMaterial() == Material.air && i > 0; --i) {
-			this.func_181651_a(parWorld, parBlockPos, parPropertyBool);
+			this.addVine(parWorld, parBlockPos, parPropertyBool);
 			parBlockPos = parBlockPos.down();
 		}
 

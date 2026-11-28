@@ -38,7 +38,7 @@ public abstract class WorldGenerator {
 
 	public abstract boolean generate(World var1, EaglercraftRandom var2, BlockPos var3);
 
-	public void func_175904_e() {
+	public void setDecorationDefaults() {
 	}
 
 	protected void setBlockAndNotifyAdequately(World worldIn, BlockPos pos, IBlockState state) {

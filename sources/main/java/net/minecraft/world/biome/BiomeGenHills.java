@@ -36,24 +36,24 @@ public class BiomeGenHills extends BiomeGenBase {
 	private WorldGenerator theWorldGenerator = new WorldGenMinable(
 			Blocks.monster_egg.getDefaultState().withProperty(BlockSilverfish.VARIANT, BlockSilverfish.EnumType.STONE),
 			9);
-	private WorldGenTaiga2 field_150634_aD = new WorldGenTaiga2(false);
+	private WorldGenTaiga2 spruceGenerator = new WorldGenTaiga2(false);
 	private int field_150635_aE = 0;
 	private int field_150636_aF = 1;
 	private int field_150637_aG = 2;
-	private int field_150638_aH;
+	private int type;
 
 	protected BiomeGenHills(int parInt1, boolean parFlag) {
 		super(parInt1);
-		this.field_150638_aH = this.field_150635_aE;
+		this.type = this.field_150635_aE;
 		if (parFlag) {
 			this.theBiomeDecorator.treesPerChunk = 3;
-			this.field_150638_aH = this.field_150636_aF;
+			this.type = this.field_150636_aF;
 		}
 
 	}
 
 	public WorldGenAbstractTree genBigTreeChance(EaglercraftRandom random) {
-		return (WorldGenAbstractTree) (random.nextInt(3) > 0 ? this.field_150634_aD : super.genBigTreeChance(random));
+		return (WorldGenAbstractTree) (random.nextInt(3) > 0 ? this.spruceGenerator : super.genBigTreeChance(random));
 	}
 
 	public void decorate(World world, EaglercraftRandom random, BlockPos blockpos) {
@@ -83,10 +83,10 @@ public class BiomeGenHills extends BiomeGenBase {
 			double d0) {
 		this.topBlock = Blocks.grass.getDefaultState();
 		this.fillerBlock = Blocks.dirt.getDefaultState();
-		if ((d0 < -1.0D || d0 > 2.0D) && this.field_150638_aH == this.field_150637_aG) {
+		if ((d0 < -1.0D || d0 > 2.0D) && this.type == this.field_150637_aG) {
 			this.topBlock = Blocks.gravel.getDefaultState();
 			this.fillerBlock = Blocks.gravel.getDefaultState();
-		} else if (d0 > 1.0D && this.field_150638_aH != this.field_150636_aF) {
+		} else if (d0 > 1.0D && this.type != this.field_150636_aF) {
 			this.topBlock = Blocks.stone.getDefaultState();
 			this.fillerBlock = Blocks.stone.getDefaultState();
 		}
@@ -98,7 +98,7 @@ public class BiomeGenHills extends BiomeGenBase {
 	 * this creates a mutation specific to Hills biomes
 	 */
 	private BiomeGenHills mutateHills(BiomeGenBase parBiomeGenBase) {
-		this.field_150638_aH = this.field_150637_aG;
+		this.type = this.field_150637_aG;
 		this.func_150557_a(parBiomeGenBase.color, true);
 		this.setBiomeName(parBiomeGenBase.biomeName + " M");
 		this.setHeight(new BiomeGenBase.Height(parBiomeGenBase.minHeight, parBiomeGenBase.maxHeight));

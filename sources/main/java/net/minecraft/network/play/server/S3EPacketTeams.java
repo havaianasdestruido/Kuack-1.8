@@ -32,53 +32,53 @@ import net.minecraft.scoreboard.Team;
  * 
  */
 public class S3EPacketTeams implements Packet<INetHandlerPlayClient> {
-	private String field_149320_a = "";
-	private String field_149318_b = "";
-	private String field_149319_c = "";
-	private String field_149316_d = "";
-	private String field_179816_e;
-	private int field_179815_f;
-	private Collection<String> field_149317_e;
-	private int field_149314_f;
-	private int field_149315_g;
+	private String name = "";
+	private String displayName = "";
+	private String prefix = "";
+	private String suffix = "";
+	private String nameTagVisibility;
+	private int color;
+	private Collection<String> players;
+	private int action;
+	private int friendlyFlags;
 
 	public S3EPacketTeams() {
-		this.field_179816_e = Team.EnumVisible.ALWAYS.field_178830_e;
-		this.field_179815_f = -1;
-		this.field_149317_e = Lists.newArrayList();
+		this.nameTagVisibility = Team.EnumVisible.ALWAYS.internalName;
+		this.color = -1;
+		this.players = Lists.newArrayList();
 	}
 
 	public S3EPacketTeams(ScorePlayerTeam parScorePlayerTeam, int parInt1) {
-		this.field_179816_e = Team.EnumVisible.ALWAYS.field_178830_e;
-		this.field_179815_f = -1;
-		this.field_149317_e = Lists.newArrayList();
-		this.field_149320_a = parScorePlayerTeam.getRegisteredName();
-		this.field_149314_f = parInt1;
+		this.nameTagVisibility = Team.EnumVisible.ALWAYS.internalName;
+		this.color = -1;
+		this.players = Lists.newArrayList();
+		this.name = parScorePlayerTeam.getRegisteredName();
+		this.action = parInt1;
 		if (parInt1 == 0 || parInt1 == 2) {
-			this.field_149318_b = parScorePlayerTeam.getTeamName();
-			this.field_149319_c = parScorePlayerTeam.getColorPrefix();
-			this.field_149316_d = parScorePlayerTeam.getColorSuffix();
-			this.field_149315_g = parScorePlayerTeam.func_98299_i();
-			this.field_179816_e = parScorePlayerTeam.getNameTagVisibility().field_178830_e;
-			this.field_179815_f = parScorePlayerTeam.getChatFormat().getColorIndex();
+			this.displayName = parScorePlayerTeam.getTeamName();
+			this.prefix = parScorePlayerTeam.getColorPrefix();
+			this.suffix = parScorePlayerTeam.getColorSuffix();
+			this.friendlyFlags = parScorePlayerTeam.func_98299_i();
+			this.nameTagVisibility = parScorePlayerTeam.getNameTagVisibility().internalName;
+			this.color = parScorePlayerTeam.getChatFormat().getColorIndex();
 		}
 
 		if (parInt1 == 0) {
-			this.field_149317_e.addAll(parScorePlayerTeam.getMembershipCollection());
+			this.players.addAll(parScorePlayerTeam.getMembershipCollection());
 		}
 
 	}
 
 	public S3EPacketTeams(ScorePlayerTeam parScorePlayerTeam, Collection<String> parCollection, int parInt1) {
-		this.field_179816_e = Team.EnumVisible.ALWAYS.field_178830_e;
-		this.field_179815_f = -1;
-		this.field_149317_e = Lists.newArrayList();
+		this.nameTagVisibility = Team.EnumVisible.ALWAYS.internalName;
+		this.color = -1;
+		this.players = Lists.newArrayList();
 		if (parInt1 != 3 && parInt1 != 4) {
 			throw new IllegalArgumentException("Method must be join or leave for player constructor");
 		} else if (parCollection != null && !parCollection.isEmpty()) {
-			this.field_149314_f = parInt1;
-			this.field_149320_a = parScorePlayerTeam.getRegisteredName();
-			this.field_149317_e.addAll(parCollection);
+			this.action = parInt1;
+			this.name = parScorePlayerTeam.getRegisteredName();
+			this.players.addAll(parCollection);
 		} else {
 			throw new IllegalArgumentException("Players cannot be null/empty");
 		}
@@ -88,22 +88,22 @@ public class S3EPacketTeams implements Packet<INetHandlerPlayClient> {
 	 * Reads the raw packet data from the data stream.
 	 */
 	public void readPacketData(PacketBuffer parPacketBuffer) throws IOException {
-		this.field_149320_a = parPacketBuffer.readStringFromBuffer(16);
-		this.field_149314_f = parPacketBuffer.readByte();
-		if (this.field_149314_f == 0 || this.field_149314_f == 2) {
-			this.field_149318_b = parPacketBuffer.readStringFromBuffer(32);
-			this.field_149319_c = parPacketBuffer.readStringFromBuffer(16);
-			this.field_149316_d = parPacketBuffer.readStringFromBuffer(16);
-			this.field_149315_g = parPacketBuffer.readByte();
-			this.field_179816_e = parPacketBuffer.readStringFromBuffer(32);
-			this.field_179815_f = parPacketBuffer.readByte();
+		this.name = parPacketBuffer.readStringFromBuffer(16);
+		this.action = parPacketBuffer.readByte();
+		if (this.action == 0 || this.action == 2) {
+			this.displayName = parPacketBuffer.readStringFromBuffer(32);
+			this.prefix = parPacketBuffer.readStringFromBuffer(16);
+			this.suffix = parPacketBuffer.readStringFromBuffer(16);
+			this.friendlyFlags = parPacketBuffer.readByte();
+			this.nameTagVisibility = parPacketBuffer.readStringFromBuffer(32);
+			this.color = parPacketBuffer.readByte();
 		}
 
-		if (this.field_149314_f == 0 || this.field_149314_f == 3 || this.field_149314_f == 4) {
+		if (this.action == 0 || this.action == 3 || this.action == 4) {
 			int i = parPacketBuffer.readVarIntFromBuffer();
 
 			for (int j = 0; j < i; ++j) {
-				this.field_149317_e.add(parPacketBuffer.readStringFromBuffer(40));
+				this.players.add(parPacketBuffer.readStringFromBuffer(40));
 			}
 		}
 
@@ -113,21 +113,21 @@ public class S3EPacketTeams implements Packet<INetHandlerPlayClient> {
 	 * Writes the raw packet data to the data stream.
 	 */
 	public void writePacketData(PacketBuffer parPacketBuffer) throws IOException {
-		parPacketBuffer.writeString(this.field_149320_a);
-		parPacketBuffer.writeByte(this.field_149314_f);
-		if (this.field_149314_f == 0 || this.field_149314_f == 2) {
-			parPacketBuffer.writeString(this.field_149318_b);
-			parPacketBuffer.writeString(this.field_149319_c);
-			parPacketBuffer.writeString(this.field_149316_d);
-			parPacketBuffer.writeByte(this.field_149315_g);
-			parPacketBuffer.writeString(this.field_179816_e);
-			parPacketBuffer.writeByte(this.field_179815_f);
+		parPacketBuffer.writeString(this.name);
+		parPacketBuffer.writeByte(this.action);
+		if (this.action == 0 || this.action == 2) {
+			parPacketBuffer.writeString(this.displayName);
+			parPacketBuffer.writeString(this.prefix);
+			parPacketBuffer.writeString(this.suffix);
+			parPacketBuffer.writeByte(this.friendlyFlags);
+			parPacketBuffer.writeString(this.nameTagVisibility);
+			parPacketBuffer.writeByte(this.color);
 		}
 
-		if (this.field_149314_f == 0 || this.field_149314_f == 3 || this.field_149314_f == 4) {
-			parPacketBuffer.writeVarIntToBuffer(this.field_149317_e.size());
+		if (this.action == 0 || this.action == 3 || this.action == 4) {
+			parPacketBuffer.writeVarIntToBuffer(this.players.size());
 
-			for (String s : this.field_149317_e) {
+			for (String s : this.players) {
 				parPacketBuffer.writeString(s);
 			}
 		}
@@ -141,39 +141,39 @@ public class S3EPacketTeams implements Packet<INetHandlerPlayClient> {
 		inethandlerplayclient.handleTeams(this);
 	}
 
-	public String func_149312_c() {
-		return this.field_149320_a;
+	public String getName() {
+		return this.name;
 	}
 
-	public String func_149306_d() {
-		return this.field_149318_b;
+	public String getDisplayName() {
+		return this.displayName;
 	}
 
-	public String func_149311_e() {
-		return this.field_149319_c;
+	public String getPrefix() {
+		return this.prefix;
 	}
 
-	public String func_149309_f() {
-		return this.field_149316_d;
+	public String getSuffix() {
+		return this.suffix;
 	}
 
-	public Collection<String> func_149310_g() {
-		return this.field_149317_e;
+	public Collection<String> getPlayers() {
+		return this.players;
 	}
 
-	public int func_149307_h() {
-		return this.field_149314_f;
+	public int getAction() {
+		return this.action;
 	}
 
-	public int func_149308_i() {
-		return this.field_149315_g;
+	public int getFriendlyFlags() {
+		return this.friendlyFlags;
 	}
 
-	public int func_179813_h() {
-		return this.field_179815_f;
+	public int getColor() {
+		return this.color;
 	}
 
-	public String func_179814_i() {
-		return this.field_179816_e;
+	public String getNameTagVisibility() {
+		return this.nameTagVisibility;
 	}
 }

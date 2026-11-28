@@ -114,7 +114,7 @@ public abstract class BlockLiquid extends Block {
 				: (enumfacing == EnumFacing.UP ? true : super.shouldSideBeRendered(iblockaccess, blockpos, enumfacing));
 	}
 
-	public boolean func_176364_g(IBlockAccess blockAccess, BlockPos pos) {
+	public boolean shouldRenderSides(IBlockAccess blockAccess, BlockPos pos) {
 		for (int i = -1; i <= 1; ++i) {
 			for (int j = -1; j <= 1; ++j) {
 				IBlockState iblockstate = blockAccess.getBlockState(pos.add(i, 0, j));
@@ -280,7 +280,7 @@ public abstract class BlockLiquid extends Block {
 	public static double getFlowDirection(IBlockAccess worldIn, BlockPos pos, Material materialIn) {
 		Vec3 vec3 = getFlowingBlock(materialIn).getFlowVector(worldIn, pos);
 		return vec3.xCoord == 0.0D && vec3.zCoord == 0.0D ? -1000.0D
-				: MathHelper.func_181159_b(vec3.zCoord, vec3.xCoord) - 1.5707963267948966D;
+				: MathHelper.atan2(vec3.zCoord, vec3.xCoord) - 1.5707963267948966D;
 	}
 
 	public void onBlockAdded(World world, BlockPos blockpos, IBlockState iblockstate) {

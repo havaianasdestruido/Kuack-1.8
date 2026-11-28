@@ -88,7 +88,7 @@ public class CommandGive extends CommandBase {
 				parICommandSender.setCommandStat(CommandResultStats.Type.AFFECTED_ITEMS, i);
 				EntityItem entityitem1 = entityplayermp.dropPlayerItemWithRandomChoice(itemstack, false);
 				if (entityitem1 != null) {
-					entityitem1.func_174870_v();
+					entityitem1.makeFakeItem();
 				}
 			} else {
 				parICommandSender.setCommandStat(CommandResultStats.Type.AFFECTED_ITEMS, i - itemstack.stackSize);

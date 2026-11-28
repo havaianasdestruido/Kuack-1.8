@@ -343,7 +343,7 @@ public class BlockRedstoneWire extends Block {
 				EnumFacing[] facings = EnumFacing.Plane.HORIZONTAL.facingsArray;
 				for (int j = 0; j < facings.length; ++j) {
 					EnumFacing enumfacing1 = facings[j];
-					if (this.func_176339_d(iblockaccess, blockpos, enumfacing1)) {
+					if (this.isPowerSourceAt(iblockaccess, blockpos, enumfacing1)) {
 						enumset.add(enumfacing1);
 					}
 				}
@@ -360,7 +360,7 @@ public class BlockRedstoneWire extends Block {
 		}
 	}
 
-	private boolean func_176339_d(IBlockAccess worldIn, BlockPos pos, EnumFacing side) {
+	private boolean isPowerSourceAt(IBlockAccess worldIn, BlockPos pos, EnumFacing side) {
 		BlockPos blockpos = pos.offset(side);
 		IBlockState iblockstate = worldIn.getBlockState(blockpos);
 		Block block = iblockstate.getBlock();

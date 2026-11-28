@@ -29,12 +29,12 @@ public class LayerBipedArmor extends LayerArmorBase<ModelBiped> {
 	}
 
 	protected void initArmor() {
-		this.field_177189_c = new ModelBiped(0.5F);
-		this.field_177186_d = new ModelBiped(1.0F);
+		this.modelLeggings = new ModelBiped(0.5F);
+		this.modelArmor = new ModelBiped(1.0F);
 	}
 
-	protected void func_177179_a(ModelBiped modelbiped, int i) {
-		this.func_177194_a(modelbiped);
+	protected void setModelPartVisible(ModelBiped modelbiped, int i) {
+		this.setModelVisible(modelbiped);
 		switch (i) {
 		case 1:
 			modelbiped.bipedRightLeg.showModel = true;
@@ -57,7 +57,7 @@ public class LayerBipedArmor extends LayerArmorBase<ModelBiped> {
 
 	}
 
-	protected void func_177194_a(ModelBiped parModelBiped) {
+	protected void setModelVisible(ModelBiped parModelBiped) {
 		parModelBiped.setInvisible(false);
 	}
 }

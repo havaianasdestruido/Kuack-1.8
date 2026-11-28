@@ -272,9 +272,9 @@ public abstract class MinecraftServer implements Runnable, ICommandSender, IThre
 
 	public abstract int getOpPermissionLevel();
 
-	public abstract boolean func_181034_q();
+	public abstract boolean shouldBroadcastRconToOps();
 
-	public abstract boolean func_183002_r();
+	public abstract boolean shouldBroadcastConsoleToOps();
 
 	/**+
 	 * Used to display a percent remaining given text and the
@@ -499,7 +499,7 @@ public abstract class MinecraftServer implements Runnable, ICommandSender, IThre
 		this.theProfiler.startSection("jobs");
 		synchronized (this.futureTaskQueue) {
 			while (!this.futureTaskQueue.isEmpty()) {
-				Util.func_181617_a((FutureTask) this.futureTaskQueue.poll(), logger);
+				Util.runTask((FutureTask) this.futureTaskQueue.poll(), logger);
 			}
 		}
 
@@ -839,7 +839,7 @@ public abstract class MinecraftServer implements Runnable, ICommandSender, IThre
 		return this.canSpawnNPCs;
 	}
 
-	public abstract boolean func_181035_ah();
+	public abstract boolean shouldUseNativeTransport();
 
 	public void setCanSpawnNPCs(boolean spawnNpcs) {
 		this.canSpawnNPCs = spawnNpcs;

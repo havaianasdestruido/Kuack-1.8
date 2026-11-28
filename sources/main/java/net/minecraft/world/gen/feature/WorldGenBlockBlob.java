@@ -27,13 +27,13 @@ import net.minecraft.world.World;
  * 
  */
 public class WorldGenBlockBlob extends WorldGenerator {
-	private final Block field_150545_a;
-	private final int field_150544_b;
+	private final Block WorldGenBlockBlobBlock;
+	private final int startRadius;
 
 	public WorldGenBlockBlob(Block parBlock, int parInt1) {
 		super(false);
-		this.field_150545_a = parBlock;
-		this.field_150544_b = parInt1;
+		this.WorldGenBlockBlobBlock = parBlock;
+		this.startRadius = parInt1;
 	}
 
 	public boolean generate(World world, EaglercraftRandom random, BlockPos blockpos) {
@@ -54,7 +54,7 @@ public class WorldGenBlockBlob extends WorldGenerator {
 					return false;
 				}
 
-				int i1 = this.field_150544_b;
+				int i1 = this.startRadius;
 
 				for (int i = 0; i1 >= 0 && i < 3; ++i) {
 					int j = i1 + random.nextInt(2);
@@ -64,7 +64,7 @@ public class WorldGenBlockBlob extends WorldGenerator {
 
 					for (BlockPos blockpos1 : BlockPos.getAllInBox(blockpos.add(-j, -k, -l), blockpos.add(j, k, l))) {
 						if (blockpos1.distanceSq(blockpos) <= (double) (f * f)) {
-							world.setBlockState(blockpos1, this.field_150545_a.getDefaultState(), 4);
+							world.setBlockState(blockpos1, this.WorldGenBlockBlobBlock.getDefaultState(), 4);
 						}
 					}
 

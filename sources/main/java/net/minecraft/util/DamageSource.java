@@ -198,7 +198,7 @@ public class DamageSource {
 	 * Gets the death message that is displayed when the player dies
 	 */
 	public IChatComponent getDeathMessage(EntityLivingBase parEntityLivingBase) {
-		EntityLivingBase entitylivingbase = parEntityLivingBase.func_94060_bK();
+		EntityLivingBase entitylivingbase = parEntityLivingBase.getAttackingEntity();
 		String s = "death.attack." + this.damageType;
 		String s1 = s + ".player";
 		return entitylivingbase != null && StatCollector.canTranslate(s1)

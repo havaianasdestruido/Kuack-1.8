@@ -36,14 +36,14 @@ import net.minecraft.world.World;
  */
 public class VillageSiege {
 	private World worldObj;
-	private boolean field_75535_b;
-	private int field_75536_c = -1;
-	private int field_75533_d;
-	private int field_75534_e;
+	private boolean hasSetupSiege;
+	private int siegeState = -1;
+	private int siegeCount;
+	private int nextSpawnTime;
 	private Village theVillage;
-	private int field_75532_g;
-	private int field_75538_h;
-	private int field_75539_i;
+	private int spawnX;
+	private int spawnY;
+	private int spawnZ;
 
 	public VillageSiege(World worldIn) {
 		this.worldObj = worldIn;
@@ -54,39 +54,39 @@ public class VillageSiege {
 	 */
 	public void tick() {
 		if (this.worldObj.isDaytime()) {
-			this.field_75536_c = 0;
-		} else if (this.field_75536_c != 2) {
-			if (this.field_75536_c == 0) {
+			this.siegeState = 0;
+		} else if (this.siegeState != 2) {
+			if (this.siegeState == 0) {
 				float f = this.worldObj.getCelestialAngle(0.0F);
 				if ((double) f < 0.5D || (double) f > 0.501D) {
 					return;
 				}
 
-				this.field_75536_c = this.worldObj.rand.nextInt(10) == 0 ? 1 : 2;
-				this.field_75535_b = false;
-				if (this.field_75536_c == 2) {
+				this.siegeState = this.worldObj.rand.nextInt(10) == 0 ? 1 : 2;
+				this.hasSetupSiege = false;
+				if (this.siegeState == 2) {
 					return;
 				}
 			}
 
-			if (this.field_75536_c != -1) {
-				if (!this.field_75535_b) {
-					if (!this.func_75529_b()) {
+			if (this.siegeState != -1) {
+				if (!this.hasSetupSiege) {
+					if (!this.trySetupSiege()) {
 						return;
 					}
 
-					this.field_75535_b = true;
+					this.hasSetupSiege = true;
 				}
 
-				if (this.field_75534_e > 0) {
-					--this.field_75534_e;
+				if (this.nextSpawnTime > 0) {
+					--this.nextSpawnTime;
 				} else {
-					this.field_75534_e = 2;
-					if (this.field_75533_d > 0) {
+					this.nextSpawnTime = 2;
+					if (this.siegeCount > 0) {
 						this.spawnZombie();
-						--this.field_75533_d;
+						--this.siegeCount;
 					} else {
-						this.field_75536_c = 2;
+						this.siegeState = 2;
 					}
 
 				}
@@ -94,7 +94,7 @@ public class VillageSiege {
 		}
 	}
 
-	private boolean func_75529_b() {
+	private boolean trySetupSiege() {
 		List list = this.worldObj.playerEntities;
 		Iterator iterator = list.iterator();
 
@@ -115,16 +115,16 @@ public class VillageSiege {
 
 					for (int i = 0; i < 10; ++i) {
 						float f1 = this.worldObj.rand.nextFloat() * 3.1415927F * 2.0F;
-						this.field_75532_g = blockpos.getX() + (int) ((double) (MathHelper.cos(f1) * f) * 0.9D);
-						this.field_75538_h = blockpos.getY();
-						this.field_75539_i = blockpos.getZ() + (int) ((double) (MathHelper.sin(f1) * f) * 0.9D);
+						this.spawnX = blockpos.getX() + (int) ((double) (MathHelper.cos(f1) * f) * 0.9D);
+						this.spawnY = blockpos.getY();
+						this.spawnZ = blockpos.getZ() + (int) ((double) (MathHelper.sin(f1) * f) * 0.9D);
 						flag = false;
 
 						List<Village> lst = this.worldObj.getVillageCollection().getVillageList();
 						for (int j = 0, l = lst.size(); j < l; ++j) {
 							Village village = lst.get(i);
-							if (village != this.theVillage && village.func_179866_a(
-									new BlockPos(this.field_75532_g, this.field_75538_h, this.field_75539_i))) {
+							if (village != this.theVillage && village.isBlockPosWithinSqVillageRadius(
+									new BlockPos(this.spawnX, this.spawnY, this.spawnZ))) {
 								flag = true;
 								break;
 							}
@@ -140,7 +140,7 @@ public class VillageSiege {
 					}
 
 					Vec3 vec3 = this
-							.func_179867_a(new BlockPos(this.field_75532_g, this.field_75538_h, this.field_75539_i));
+							.findRandomSpawnPos(new BlockPos(this.spawnX, this.spawnY, this.spawnZ));
 					if (vec3 != null) {
 						break;
 					}
@@ -148,13 +148,13 @@ public class VillageSiege {
 			}
 		}
 
-		this.field_75534_e = 0;
-		this.field_75533_d = 20;
+		this.nextSpawnTime = 0;
+		this.siegeCount = 20;
 		return true;
 	}
 
 	private boolean spawnZombie() {
-		Vec3 vec3 = this.func_179867_a(new BlockPos(this.field_75532_g, this.field_75538_h, this.field_75539_i));
+		Vec3 vec3 = this.findRandomSpawnPos(new BlockPos(this.spawnX, this.spawnY, this.spawnZ));
 		if (vec3 == null) {
 			return false;
 		} else {
@@ -178,11 +178,11 @@ public class VillageSiege {
 		}
 	}
 
-	private Vec3 func_179867_a(BlockPos parBlockPos) {
+	private Vec3 findRandomSpawnPos(BlockPos parBlockPos) {
 		for (int i = 0; i < 10; ++i) {
 			BlockPos blockpos = parBlockPos.add(this.worldObj.rand.nextInt(16) - 8, this.worldObj.rand.nextInt(6) - 3,
 					this.worldObj.rand.nextInt(16) - 8);
-			if (this.theVillage.func_179866_a(blockpos) && SpawnerAnimals.canCreatureTypeSpawnAtLocation(
+			if (this.theVillage.isBlockPosWithinSqVillageRadius(blockpos) && SpawnerAnimals.canCreatureTypeSpawnAtLocation(
 					EntityLiving.SpawnPlacementType.ON_GROUND, this.worldObj, blockpos)) {
 				return new Vec3((double) blockpos.getX(), (double) blockpos.getY(), (double) blockpos.getZ());
 			}

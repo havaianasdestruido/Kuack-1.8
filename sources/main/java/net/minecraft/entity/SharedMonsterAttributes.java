@@ -69,7 +69,7 @@ public class SharedMonsterAttributes {
 		IAttribute iattribute = parIAttributeInstance.getAttribute();
 		nbttagcompound.setString("Name", iattribute.getAttributeUnlocalizedName());
 		nbttagcompound.setDouble("Base", parIAttributeInstance.getBaseValue());
-		Collection collection = parIAttributeInstance.func_111122_c();
+		Collection collection = parIAttributeInstance.getModifiers();
 		if (collection != null && !collection.isEmpty()) {
 			NBTTagList nbttaglist = new NBTTagList();
 
@@ -98,7 +98,7 @@ public class SharedMonsterAttributes {
 		return nbttagcompound;
 	}
 
-	public static void func_151475_a(BaseAttributeMap parBaseAttributeMap, NBTTagList parNBTTagList) {
+	public static void setAttributeModifiers(BaseAttributeMap parBaseAttributeMap, NBTTagList parNBTTagList) {
 		for (int i = 0; i < parNBTTagList.tagCount(); ++i) {
 			NBTTagCompound nbttagcompound = parNBTTagList.getCompoundTagAt(i);
 			IAttributeInstance iattributeinstance = parBaseAttributeMap

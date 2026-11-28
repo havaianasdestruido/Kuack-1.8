@@ -126,12 +126,12 @@ public class NetHandlerPlayServer implements INetHandlerPlayServer, ITickable {
 	private int field_175090_f;
 	private int floatingTickCount;
 	private boolean field_147366_g;
-	private int field_147378_h;
+	private int keepAliveId;
 	private long lastPingTime;
 	private long lastSentPingPacket;
 	private int chatSpamThresholdCount;
 	private int itemDropThreshold;
-	private IntHashMap<Short> field_147372_n = new IntHashMap();
+	private IntHashMap<Short> pendingTransactions = new IntHashMap();
 	private double lastPosX;
 	private double lastPosY;
 	private double lastPosZ;
@@ -157,8 +157,8 @@ public class NetHandlerPlayServer implements INetHandlerPlayServer, ITickable {
 		if ((long) this.networkTickCount - this.lastSentPingPacket > 40L) {
 			this.lastSentPingPacket = (long) this.networkTickCount;
 			this.lastPingTime = this.currentTimeMillis();
-			this.field_147378_h = (int) this.lastPingTime;
-			this.sendPacket(new S00PacketKeepAlive(this.field_147378_h));
+			this.keepAliveId = (int) this.lastPingTime;
+			this.sendPacket(new S00PacketKeepAlive(this.keepAliveId));
 		}
 
 		this.serverController.theProfiler.endSection();
@@ -201,7 +201,7 @@ public class NetHandlerPlayServer implements INetHandlerPlayServer, ITickable {
 				c0cpacketinput.isJumping(), c0cpacketinput.isSneaking());
 	}
 
-	private boolean func_183006_b(C03PacketPlayer parC03PacketPlayer) {
+	private boolean isMovePlayerPacketInvalid(C03PacketPlayer parC03PacketPlayer) {
 		return !Doubles.isFinite(parC03PacketPlayer.getPositionX())
 				|| !Doubles.isFinite(parC03PacketPlayer.getPositionY())
 				|| !Doubles.isFinite(parC03PacketPlayer.getPositionZ())
@@ -213,7 +213,7 @@ public class NetHandlerPlayServer implements INetHandlerPlayServer, ITickable {
 	 * orientation
 	 */
 	public void processPlayer(C03PacketPlayer c03packetplayer) {
-		if (this.func_183006_b(c03packetplayer)) {
+		if (this.isMovePlayerPacketInvalid(c03packetplayer)) {
 			this.kickPlayerFromServer("Invalid move packet received");
 		} else {
 			WorldServer worldserver = this.serverController.worldServerForDimension(this.playerEntity.dimension);
@@ -857,7 +857,7 @@ public class NetHandlerPlayServer implements INetHandlerPlayServer, ITickable {
 			}
 			break;
 		case REQUEST_STATS:
-			this.playerEntity.getStatFile().func_150876_a(this.playerEntity);
+			this.playerEntity.getStatFile().sendStats(this.playerEntity);
 			break;
 		case OPEN_INVENTORY_ACHIEVEMENT:
 			this.playerEntity.triggerAchievement(AchievementList.openInventory);
@@ -902,7 +902,7 @@ public class NetHandlerPlayServer implements INetHandlerPlayServer, ITickable {
 					this.playerEntity.updateHeldItem();
 					this.playerEntity.isChangingQuantityOnly = false;
 				} else {
-					this.field_147372_n.addKey(this.playerEntity.openContainer.windowId,
+					this.pendingTransactions.addKey(this.playerEntity.openContainer.windowId,
 							Short.valueOf(c0epacketclickwindow.getActionNumber()));
 					this.playerEntity.playerNetServerHandler.sendPacket(new S32PacketConfirmTransaction(
 							c0epacketclickwindow.getWindowId(), c0epacketclickwindow.getActionNumber(), false));
@@ -993,7 +993,7 @@ public class NetHandlerPlayServer implements INetHandlerPlayServer, ITickable {
 	 * player's ability to manipulate the container contents
 	 */
 	public void processConfirmTransaction(C0FPacketConfirmTransaction c0fpacketconfirmtransaction) {
-		Short oshort = (Short) this.field_147372_n.lookup(this.playerEntity.openContainer.windowId);
+		Short oshort = (Short) this.pendingTransactions.lookup(this.playerEntity.openContainer.windowId);
 		if (oshort != null && c0fpacketconfirmtransaction.getUid() == oshort.shortValue()
 				&& this.playerEntity.openContainer.windowId == c0fpacketconfirmtransaction.getWindowId()
 				&& !this.playerEntity.openContainer.getCanCraft(this.playerEntity)
@@ -1041,7 +1041,7 @@ public class NetHandlerPlayServer implements INetHandlerPlayServer, ITickable {
 	 * Updates a players' ping statistics
 	 */
 	public void processKeepAlive(C00PacketKeepAlive c00packetkeepalive) {
-		if (c00packetkeepalive.getKey() == this.field_147378_h) {
+		if (c00packetkeepalive.getKey() == this.keepAliveId) {
 			int i = (int) (this.currentTimeMillis() - this.lastPingTime);
 			this.playerEntity.ping = (this.playerEntity.ping * 3 + i) / 4;
 		}
@@ -1210,7 +1210,7 @@ public class NetHandlerPlayServer implements INetHandlerPlayServer, ITickable {
 					Slot slot = containerbeacon.getSlot(0);
 					if (slot.getHasStack()) {
 						slot.decrStackSize(1);
-						IInventory iinventory = containerbeacon.func_180611_e();
+						IInventory iinventory = containerbeacon.getTileEntity();
 						iinventory.setField(1, j);
 						iinventory.setField(2, k);
 						iinventory.markDirty();

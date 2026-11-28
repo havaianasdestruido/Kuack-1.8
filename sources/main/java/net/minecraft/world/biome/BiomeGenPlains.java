@@ -28,7 +28,7 @@ import net.minecraft.world.World;
  * 
  */
 public class BiomeGenPlains extends BiomeGenBase {
-	protected boolean field_150628_aC;
+	protected boolean sunflowers;
 
 	protected BiomeGenPlains(int parInt1) {
 		super(parInt1);
@@ -41,7 +41,7 @@ public class BiomeGenPlains extends BiomeGenBase {
 	}
 
 	public BlockFlower.EnumFlowerType pickRandomFlower(EaglercraftRandom random, BlockPos blockpos) {
-		double d0 = GRASS_COLOR_NOISE.func_151601_a((double) blockpos.getX() / 200.0D,
+		double d0 = GRASS_COLOR_NOISE.getValue((double) blockpos.getX() / 200.0D,
 				(double) blockpos.getZ() / 200.0D);
 		if (d0 < -0.8D) {
 			int j = random.nextInt(4);
@@ -66,7 +66,7 @@ public class BiomeGenPlains extends BiomeGenBase {
 	}
 
 	public void decorate(World world, EaglercraftRandom random, BlockPos blockpos) {
-		double d0 = GRASS_COLOR_NOISE.func_151601_a((double) (blockpos.getX() + 8) / 200.0D,
+		double d0 = GRASS_COLOR_NOISE.getValue((double) (blockpos.getX() + 8) / 200.0D,
 				(double) (blockpos.getZ() + 8) / 200.0D);
 		if (d0 < -0.8D) {
 			this.theBiomeDecorator.flowersPerChunk = 15;
@@ -84,7 +84,7 @@ public class BiomeGenPlains extends BiomeGenBase {
 			}
 		}
 
-		if (this.field_150628_aC) {
+		if (this.sunflowers) {
 			DOUBLE_PLANT_GENERATOR.setPlantType(BlockDoublePlant.EnumPlantType.SUNFLOWER);
 
 			for (int i1 = 0; i1 < 10; ++i1) {
@@ -101,7 +101,7 @@ public class BiomeGenPlains extends BiomeGenBase {
 	protected BiomeGenBase createMutatedBiome(int i) {
 		BiomeGenPlains biomegenplains = new BiomeGenPlains(i);
 		biomegenplains.setBiomeName("Sunflower Plains");
-		biomegenplains.field_150628_aC = true;
+		biomegenplains.sunflowers = true;
 		biomegenplains.setColor(9286496);
 		biomegenplains.field_150609_ah = 14273354;
 		return biomegenplains;

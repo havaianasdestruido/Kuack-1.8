@@ -68,7 +68,7 @@ public class BlockSign extends BlockContainer {
 		return false;
 	}
 
-	public boolean func_181623_g() {
+	public boolean canSpawnInBlock() {
 		return true;
 	}
 
@@ -103,6 +103,6 @@ public class BlockSign extends BlockContainer {
 	}
 
 	public boolean canPlaceBlockAt(World world, BlockPos blockpos) {
-		return !this.func_181087_e(world, blockpos) && super.canPlaceBlockAt(world, blockpos);
+		return !this.hasInvalidNeighbor(world, blockpos) && super.canPlaceBlockAt(world, blockpos);
 	}
 }

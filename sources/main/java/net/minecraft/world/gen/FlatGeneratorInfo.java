@@ -68,7 +68,7 @@ public class FlatGeneratorInfo {
 		return this.flatLayers;
 	}
 
-	public void func_82645_d() {
+	public void updateLayers() {
 		int i = 0;
 
 		for (int j = 0, l = this.flatLayers.size(); j < l; ++j) {
@@ -129,7 +129,7 @@ public class FlatGeneratorInfo {
 		return stringbuilder.toString();
 	}
 
-	private static FlatLayerInfo func_180715_a(int parInt1, String parString1, int parInt2) {
+	private static FlatLayerInfo getLayerFromString(int parInt1, String parString1, int parInt2) {
 		String[] astring = parInt1 >= 3 ? parString1.split("\\*", 2) : parString1.split("x", 2);
 		int i = 1;
 		int j = 0;
@@ -192,14 +192,14 @@ public class FlatGeneratorInfo {
 		return flatlayerinfo;
 	}
 
-	private static List<FlatLayerInfo> func_180716_a(int parInt1, String parString1) {
+	private static List<FlatLayerInfo> getLayersFromString(int parInt1, String parString1) {
 		if (parString1 != null && parString1.length() >= 1) {
 			ArrayList arraylist = Lists.newArrayList();
 			String[] astring = parString1.split(",");
 			int i = 0;
 
 			for (int j = 0; j < astring.length; ++j) {
-				FlatLayerInfo flatlayerinfo = func_180715_a(parInt1, astring[j], i);
+				FlatLayerInfo flatlayerinfo = getLayerFromString(parInt1, astring[j], i);
 				if (flatlayerinfo == null) {
 					return null;
 				}
@@ -223,10 +223,10 @@ public class FlatGeneratorInfo {
 			if (i >= 0 && i <= 3) {
 				FlatGeneratorInfo flatgeneratorinfo = new FlatGeneratorInfo();
 				int j = astring.length == 1 ? 0 : 1;
-				List list = func_180716_a(i, astring[j++]);
+				List list = getLayersFromString(i, astring[j++]);
 				if (list != null && !list.isEmpty()) {
 					flatgeneratorinfo.getFlatLayers().addAll(list);
-					flatgeneratorinfo.func_82645_d();
+					flatgeneratorinfo.updateLayers();
 					int k = BiomeGenBase.plains.biomeID;
 					if (i > 0 && astring.length > j) {
 						k = MathHelper.parseIntWithDefault(astring[j++], k);
@@ -273,7 +273,7 @@ public class FlatGeneratorInfo {
 		flatgeneratorinfo.getFlatLayers().add(new FlatLayerInfo(1, Blocks.bedrock));
 		flatgeneratorinfo.getFlatLayers().add(new FlatLayerInfo(2, Blocks.dirt));
 		flatgeneratorinfo.getFlatLayers().add(new FlatLayerInfo(1, Blocks.grass));
-		flatgeneratorinfo.func_82645_d();
+		flatgeneratorinfo.updateLayers();
 		flatgeneratorinfo.getWorldFeatures().put("village", Maps.newHashMap());
 		return flatgeneratorinfo;
 	}

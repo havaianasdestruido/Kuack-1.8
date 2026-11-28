@@ -188,7 +188,7 @@ public class BlockModelShapes {
 				(new StateMap.Builder()).withName(BlockWall.VARIANT).withSuffix("_wall").build());
 		this.registerBlockWithStateMapper(Blocks.double_plant,
 				(new StateMap.Builder()).withName(BlockDoublePlant.VARIANT)
-						.ignore(new IProperty[] { BlockDoublePlant.field_181084_N }).build());
+						.ignore(new IProperty[] { BlockDoublePlant.FACING }).build());
 		this.registerBlockWithStateMapper(Blocks.oak_fence_gate,
 				(new StateMap.Builder()).ignore(new IProperty[] { BlockFenceGate.POWERED }).build());
 		this.registerBlockWithStateMapper(Blocks.spruce_fence_gate,

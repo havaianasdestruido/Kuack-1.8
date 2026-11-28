@@ -38,13 +38,13 @@ public class TileEntityEnchantmentTable extends TileEntity implements ITickable,
 	public int tickCount;
 	public float pageFlip;
 	public float pageFlipPrev;
-	public float field_145932_k;
-	public float field_145929_l;
+	public float flipT;
+	public float flipA;
 	public float bookSpread;
 	public float bookSpreadPrev;
 	public float bookRotation;
 	public float bookRotationPrev;
-	public float field_145924_q;
+	public float tRot;
 	private static EaglercraftRandom rand = new EaglercraftRandom();
 	private String customName;
 
@@ -75,20 +75,20 @@ public class TileEntityEnchantmentTable extends TileEntity implements ITickable,
 		if (entityplayer != null) {
 			double d0 = entityplayer.posX - (double) ((float) this.pos.getX() + 0.5F);
 			double d1 = entityplayer.posZ - (double) ((float) this.pos.getZ() + 0.5F);
-			this.field_145924_q = (float) MathHelper.func_181159_b(d1, d0);
+			this.tRot = (float) MathHelper.atan2(d1, d0);
 			this.bookSpread += 0.1F;
 			if (this.bookSpread < 0.5F || rand.nextInt(40) == 0) {
-				float f1 = this.field_145932_k;
+				float f1 = this.flipT;
 
 				while (true) {
-					this.field_145932_k += (float) (rand.nextInt(4) - rand.nextInt(4));
-					if (f1 != this.field_145932_k) {
+					this.flipT += (float) (rand.nextInt(4) - rand.nextInt(4));
+					if (f1 != this.flipT) {
 						break;
 					}
 				}
 			}
 		} else {
-			this.field_145924_q += 0.02F;
+			this.tRot += 0.02F;
 			this.bookSpread -= 0.1F;
 		}
 
@@ -100,16 +100,16 @@ public class TileEntityEnchantmentTable extends TileEntity implements ITickable,
 			this.bookRotation += 6.2831855F;
 		}
 
-		while (this.field_145924_q >= 3.1415927F) {
-			this.field_145924_q -= 6.2831855F;
+		while (this.tRot >= 3.1415927F) {
+			this.tRot -= 6.2831855F;
 		}
 
-		while (this.field_145924_q < -3.1415927F) {
-			this.field_145924_q += 6.2831855F;
+		while (this.tRot < -3.1415927F) {
+			this.tRot += 6.2831855F;
 		}
 
 		float f2;
-		for (f2 = this.field_145924_q - this.bookRotation; f2 >= 3.1415927F; f2 -= 6.2831855F) {
+		for (f2 = this.tRot - this.bookRotation; f2 >= 3.1415927F; f2 -= 6.2831855F) {
 			;
 		}
 
@@ -121,11 +121,11 @@ public class TileEntityEnchantmentTable extends TileEntity implements ITickable,
 		this.bookSpread = MathHelper.clamp_float(this.bookSpread, 0.0F, 1.0F);
 		++this.tickCount;
 		this.pageFlipPrev = this.pageFlip;
-		float f = (this.field_145932_k - this.pageFlip) * 0.4F;
+		float f = (this.flipT - this.pageFlip) * 0.4F;
 		float f3 = 0.2F;
 		f = MathHelper.clamp_float(f, -f3, f3);
-		this.field_145929_l += (f - this.field_145929_l) * 0.9F;
-		this.pageFlip += this.field_145929_l;
+		this.flipA += (f - this.flipA) * 0.9F;
+		this.pageFlip += this.flipA;
 	}
 
 	/**+

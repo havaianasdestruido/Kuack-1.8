@@ -31,7 +31,7 @@ import net.minecraft.util.IntegerCache;
  * 
  */
 public class PotionHelper {
-	public static final String field_77924_a = null;
+	public static final String unusedString = null;
 	public static final String sugarEffect = "-0+1-2-3&4-4+13";
 	public static final String ghastTearEffect = "+0-1-2-3&4-4+13";
 	public static final String spiderEyeEffect = "-0-1+2-3&4-4+13";
@@ -92,7 +92,7 @@ public class PotionHelper {
 	 * Given a potion data value, get its prefix index number.
 	 */
 	public static int getPotionPrefixIndex(int dataValue) {
-		return func_77908_a(dataValue, 5, 4, 3, 2, 1);
+		return getPotionPrefixIndexFlags(dataValue, 5, 4, 3, 2, 1);
 	}
 
 	/**+
@@ -152,7 +152,7 @@ public class PotionHelper {
 	 * (optionally bypassing the cache)
 	 */
 	public static int getLiquidColor(int dataValue, boolean bypassCache) {
-		Integer integer = IntegerCache.func_181756_a(dataValue);
+		Integer integer = IntegerCache.getInteger(dataValue);
 		if (!bypassCache) {
 			if (DATAVALUE_COLORS.containsKey(integer)) {
 				return ((Integer) DATAVALUE_COLORS.get(integer)).intValue();
@@ -179,7 +179,7 @@ public class PotionHelper {
 		return potionPrefixes[i];
 	}
 
-	private static int func_77904_a(boolean parFlag, boolean parFlag2, boolean parFlag3, int parInt1, int parInt2,
+	private static int getPotionEffect(boolean parFlag, boolean parFlag2, boolean parFlag3, int parInt1, int parInt2,
 			int parInt3, int parInt4) {
 		int i = 0;
 		if (parFlag) {
@@ -266,7 +266,7 @@ public class PotionHelper {
 							flag = true;
 						} else if (c0 == 33) {
 							if (flag2) {
-								i1 += func_77904_a(flag3, flag1, flag4, b0, k, l, parInt3);
+								i1 += getPotionEffect(flag3, flag1, flag4, b0, k, l, parInt3);
 								flag3 = false;
 								flag4 = false;
 								flag = false;
@@ -280,7 +280,7 @@ public class PotionHelper {
 							flag3 = true;
 						} else if (c0 == 45) {
 							if (flag2) {
-								i1 += func_77904_a(flag3, flag1, flag4, b0, k, l, parInt3);
+								i1 += getPotionEffect(flag3, flag1, flag4, b0, k, l, parInt3);
 								flag3 = false;
 								flag4 = false;
 								flag = false;
@@ -294,7 +294,7 @@ public class PotionHelper {
 							flag4 = true;
 						} else if (c0 != 61 && c0 != 60 && c0 != 62) {
 							if (c0 == 43 && flag2) {
-								i1 += func_77904_a(flag3, flag1, flag4, b0, k, l, parInt3);
+								i1 += getPotionEffect(flag3, flag1, flag4, b0, k, l, parInt3);
 								flag3 = false;
 								flag4 = false;
 								flag = false;
@@ -306,7 +306,7 @@ public class PotionHelper {
 							}
 						} else {
 							if (flag2) {
-								i1 += func_77904_a(flag3, flag1, flag4, b0, k, l, parInt3);
+								i1 += getPotionEffect(flag3, flag1, flag4, b0, k, l, parInt3);
 								flag3 = false;
 								flag4 = false;
 								flag = false;
@@ -328,7 +328,7 @@ public class PotionHelper {
 					}
 
 					if (flag2) {
-						i1 += func_77904_a(flag3, flag1, flag4, b0, k, l, parInt3);
+						i1 += getPotionEffect(flag3, flag1, flag4, b0, k, l, parInt3);
 					}
 
 					return i1;
@@ -487,7 +487,7 @@ public class PotionHelper {
 		return parInt1 & 32767;
 	}
 
-	public static int func_77908_a(int parInt1, int parInt2, int parInt3, int parInt4, int parInt5, int parInt6) {
+	public static int getPotionPrefixIndexFlags(int parInt1, int parInt2, int parInt3, int parInt4, int parInt5, int parInt6) {
 		return (checkFlag(parInt1, parInt2) ? 16 : 0) | (checkFlag(parInt1, parInt3) ? 8 : 0)
 				| (checkFlag(parInt1, parInt4) ? 4 : 0) | (checkFlag(parInt1, parInt5) ? 2 : 0)
 				| (checkFlag(parInt1, parInt6) ? 1 : 0);

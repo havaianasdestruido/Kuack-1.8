@@ -26,7 +26,7 @@ import net.minecraft.world.World;
  * 
  */
 public class EntityCrit2FX extends EntityFX {
-	float field_174839_a;
+	float oSize;
 
 	protected EntityCrit2FX(World worldIn, double xCoordIn, double yCoordIn, double zCoordIn, double parDouble1,
 			double parDouble2, double parDouble3) {
@@ -46,7 +46,7 @@ public class EntityCrit2FX extends EntityFX {
 				+ 0.6000000238418579D);
 		this.particleScale *= 0.75F;
 		this.particleScale *= parFloat1;
-		this.field_174839_a = this.particleScale;
+		this.oSize = this.particleScale;
 		this.particleMaxAge = (int) (6.0D / (Math.random() * 0.8D + 0.6D));
 		this.particleMaxAge = (int) ((float) this.particleMaxAge * parFloat1);
 		this.noClip = false;
@@ -61,7 +61,7 @@ public class EntityCrit2FX extends EntityFX {
 			float f4, float f5) {
 		float f6 = ((float) this.particleAge + f) / (float) this.particleMaxAge * 32.0F;
 		f6 = MathHelper.clamp_float(f6, 0.0F, 1.0F);
-		this.particleScale = this.field_174839_a * f6;
+		this.particleScale = this.oSize * f6;
 		super.renderParticle(worldrenderer, entity, f, f1, f2, f3, f4, f5);
 	}
 

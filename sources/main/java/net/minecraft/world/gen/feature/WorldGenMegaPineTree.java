@@ -35,26 +35,26 @@ import net.minecraft.world.World;
  * 
  */
 public class WorldGenMegaPineTree extends WorldGenHugeTrees {
-	private static final IBlockState field_181633_e = Blocks.log.getDefaultState().withProperty(BlockOldLog.VARIANT,
+	private static final IBlockState TRUNK = Blocks.log.getDefaultState().withProperty(BlockOldLog.VARIANT,
 			BlockPlanks.EnumType.SPRUCE);
-	private static final IBlockState field_181634_f = Blocks.leaves.getDefaultState()
+	private static final IBlockState LEAF = Blocks.leaves.getDefaultState()
 			.withProperty(BlockOldLeaf.VARIANT, BlockPlanks.EnumType.SPRUCE)
 			.withProperty(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false));
-	private static final IBlockState field_181635_g = Blocks.dirt.getDefaultState().withProperty(BlockDirt.VARIANT,
+	private static final IBlockState PODZOL = Blocks.dirt.getDefaultState().withProperty(BlockDirt.VARIANT,
 			BlockDirt.DirtType.PODZOL);
 	private boolean useBaseHeight;
 
 	public WorldGenMegaPineTree(boolean parFlag, boolean parFlag2) {
-		super(parFlag, 13, 15, field_181633_e, field_181634_f);
+		super(parFlag, 13, 15, TRUNK, LEAF);
 		this.useBaseHeight = parFlag2;
 	}
 
 	public boolean generate(World world, EaglercraftRandom random, BlockPos blockpos) {
-		int i = this.func_150533_a(random);
-		if (!this.func_175929_a(world, random, blockpos, i)) {
+		int i = this.getHeight(random);
+		if (!this.ensureGrowable(world, random, blockpos, i)) {
 			return false;
 		} else {
-			this.func_150541_c(world, blockpos.getX(), blockpos.getZ(), blockpos.getY() + i, 0, random);
+			this.createCrown(world, blockpos.getX(), blockpos.getZ(), blockpos.getY() + i, 0, random);
 
 			for (int j = 0; j < i; ++j) {
 				Block block = world.getBlockState(blockpos.up(j)).getBlock();
@@ -84,7 +84,7 @@ public class WorldGenMegaPineTree extends WorldGenHugeTrees {
 		}
 	}
 
-	private void func_150541_c(World worldIn, int parInt1, int parInt2, int parInt3, int parInt4,
+	private void createCrown(World worldIn, int parInt1, int parInt2, int parInt3, int parInt4,
 			EaglercraftRandom parRandom) {
 		int i = parRandom.nextInt(5) + (this.useBaseHeight ? this.baseHeight : 3);
 		int j = 0;
@@ -92,47 +92,47 @@ public class WorldGenMegaPineTree extends WorldGenHugeTrees {
 		for (int k = parInt3 - i; k <= parInt3; ++k) {
 			int l = parInt3 - k;
 			int i1 = parInt4 + MathHelper.floor_float((float) l / (float) i * 3.5F);
-			this.func_175925_a(worldIn, new BlockPos(parInt1, k, parInt2),
+			this.growLeavesLayerStrict(worldIn, new BlockPos(parInt1, k, parInt2),
 					i1 + (l > 0 && i1 == j && (k & 1) == 0 ? 1 : 0));
 			j = i1;
 		}
 
 	}
 
-	public void func_180711_a(World world, EaglercraftRandom random, BlockPos blockpos) {
-		this.func_175933_b(world, blockpos.west().north());
-		this.func_175933_b(world, blockpos.east(2).north());
-		this.func_175933_b(world, blockpos.west().south(2));
-		this.func_175933_b(world, blockpos.east(2).south(2));
+	public void generateSaplings(World world, EaglercraftRandom random, BlockPos blockpos) {
+		this.placePodzolCircle(world, blockpos.west().north());
+		this.placePodzolCircle(world, blockpos.east(2).north());
+		this.placePodzolCircle(world, blockpos.west().south(2));
+		this.placePodzolCircle(world, blockpos.east(2).south(2));
 
 		for (int i = 0; i < 5; ++i) {
 			int j = random.nextInt(64);
 			int k = j % 8;
 			int l = j / 8;
 			if (k == 0 || k == 7 || l == 0 || l == 7) {
-				this.func_175933_b(world, blockpos.add(-3 + k, 0, -3 + l));
+				this.placePodzolCircle(world, blockpos.add(-3 + k, 0, -3 + l));
 			}
 		}
 
 	}
 
-	private void func_175933_b(World worldIn, BlockPos parBlockPos) {
+	private void placePodzolCircle(World worldIn, BlockPos parBlockPos) {
 		for (int i = -2; i <= 2; ++i) {
 			for (int j = -2; j <= 2; ++j) {
 				if (Math.abs(i) != 2 || Math.abs(j) != 2) {
-					this.func_175934_c(worldIn, parBlockPos.add(i, 0, j));
+					this.placePodzolAt(worldIn, parBlockPos.add(i, 0, j));
 				}
 			}
 		}
 
 	}
 
-	private void func_175934_c(World worldIn, BlockPos parBlockPos) {
+	private void placePodzolAt(World worldIn, BlockPos parBlockPos) {
 		for (int i = 2; i >= -3; --i) {
 			BlockPos blockpos = parBlockPos.up(i);
 			Block block = worldIn.getBlockState(blockpos).getBlock();
 			if (block == Blocks.grass || block == Blocks.dirt) {
-				this.setBlockAndNotifyAdequately(worldIn, blockpos, field_181635_g);
+				this.setBlockAndNotifyAdequately(worldIn, blockpos, PODZOL);
 				break;
 			}
 

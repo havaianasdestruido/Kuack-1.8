@@ -46,7 +46,7 @@ public class WorldGenBigTree extends WorldGenAbstractTree {
 	int trunkSize = 1;
 	int heightLimitLimit = 12;
 	int leafDistanceLimit = 4;
-	List<WorldGenBigTree.FoliageCoordinates> field_175948_j;
+	List<WorldGenBigTree.FoliageCoordinates> foliageCoords;
 
 	public WorldGenBigTree(boolean parFlag) {
 		super(parFlag);
@@ -69,8 +69,8 @@ public class WorldGenBigTree extends WorldGenAbstractTree {
 
 		int j = this.basePos.getY() + this.height;
 		int k = this.heightLimit - this.leafDistanceLimit;
-		this.field_175948_j = Lists.newArrayList();
-		this.field_175948_j.add(new WorldGenBigTree.FoliageCoordinates(this.basePos.up(k), j));
+		this.foliageCoords = Lists.newArrayList();
+		this.foliageCoords.add(new WorldGenBigTree.FoliageCoordinates(this.basePos.up(k), j));
 
 		for (; k >= 0; --k) {
 			float f = this.layerSize(k);
@@ -90,7 +90,7 @@ public class WorldGenBigTree extends WorldGenAbstractTree {
 						int k1 = d4 > (double) j ? j : (int) d4;
 						BlockPos blockpos2 = new BlockPos(this.basePos.getX(), k1, this.basePos.getZ());
 						if (this.checkBlockLine(blockpos2, blockpos) == -1) {
-							this.field_175948_j.add(new WorldGenBigTree.FoliageCoordinates(blockpos, blockpos2.getY()));
+							this.foliageCoords.add(new WorldGenBigTree.FoliageCoordinates(blockpos, blockpos2.getY()));
 						}
 					}
 				}
@@ -99,7 +99,7 @@ public class WorldGenBigTree extends WorldGenAbstractTree {
 
 	}
 
-	void func_181631_a(BlockPos parBlockPos, float parFloat1, IBlockState parIBlockState) {
+	void crosSection(BlockPos parBlockPos, float parFloat1, IBlockState parIBlockState) {
 		int i = (int) ((double) parFloat1 + 0.618D);
 
 		for (int j = -i; j <= i; ++j) {
@@ -149,13 +149,13 @@ public class WorldGenBigTree extends WorldGenAbstractTree {
 	 */
 	void generateLeafNode(BlockPos pos) {
 		for (int i = 0; i < this.leafDistanceLimit; ++i) {
-			this.func_181631_a(pos.up(i), this.leafSize(i),
+			this.crosSection(pos.up(i), this.leafSize(i),
 					Blocks.leaves.getDefaultState().withProperty(BlockLeaves.CHECK_DECAY, Boolean.valueOf(false)));
 		}
 
 	}
 
-	void func_175937_a(BlockPos parBlockPos, BlockPos parBlockPos2, Block parBlock) {
+	void limb(BlockPos parBlockPos, BlockPos parBlockPos2, Block parBlock) {
 		BlockPos blockpos = parBlockPos2.add(-parBlockPos.getX(), -parBlockPos.getY(), -parBlockPos.getZ());
 		int i = this.getGreatestDistance(blockpos);
 		float f = (float) blockpos.getX() / (float) i;
@@ -165,7 +165,7 @@ public class WorldGenBigTree extends WorldGenAbstractTree {
 		for (int j = 0; j <= i; ++j) {
 			BlockPos blockpos1 = parBlockPos.add((double) (0.5F + (float) j * f), (double) (0.5F + (float) j * f1),
 					(double) (0.5F + (float) j * f2));
-			BlockLog.EnumAxis blocklog$enumaxis = this.func_175938_b(parBlockPos, blockpos1);
+			BlockLog.EnumAxis blocklog$enumaxis = this.getLogAxis(parBlockPos, blockpos1);
 			this.setBlockAndNotifyAdequately(this.world, blockpos1,
 					parBlock.getDefaultState().withProperty(BlockLog.LOG_AXIS, blocklog$enumaxis));
 		}
@@ -183,7 +183,7 @@ public class WorldGenBigTree extends WorldGenAbstractTree {
 		return k > i && k > j ? k : (j > i ? j : i);
 	}
 
-	private BlockLog.EnumAxis func_175938_b(BlockPos parBlockPos, BlockPos parBlockPos2) {
+	private BlockLog.EnumAxis getLogAxis(BlockPos parBlockPos, BlockPos parBlockPos2) {
 		BlockLog.EnumAxis blocklog$enumaxis = BlockLog.EnumAxis.Y;
 		int i = Math.abs(parBlockPos2.getX() - parBlockPos.getX());
 		int j = Math.abs(parBlockPos2.getZ() - parBlockPos.getZ());
@@ -204,8 +204,8 @@ public class WorldGenBigTree extends WorldGenAbstractTree {
 	 * leafNodes list.
 	 */
 	void generateLeaves() {
-		for (int i = 0, l = this.field_175948_j.size(); i < l; ++i) {
-			this.generateLeafNode(this.field_175948_j.get(i));
+		for (int i = 0, l = this.foliageCoords.size(); i < l; ++i) {
+			this.generateLeafNode(this.foliageCoords.get(i));
 		}
 
 	}
@@ -227,11 +227,11 @@ public class WorldGenBigTree extends WorldGenAbstractTree {
 		BlockPos blockpos = this.basePos;
 		BlockPos blockpos1 = this.basePos.up(this.height);
 		Block block = Blocks.log;
-		this.func_175937_a(blockpos, blockpos1, block);
+		this.limb(blockpos, blockpos1, block);
 		if (this.trunkSize == 2) {
-			this.func_175937_a(blockpos.east(), blockpos1.east(), block);
-			this.func_175937_a(blockpos.east().south(), blockpos1.east().south(), block);
-			this.func_175937_a(blockpos.south(), blockpos1.south(), block);
+			this.limb(blockpos.east(), blockpos1.east(), block);
+			this.limb(blockpos.east().south(), blockpos1.east().south(), block);
+			this.limb(blockpos.south(), blockpos1.south(), block);
 		}
 
 	}
@@ -241,13 +241,13 @@ public class WorldGenBigTree extends WorldGenAbstractTree {
 	 * different leaf nodes that would otherwise degrade.
 	 */
 	void generateLeafNodeBases() {
-		for (int j = 0, l = this.field_175948_j.size(); j < l; ++j) {
-			WorldGenBigTree.FoliageCoordinates worldgenbigtree$foliagecoordinates = this.field_175948_j.get(j);
-			int i = worldgenbigtree$foliagecoordinates.func_177999_q();
+		for (int j = 0, l = this.foliageCoords.size(); j < l; ++j) {
+			WorldGenBigTree.FoliageCoordinates worldgenbigtree$foliagecoordinates = this.foliageCoords.get(j);
+			int i = worldgenbigtree$foliagecoordinates.getBranchBase();
 			BlockPos blockpos = new BlockPos(this.basePos.getX(), i, this.basePos.getZ());
 			if (!blockpos.equals(worldgenbigtree$foliagecoordinates)
 					&& this.leafNodeNeedsBase(i - this.basePos.getY())) {
-				this.func_175937_a(blockpos, worldgenbigtree$foliagecoordinates, Blocks.log);
+				this.limb(blockpos, worldgenbigtree$foliagecoordinates, Blocks.log);
 			}
 		}
 
@@ -271,7 +271,7 @@ public class WorldGenBigTree extends WorldGenAbstractTree {
 			for (int j = 0; j <= i; ++j) {
 				BlockPos blockpos1 = posOne.add((double) (0.5F + (float) j * f), (double) (0.5F + (float) j * f1),
 						(double) (0.5F + (float) j * f2));
-				if (!this.func_150523_a(this.world.getBlockState(blockpos1).getBlock())) {
+				if (!this.canGrowInto(this.world.getBlockState(blockpos1).getBlock())) {
 					return j;
 				}
 			}
@@ -280,7 +280,7 @@ public class WorldGenBigTree extends WorldGenAbstractTree {
 		}
 	}
 
-	public void func_175904_e() {
+	public void setDecorationDefaults() {
 		this.leafDistanceLimit = 5;
 	}
 
@@ -326,15 +326,15 @@ public class WorldGenBigTree extends WorldGenAbstractTree {
 	}
 
 	static class FoliageCoordinates extends BlockPos {
-		private final int field_178000_b;
+		private final int branchBase;
 
 		public FoliageCoordinates(BlockPos parBlockPos, int parInt1) {
 			super(parBlockPos.getX(), parBlockPos.getY(), parBlockPos.getZ());
-			this.field_178000_b = parInt1;
+			this.branchBase = parInt1;
 		}
 
-		public int func_177999_q() {
-			return this.field_178000_b;
+		public int getBranchBase() {
+			return this.branchBase;
 		}
 	}
 }

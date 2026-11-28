@@ -100,7 +100,7 @@ public class ScoreboardSaveData extends WorldSavedData {
 
 			if (nbttagcompound.hasKey("NameTagVisibility", 8)) {
 				Team.EnumVisible team$enumvisible = Team.EnumVisible
-						.func_178824_a(nbttagcompound.getString("NameTagVisibility"));
+						.getByName(nbttagcompound.getString("NameTagVisibility"));
 				if (team$enumvisible != null) {
 					scoreplayerteam.setNameTagVisibility(team$enumvisible);
 				}
@@ -108,18 +108,18 @@ public class ScoreboardSaveData extends WorldSavedData {
 
 			if (nbttagcompound.hasKey("DeathMessageVisibility", 8)) {
 				Team.EnumVisible team$enumvisible1 = Team.EnumVisible
-						.func_178824_a(nbttagcompound.getString("DeathMessageVisibility"));
+						.getByName(nbttagcompound.getString("DeathMessageVisibility"));
 				if (team$enumvisible1 != null) {
 					scoreplayerteam.setDeathMessageVisibility(team$enumvisible1);
 				}
 			}
 
-			this.func_96502_a(scoreplayerteam, nbttagcompound.getTagList("Players", 8));
+			this.loadTeamPlayers(scoreplayerteam, nbttagcompound.getTagList("Players", 8));
 		}
 
 	}
 
-	protected void func_96502_a(ScorePlayerTeam parScorePlayerTeam, NBTTagList parNBTTagList) {
+	protected void loadTeamPlayers(ScorePlayerTeam parScorePlayerTeam, NBTTagList parNBTTagList) {
 		for (int i = 0; i < parNBTTagList.tagCount(); ++i) {
 			this.theScoreboard.addPlayerToTeam(parNBTTagList.getStringTagAt(i), parScorePlayerTeam.getRegisteredName());
 		}
@@ -151,7 +151,7 @@ public class ScoreboardSaveData extends WorldSavedData {
 				ScoreObjective scoreobjective = this.theScoreboard.addScoreObjective(s, iscoreobjectivecriteria);
 				scoreobjective.setDisplayName(nbttagcompound.getString("DisplayName"));
 				scoreobjective.setRenderType(
-						IScoreObjectiveCriteria.EnumRenderType.func_178795_a(nbttagcompound.getString("RenderType")));
+						IScoreObjectiveCriteria.EnumRenderType.getByName(nbttagcompound.getString("RenderType")));
 			}
 		}
 
@@ -185,12 +185,12 @@ public class ScoreboardSaveData extends WorldSavedData {
 		} else {
 			nbttagcompound.setTag("Objectives", this.objectivesToNbt());
 			nbttagcompound.setTag("PlayerScores", this.scoresToNbt());
-			nbttagcompound.setTag("Teams", this.func_96496_a());
-			this.func_96497_d(nbttagcompound);
+			nbttagcompound.setTag("Teams", this.teamsToNbt());
+			this.fillInDisplaySlots(nbttagcompound);
 		}
 	}
 
-	protected NBTTagList func_96496_a() {
+	protected NBTTagList teamsToNbt() {
 		NBTTagList nbttaglist = new NBTTagList();
 
 		for (ScorePlayerTeam scoreplayerteam : this.theScoreboard.getTeams()) {
@@ -205,9 +205,9 @@ public class ScoreboardSaveData extends WorldSavedData {
 			nbttagcompound.setString("Suffix", scoreplayerteam.getColorSuffix());
 			nbttagcompound.setBoolean("AllowFriendlyFire", scoreplayerteam.getAllowFriendlyFire());
 			nbttagcompound.setBoolean("SeeFriendlyInvisibles", scoreplayerteam.getSeeFriendlyInvisiblesEnabled());
-			nbttagcompound.setString("NameTagVisibility", scoreplayerteam.getNameTagVisibility().field_178830_e);
+			nbttagcompound.setString("NameTagVisibility", scoreplayerteam.getNameTagVisibility().internalName);
 			nbttagcompound.setString("DeathMessageVisibility",
-					scoreplayerteam.getDeathMessageVisibility().field_178830_e);
+					scoreplayerteam.getDeathMessageVisibility().internalName);
 			NBTTagList nbttaglist1 = new NBTTagList();
 
 			for (String s : scoreplayerteam.getMembershipCollection()) {
@@ -221,7 +221,7 @@ public class ScoreboardSaveData extends WorldSavedData {
 		return nbttaglist;
 	}
 
-	protected void func_96497_d(NBTTagCompound parNBTTagCompound) {
+	protected void fillInDisplaySlots(NBTTagCompound parNBTTagCompound) {
 		NBTTagCompound nbttagcompound = new NBTTagCompound();
 		boolean flag = false;
 
@@ -248,7 +248,7 @@ public class ScoreboardSaveData extends WorldSavedData {
 				nbttagcompound.setString("Name", scoreobjective.getName());
 				nbttagcompound.setString("CriteriaName", scoreobjective.getCriteria().getName());
 				nbttagcompound.setString("DisplayName", scoreobjective.getDisplayName());
-				nbttagcompound.setString("RenderType", scoreobjective.getRenderType().func_178796_a());
+				nbttagcompound.setString("RenderType", scoreobjective.getRenderType().IScoreObjectiveCriteriaGetRenderType());
 				nbttaglist.appendTag(nbttagcompound);
 			}
 		}

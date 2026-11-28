@@ -37,7 +37,7 @@ import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
  * 
  */
 public class WorldGenDungeons extends WorldGenerator {
-	private static final Logger field_175918_a = LogManager.getLogger();
+	private static final Logger LOGGER = LogManager.getLogger();
 	private static final String[] SPAWNERTYPES = new String[] { "Skeleton", "Zombie", "Zombie", "Spider" };
 	private static final List<WeightedRandomChestContent> CHESTCONTENT = Lists
 			.newArrayList(new WeightedRandomChestContent[] { new WeightedRandomChestContent(Items.saddle, 0, 1, 1, 10),
@@ -151,7 +151,7 @@ public class WorldGenDungeons extends WorldGenerator {
 			if (tileentity instanceof TileEntityMobSpawner) {
 				((TileEntityMobSpawner) tileentity).getSpawnerBaseLogic().setEntityName(this.pickMobSpawner(random));
 			} else {
-				field_175918_a.error("Failed to fetch mob spawner entity at (" + blockpos.getX() + ", "
+				LOGGER.error("Failed to fetch mob spawner entity at (" + blockpos.getX() + ", "
 						+ blockpos.getY() + ", " + blockpos.getZ() + ")");
 			}
 

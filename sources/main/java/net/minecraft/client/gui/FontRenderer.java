@@ -183,7 +183,7 @@ public class FontRenderer implements IResourceManagerReloadListener {
 
 	}
 
-	private float func_181559_a(char parChar1, boolean parFlag) {
+	private float renderChar(char parChar1, boolean parFlag) {
 		if (parChar1 == 32) {
 			return 4.0F;
 		} else {
@@ -417,7 +417,7 @@ public class FontRenderer implements IResourceManagerReloadListener {
 					this.posY -= f1;
 				}
 
-				float f = this.func_181559_a(c0, this.italicStyle);
+				float f = this.renderChar(c0, this.italicStyle);
 				if (flag) {
 					this.posX += f1;
 					this.posY += f1;
@@ -430,7 +430,7 @@ public class FontRenderer implements IResourceManagerReloadListener {
 						this.posY -= f1;
 					}
 
-					this.func_181559_a(c0, this.italicStyle);
+					this.renderChar(c0, this.italicStyle);
 					this.posX -= f1;
 					if (flag) {
 						this.posX += f1;

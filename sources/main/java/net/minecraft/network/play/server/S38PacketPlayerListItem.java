@@ -190,11 +190,11 @@ public class S38PacketPlayerListItem implements Packet<INetHandlerPlayClient> {
 		inethandlerplayclient.handlePlayerListItem(this);
 	}
 
-	public List<S38PacketPlayerListItem.AddPlayerData> func_179767_a() {
+	public List<S38PacketPlayerListItem.AddPlayerData> getEntries() {
 		return this.players;
 	}
 
-	public S38PacketPlayerListItem.Action func_179768_b() {
+	public S38PacketPlayerListItem.Action getAction() {
 		return this.action;
 	}
 

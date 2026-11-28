@@ -75,7 +75,7 @@ public class MapColor {
 		}
 	}
 
-	public int func_151643_b(int parInt1) {
+	public int getMapColor(int parInt1) {
 		short short1 = 220;
 		if (parInt1 == 3) {
 			short1 = 135;

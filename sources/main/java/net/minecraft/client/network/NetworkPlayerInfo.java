@@ -35,11 +35,11 @@ public class NetworkPlayerInfo {
 	private int responseTime;
 	private String skinType;
 	private IChatComponent displayName;
-	private int field_178873_i = 0;
-	private int field_178870_j = 0;
-	private long field_178871_k = 0L;
-	private long field_178868_l = 0L;
-	private long field_178869_m = 0L;
+	private int lastHealth = 0;
+	private int displayHealth = 0;
+	private long lastHealthTime = 0L;
+	private long healthBlinkTime = 0L;
+	private long renderVisibilityId = 0L;
 
 	public NetworkPlayerInfo(GameProfile parGameProfile) {
 		this.gameProfile = parGameProfile;
@@ -110,43 +110,43 @@ public class NetworkPlayerInfo {
 		return this.displayName;
 	}
 
-	public int func_178835_l() {
-		return this.field_178873_i;
+	public int getLastHealth() {
+		return this.lastHealth;
 	}
 
-	public void func_178836_b(int parInt1) {
-		this.field_178873_i = parInt1;
+	public void setLastHealth(int parInt1) {
+		this.lastHealth = parInt1;
 	}
 
-	public int func_178860_m() {
-		return this.field_178870_j;
+	public int getDisplayHealth() {
+		return this.displayHealth;
 	}
 
-	public void func_178857_c(int parInt1) {
-		this.field_178870_j = parInt1;
+	public void setDisplayHealth(int parInt1) {
+		this.displayHealth = parInt1;
 	}
 
-	public long func_178847_n() {
-		return this.field_178871_k;
+	public long getLastHealthTime() {
+		return this.lastHealthTime;
 	}
 
-	public void func_178846_a(long parLong1) {
-		this.field_178871_k = parLong1;
+	public void setLastHealthTime(long parLong1) {
+		this.lastHealthTime = parLong1;
 	}
 
-	public long func_178858_o() {
-		return this.field_178868_l;
+	public long getHealthBlinkTime() {
+		return this.healthBlinkTime;
 	}
 
-	public void func_178844_b(long parLong1) {
-		this.field_178868_l = parLong1;
+	public void setHealthBlinkTime(long parLong1) {
+		this.healthBlinkTime = parLong1;
 	}
 
-	public long func_178855_p() {
-		return this.field_178869_m;
+	public long getRenderVisibilityId() {
+		return this.renderVisibilityId;
 	}
 
-	public void func_178843_c(long parLong1) {
-		this.field_178869_m = parLong1;
+	public void setRenderVisibilityId(long parLong1) {
+		this.renderVisibilityId = parLong1;
 	}
 }

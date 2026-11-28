@@ -125,7 +125,7 @@ public class CommandPlaySound extends CommandBase {
 	public List<String> addTabCompletionOptions(ICommandSender var1, String[] astring, BlockPos blockpos) {
 		return astring.length == 2
 				? getListOfStringsMatchingLastWord(astring, MinecraftServer.getServer().getAllUsernames())
-				: (astring.length > 2 && astring.length <= 5 ? func_175771_a(astring, 2, blockpos) : null);
+				: (astring.length > 2 && astring.length <= 5 ? getTabCompletionCoordinate(astring, 2, blockpos) : null);
 	}
 
 	/**+

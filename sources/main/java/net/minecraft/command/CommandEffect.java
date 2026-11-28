@@ -137,7 +137,7 @@ public class CommandEffect extends CommandBase {
 	 */
 	public List<String> addTabCompletionOptions(ICommandSender var1, String[] astring, BlockPos var3) {
 		return astring.length == 1 ? getListOfStringsMatchingLastWord(astring, this.getAllUsernames())
-				: (astring.length == 2 ? getListOfStringsMatchingLastWord(astring, Potion.func_181168_c())
+				: (astring.length == 2 ? getListOfStringsMatchingLastWord(astring, Potion.getPotionLocations())
 						: (astring.length == 5
 								? getListOfStringsMatchingLastWord(astring, new String[] { "true", "false" })
 								: null));

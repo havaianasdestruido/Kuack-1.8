@@ -101,7 +101,7 @@ public class ItemRenderer {
 		return blockIn != null && blockIn.getBlockLayer() == EnumWorldBlockLayer.TRANSLUCENT;
 	}
 
-	private void func_178101_a(float angle, float parFloat2) {
+	private void rotateArroundXAndY(float angle, float parFloat2) {
 		GlStateManager.pushMatrix();
 		GlStateManager.rotate(angle, 1.0F, 0.0F, 0.0F);
 		GlStateManager.rotate(parFloat2, 0.0F, 1.0F, 0.0F);
@@ -109,7 +109,7 @@ public class ItemRenderer {
 		GlStateManager.popMatrix();
 	}
 
-	private void func_178109_a(AbstractClientPlayer clientPlayer) {
+	private void setLightMapFromPlayer(AbstractClientPlayer clientPlayer) {
 		int i = this.mc.theWorld.getCombinedLight(new BlockPos(clientPlayer.posX,
 				clientPlayer.posY + (double) clientPlayer.getEyeHeight(), clientPlayer.posZ), 0);
 		float f = (float) (i & '\uffff');
@@ -117,7 +117,7 @@ public class ItemRenderer {
 		OpenGlHelper.setLightmapTextureCoords(OpenGlHelper.lightmapTexUnit, f, f1);
 	}
 
-	private void func_178110_a(EntityPlayerSP entityplayerspIn, float partialTicks) {
+	private void rotateWithPlayerRotations(EntityPlayerSP entityplayerspIn, float partialTicks) {
 		float f = entityplayerspIn.prevRenderArmPitch
 				+ (entityplayerspIn.renderArmPitch - entityplayerspIn.prevRenderArmPitch) * partialTicks;
 		float f1 = entityplayerspIn.prevRenderArmYaw
@@ -126,7 +126,7 @@ public class ItemRenderer {
 		GlStateManager.rotate((entityplayerspIn.rotationYaw - f1) * 0.1F, 0.0F, 1.0F, 0.0F);
 	}
 
-	private float func_178100_c(float parFloat1) {
+	private float getMapAngleFromPitch(float parFloat1) {
 		float f = 1.0F - parFloat1 / 45.0F + 0.1F;
 		f = MathHelper.clamp_float(f, 0.0F, 1.0F);
 		f = -MathHelper.cos(f * 3.1415927F) * 0.5F + 0.5F;
@@ -171,7 +171,7 @@ public class ItemRenderer {
 		float f1 = 0.2F * MathHelper.sin(MathHelper.sqrt_float(parFloat3) * 3.1415927F * 2.0F);
 		float f2 = -0.2F * MathHelper.sin(parFloat3 * 3.1415927F);
 		GlStateManager.translate(f, f1, f2);
-		float f3 = this.func_178100_c(parFloat1);
+		float f3 = this.getMapAngleFromPitch(parFloat1);
 		GlStateManager.translate(0.0F, 0.04F, -0.72F);
 		GlStateManager.translate(0.0F, parFloat2 * -1.2F, 0.0F);
 		GlStateManager.translate(0.0F, f3 * -0.5F, 0.0F);
@@ -207,7 +207,7 @@ public class ItemRenderer {
 
 	}
 
-	private void func_178095_a(AbstractClientPlayer clientPlayer, float parFloat1, float parFloat2) {
+	private void renderPlayerArm(AbstractClientPlayer clientPlayer, float parFloat1, float parFloat2) {
 		float f = -0.3F * MathHelper.sin(MathHelper.sqrt_float(parFloat2) * 3.1415927F);
 		float f1 = 0.4F * MathHelper.sin(MathHelper.sqrt_float(parFloat2) * 3.1415927F * 2.0F);
 		float f2 = -0.4F * MathHelper.sin(parFloat2 * 3.1415927F);
@@ -233,14 +233,14 @@ public class ItemRenderer {
 		GlStateManager.enableCull();
 	}
 
-	private void func_178105_d(float parFloat1) {
+	private void doItemUsedTransformations(float parFloat1) {
 		float f = -0.4F * MathHelper.sin(MathHelper.sqrt_float(parFloat1) * 3.1415927F);
 		float f1 = 0.2F * MathHelper.sin(MathHelper.sqrt_float(parFloat1) * 3.1415927F * 2.0F);
 		float f2 = -0.2F * MathHelper.sin(parFloat1 * 3.1415927F);
 		GlStateManager.translate(f, f1, f2);
 	}
 
-	private void func_178104_a(AbstractClientPlayer clientPlayer, float parFloat1) {
+	private void performDrinking(AbstractClientPlayer clientPlayer, float parFloat1) {
 		float f = (float) clientPlayer.getItemInUseCount() - parFloat1 + 1.0F;
 		float f1 = f / (float) this.itemToRender.getMaxItemUseDuration();
 		float f2 = MathHelper.abs(MathHelper.cos(f / 4.0F * 3.1415927F) * 0.1F);
@@ -272,7 +272,7 @@ public class ItemRenderer {
 		GlStateManager.scale(0.4F, 0.4F, 0.4F);
 	}
 
-	private void func_178098_a(float clientPlayer, AbstractClientPlayer parAbstractClientPlayer) {
+	private void doBowTransformations(float clientPlayer, AbstractClientPlayer parAbstractClientPlayer) {
 		GlStateManager.rotate(-18.0F, 0.0F, 0.0F, 1.0F);
 		GlStateManager.rotate(-12.0F, 0.0F, 1.0F, 0.0F);
 		GlStateManager.rotate(-8.0F, 1.0F, 0.0F, 0.0F);
@@ -296,7 +296,7 @@ public class ItemRenderer {
 		GlStateManager.scale(1.0F, 1.0F, 1.0F + f1 * 0.2F);
 	}
 
-	private void func_178103_d() {
+	private void doBlockTransformations() {
 		GlStateManager.translate(-0.5F, 0.2F, 0.0F);
 		GlStateManager.rotate(30.0F, 0.0F, 1.0F, 0.0F);
 		GlStateManager.rotate(-80.0F, 1.0F, 0.0F, 0.0F);
@@ -316,9 +316,9 @@ public class ItemRenderer {
 				+ (entityplayersp.rotationPitch - entityplayersp.prevRotationPitch) * partialTicks;
 		float f3 = entityplayersp.prevRotationYaw
 				+ (entityplayersp.rotationYaw - entityplayersp.prevRotationYaw) * partialTicks;
-		this.func_178101_a(f2, f3);
-		this.func_178109_a(entityplayersp);
-		this.func_178110_a((EntityPlayerSP) entityplayersp, partialTicks);
+		this.rotateArroundXAndY(f2, f3);
+		this.setLightMapFromPlayer(entityplayersp);
+		this.rotateWithPlayerRotations((EntityPlayerSP) entityplayersp, partialTicks);
 		GlStateManager.enableRescaleNormal();
 		GlStateManager.pushMatrix();
 		if (this.itemToRender != null) {
@@ -332,25 +332,25 @@ public class ItemRenderer {
 					break;
 				case EAT:
 				case DRINK:
-					this.func_178104_a(entityplayersp, partialTicks);
+					this.performDrinking(entityplayersp, partialTicks);
 					this.transformFirstPersonItem(f, 0.0F);
 					break;
 				case BLOCK:
 					this.transformFirstPersonItem(f, 0.0F);
-					this.func_178103_d();
+					this.doBlockTransformations();
 					break;
 				case BOW:
 					this.transformFirstPersonItem(f, 0.0F);
-					this.func_178098_a(partialTicks, entityplayersp);
+					this.doBowTransformations(partialTicks, entityplayersp);
 				}
 			} else {
-				this.func_178105_d(f1);
+				this.doItemUsedTransformations(f1);
 				this.transformFirstPersonItem(f, f1);
 			}
 
 			this.renderItem(entityplayersp, this.itemToRender, ItemCameraTransforms.TransformType.FIRST_PERSON);
 		} else if (!entityplayersp.isInvisible()) {
-			this.func_178095_a(entityplayersp, f, f1);
+			this.renderPlayerArm(entityplayersp, f, f1);
 		}
 
 		GlStateManager.popMatrix();
@@ -382,7 +382,7 @@ public class ItemRenderer {
 			}
 
 			if (iblockstate.getBlock().getRenderType() != -1) {
-				this.func_178108_a(partialTicks,
+				this.renderBlockInHand(partialTicks,
 						this.mc.getBlockRendererDispatcher().getBlockModelShapes().getTexture(iblockstate));
 			}
 		}
@@ -400,7 +400,7 @@ public class ItemRenderer {
 		GlStateManager.enableAlpha();
 	}
 
-	private void func_178108_a(float parFloat1, EaglerTextureAtlasSprite parTextureAtlasSprite) {
+	private void renderBlockInHand(float parFloat1, EaglerTextureAtlasSprite parTextureAtlasSprite) {
 		this.mc.getTextureManager().bindTexture(TextureMap.locationBlocksTexture);
 		Tessellator tessellator = Tessellator.getInstance();
 		WorldRenderer worldrenderer = tessellator.getWorldRenderer();
