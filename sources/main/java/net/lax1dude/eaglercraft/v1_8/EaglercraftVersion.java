@@ -54,9 +54,9 @@ public class EaglercraftVersion {
 	public static final String mainMenuStringG = "Resenha's Edition";
 	public static final String mainMenuStringH = "Modo Orelha ativaaaar";
 
-	public static final long demoWorldSeed = (long) "North Carolina".hashCode();
+	public static final long demoWorldSeed = (long) "KIRK".hashCode();
 
-	public static final boolean mainMenuEnableGithubButton = false;
+	public static final boolean mainMenuEnableGithubButton = true;
 
 	public static final boolean forceDemoMode = false;
 
