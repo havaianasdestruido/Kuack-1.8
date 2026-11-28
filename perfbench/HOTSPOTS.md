@@ -30,6 +30,28 @@ or `E` (source-estimated from call-site/loop structure); no full-game trace was 
 Game-input distributions were **not** captured. Benchmarks use deterministic sequential, fixed-LCG
 random and adversarial negative/out-of-range inputs; full-game FPS/frame-time remains unavailable.
 
+## GPU-side hot loops: the built-in deferred/PBR shaders
+
+The census above is Java-only. The shaders in `assets/eagler/glsl/deferred/` are the other half of
+the frame cost and are analysed separately, with the same rules (measure, verify, record):
+
+- **Per-frame light loops (optimised, see FINDINGS #14)** — `lighting_point.fsh` runs once per
+  fragment of every dynamic light mesh (≤12 lights per chunk bucket, drawn with depth test off), and
+  `eaglercraftLighting()` runs inside the per-light loop of `forward_core.fsh`,
+  `accel_particle_forward.fsh`, `realistic_water_render.fsh` and `forward_glass_highlights.fsh`.
+  `pow(x,5.0)` → multiplies, culls moved before `normalize()`/the `1/dist2` divide, dead work
+  removed. Measured: pow/SFU pairs per invocation 3.41 → 0 (`forward_core`), 7.99 → 0
+  (`accel_particle`), `sqrt` 12.41 → 7.66, 5.4 % fewer x86 instructions in the BRDF, 0 of 14.66 M
+  point-lit fragments change an 8-bit output.
+- **Not touched, by design** — `skybox_irradiance.fsh` is the most expensive shader in the tree
+  (156 texture taps per output texel) but it only runs when the sky needs re-convolving (3 draw
+  calls, not per frame); `reproject_ssr.fsh` takes one sample per pixel per frame and accumulates
+  over ~maxAge frames; `shadows_sun.fsh` is geometry-bound (shadow frustum draw), not ALU-bound; the
+  two `u_metalsLUT` fetches in the metal branch cannot be merged without changing the LUT asset.
+- **Possible follow-ups** — a "precomputed material" entry point for `eaglercraftLighting`
+  (`roughness`, `roughness^4`, `gs` are light-invariant; compilers already do LICM, win unproven),
+  and `deferred_combine.fsh`'s irradiance/`smoothstep` pair on the `dst < 0.005` seam path.
+
 ## The maths/LUT sweep (this session)
 
 Full detail in `FINDINGS.md` (existing-table inventory, trig call-site census, #10, #11, and the

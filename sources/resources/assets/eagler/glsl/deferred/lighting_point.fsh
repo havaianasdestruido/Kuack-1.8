@@ -41,48 +41,40 @@ uniform vec3 u_lightColor3f;
 
 void main() {
 	vec2 v_position2f = gl_FragCoord.xy * u_viewportSize2f;
-	vec3 diffuseColor3f;
-	vec3 normalVector3f;
-	vec2 lightmapCoords2f;
-	vec3 materialData3f;
 
 	float depth = textureLod(u_gbufferDepthTexture, v_position2f, 0.0).r;
 	if(depth < 0.00001) {
 		discard;
 	}
 
-	vec4 worldSpacePosition = vec4(v_position2f, depth, 1.0);
-	worldSpacePosition.xyz *= 2.0;
-	worldSpacePosition.xyz -= 1.0;
-	worldSpacePosition = u_inverseProjectionMatrix4f * worldSpacePosition;
-	vec4 worldSpacePosition2 = worldSpacePosition;
-	worldSpacePosition = u_inverseViewMatrix4f * worldSpacePosition;
-	vec3 lightDist = (worldSpacePosition.xyz / worldSpacePosition.w) - u_lightPosition3f;
-	vec3 color3f = u_lightColor3f / dot(lightDist, lightDist);
+	vec4 viewSpacePosition4f = u_inverseProjectionMatrix4f * (vec4(v_position2f, depth, 1.0) * 2.0 - 1.0);
+	vec4 worldSpacePosition4f = u_inverseViewMatrix4f * viewSpacePosition4f;
+	// one dot serves the falloff and the normalise() of the light vector below
+	vec3 lightDist3f = (worldSpacePosition4f.xyz / worldSpacePosition4f.w) - u_lightPosition3f;
+	float dist2 = dot(lightDist3f, lightDist3f);
+
+	vec3 color3f = u_lightColor3f / dist2;
 
 	if(color3f.r + color3f.g + color3f.b < 0.025) {
 		discard;
 	}
 
-	vec4 sampleVar4f = textureLod(u_gbufferColorTexture, v_position2f, 0.0);
-	diffuseColor3f.rgb = sampleVar4f.rgb;
-	lightmapCoords2f.x = sampleVar4f.a;
-	sampleVar4f = textureLod(u_gbufferNormalTexture, v_position2f, 0.0);
-	normalVector3f.xyz = sampleVar4f.rgb * 2.0 - 1.0;
-	lightmapCoords2f.y = sampleVar4f.a;
-	materialData3f = textureLod(u_gbufferMaterialTexture, v_position2f, 0.0).rgb;
+	vec4 sampleVar4f = textureLod(u_gbufferNormalTexture, v_position2f, 0.0);
+	vec3 worldSpaceNormal = normalize(mat3(u_inverseViewMatrix4f) * (sampleVar4f.rgb * 2.0 - 1.0));
+	vec3 materialData3f = textureLod(u_gbufferMaterialTexture, v_position2f, 0.0).rgb;
 
-	vec3 worldSpaceNormal = normalize(mat3(u_inverseViewMatrix4f) * normalVector3f);
-
-	vec3 lightDir3f = normalize(lightDist);
-	lightDir3f = materialData3f.b == 1.0 ? worldSpaceNormal : -lightDir3f;
-
-	if(dot(lightDir3f, worldSpaceNormal) <= 0.0) {
+	// Facing test on the unnormalised light vector: normalize() only scales by the positive
+	// 1/|d|, so it cannot flip the sign of dot(lightDir, N). Testing before the normalise lets
+	// every fragment this light cannot reach skip it, the colour divide and the whole BRDF.
+	if(materialData3f.b != 1.0 && dot(lightDist3f, worldSpaceNormal) >= 0.0) {
 		discard;
 	}
 
-	diffuseColor3f *= diffuseColor3f;
-	worldSpacePosition2 = u_inverseViewMatrix4f * vec4(worldSpacePosition2.xyz / worldSpacePosition2.w, 0.0);
-	worldSpacePosition2.xyz = normalize(worldSpacePosition2.xyz);
-	output4f = vec4(eaglercraftLighting(diffuseColor3f, color3f, -worldSpacePosition2.xyz, lightDir3f, worldSpaceNormal, materialData3f), 0.0);
+	vec3 lightDir3f = materialData3f.b == 1.0 ? worldSpaceNormal : lightDist3f * (-inversesqrt(dist2));
+	vec3 viewDir3f = -normalize(mat3(u_inverseViewMatrix4f) * (viewSpacePosition4f.xyz / viewSpacePosition4f.w));
+
+	sampleVar4f = textureLod(u_gbufferColorTexture, v_position2f, 0.0);
+	vec3 diffuseColor3f = sampleVar4f.rgb * sampleVar4f.rgb;
+
+	output4f = vec4(eaglercraftLighting(diffuseColor3f, color3f, viewDir3f, lightDir3f, worldSpaceNormal, materialData3f), 0.0);
 }

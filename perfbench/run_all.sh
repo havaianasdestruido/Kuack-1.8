@@ -44,7 +44,7 @@ cd "$ROOT"
 run_step "01-unit-tests" python3 -m unittest discover -s tests -v
 run_step "02-shell-syntax" bash -n perfbench/run_all.sh perfbench/run_bench.sh perfbench/compile_main.sh \
     perfbench/teavm/build_probe.sh perfbench/wasm/build.sh perfbench/native/build.sh \
-    perfbench/jit_gc_profile.sh
+    perfbench/shader/run_bench.sh perfbench/shader/run_validate.sh perfbench/jit_gc_profile.sh
 run_step "03-python-syntax" python3 -m py_compile perfbench/gen_luts.py perfbench/native/gen_header.py \
     perfbench/teavm/fetch_teavm_jars.py tests/test_generated_luts.py
 run_step "04-generator-check" bash -c \
@@ -60,7 +60,9 @@ run_step "12-v8-math" node ./perfbench/js/bench_v8_math.js
 run_step "13-wasm-build" env WABT_MODULE="${WABT_MODULE:-}" ./perfbench/wasm/build.sh
 run_step "14-wasm-bench" node ./perfbench/wasm/run_wasm.js
 run_step "15-native-aot" ./perfbench/native/build.sh
-run_step "16-hotspot-jit-jfr" env JDK="$JDK17" ./perfbench/jit_gc_profile.sh
+run_step "16-shader-bench" ./perfbench/shader/run_bench.sh
+run_step "17-shader-validate" ./perfbench/shader/run_validate.sh
+run_step "18-hotspot-jit-jfr" env JDK="$JDK17" ./perfbench/jit_gc_profile.sh
 
 echo
 echo "All repeatable validation steps completed. Output: $RESULTS/*.txt" | tee "$RESULTS/99-summary.txt"

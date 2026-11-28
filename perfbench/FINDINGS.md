@@ -579,6 +579,111 @@ updates/s this is a few microseconds of CPU per second, not an FPS claim.
 
 ---
 
+## #14 Built-in deferred/PBR shaders — hot-loop sweep (GLSL, not Java)
+
+**Files:** `sources/resources/assets/eagler/glsl/deferred/lib/pbr_lighting.glsl`,
+`lib/pbr_env_map.glsl`, `lighting_point.fsh` (per point light), `lighting_sun.fsh` (via the lib),
+`forward_core.fsh`, `accel_particle_forward.fsh`, `realistic_water_render.fsh`,
+`forward_glass_highlights.fsh` (the last two carry their own copies of the BRDF).
+
+**Where the hot loops are.** `lighting_point.fsh` runs once per fragment of every dynamic light's
+bounding mesh (up to 12 lights per chunk bucket, no depth test), and `forward_core.fsh` /
+`accel_particle_forward.fsh` / the water and glass variants run `eaglercraftLighting()` inside a
+per-light loop for every entity/particle fragment. So the per-invocation cost of the BRDF and the
+per-light loop body are the two things worth attacking, not the once-per-sky-update convolution
+shaders (`skybox_irradiance.fsh`, 156 taps/texel) or the temporally amortised SSR march.
+
+**What changed.**
+
+1. `pow(x, 5.0)` → `x2 * x2 * x` in the Fresnel-Schlick term of every PBR lighting function
+   (7 sites: the two libs, the water and glass copies). `highp pow()` is `exp2(5.0 * log2(x))` on
+   GLES3 drivers, i.e. two SFU ops plus the surrounding multiplies; three ALU multiplies replace it.
+   This is the only transcendental in the light-loop body.
+2. Point-light pass (`lighting_point.fsh`):
+   - the facing test now runs on the **unnormalised** light vector — `normalize()` only scales by
+     the positive `1/|d|`, so it cannot flip the sign of `dot(lightDir, N)` — which lets fragments
+     the light cannot reach skip `normalize()`, the colour divide and the whole BRDF;
+   - one `dot()` is now shared by the falloff and the `normalize()`;
+   - the colour texture fetch, two dead `lightmapCoords` stores and the second `u_inverseViewMatrix4f`
+     multiply were removed (the view direction reuses the inverse-projection result exactly as
+     `deferred_combine.fsh` already does).
+3. Per-light loops (`forward_core`, `accel_particle_forward`, water, glass): both culls (facing and
+   the `0.025` radiance cut-off) moved **before** the `normalize()` and the `1/dist2` divide. The
+   radiance test now compares `L.r+L.g+L.b` against `0.025 * dist2`, which is the same comparison
+   with the positive falloff moved across the inequality. The emissive (`material.b == 1.0`) case
+   keeps the old "never culled by facing" behaviour. `forward_core`/`accel_particle_forward` test
+   `dot(worldPos - lightPos, N) >= 0`, the water/glass loops the sign-flipped
+   `dot(lightPos - worldPos, N) <= 0`; both are the same test the shader did on the normalised
+   vector, and the harness replays the forward and accel forms (water/glass carry the same two
+   lines with the vector negated).
+
+**Old → new (per shader invocation, measured by the census in `perfbench/shader/`)
+| shader | pow/SFU pairs | sqrt/invsqrt | texture fetches |
+|---|---|---|---|
+| `lighting_point` per light-fragment | 0.888 → **0.000** | 3.775 → 3.643 | 4.000 → 3.888 |
+| `forward_core` per entity-fragment (8 lights) | 3.414 → **0.000** | 12.414 → **7.664** | – |
+| `accel_particle_forward` per fragment (8 lights) | 7.990 → **0.000** | 16.990 → 16.990 | – |
+
+`pow/SFU pairs` is below 1 for the point-light pass because 11.2 % of the covered fragments are now
+discarded before the BRDF. The `forward_core` `sqrt` drop is that shader's cull reordering: the
+lights that fail the facing test no longer pay their `normalize()` (3.41 of 8 lights contribute on
+average in the modelled frame, so ~4.75 normalises per fragment are gone).
+
+**Verification (equivalence).** `./perfbench/shader/run_bench.sh` replays the old and new scalar
+`float` math on a 1920×1080 synthetic gbuffer (blocky interior, 8 lights, half of them embedded in
+solid blocks like a torch/glowstone, 5 % metal / 25 % mirror / 2 % emissive materials, RGBA16F
+lighting target). All comparisons use identical inputs.
+
+| kernel | discard-mask mismatches | max ULP | max &#124;diff&#124; | RGBA16F value differs | 8-bit `post_tonemap` output differs |
+|---|---|---|---|---|---|
+| `lighting_point`, 16.51 M fragments (14.66 M kept) | **0** | 12 | 4.8e-7 | 182 | **0** |
+| `forward_core` loop, 250 k fragments | 0 (same 853,479 lights kept) | 2604 | 4.8e-7 | 9 | **0** |
+| `accel_particle` loop, 250 k fragments | 0 (same 1,997,528 lights kept) | 10 | 4.8e-7 | 9 | 1 |
+| `eaglercraftLighting` + IBL, 600 k random cases (incl. g = 0.9 / 0.964 boundaries) | – | 4298 | 1.9e-6 | – | – |
+
+The ULP tail is the GGX specular peak: `NDF = roughness^4` and `denom = NdotH^2 (NDF-1) + 1` make
+`1/denom^2` explode as `NdotH → 1` for smooth metals, so a 1-ULP change in `fresnel` is amplified
+by up to ~10^3 there. Absolute deviation stays ≤ 4.8e-7 (well under one RGBA16F step) and **no
+fragment changes its 8-bit output** except one `accel_particle` fragment sitting exactly on a
+rounding boundary. Light/skip *decisions* are bit-identical everywhere.
+
+**Benchmark (CPU replay; `gcc 12.2.0 -O2 -std=c11`, no `-ffast-math`).**
+
+| kernel | old | new | speedup (5 runs) |
+|---|---|---|---|
+| `lighting_point` per covered light-fragment | 100.8 ns | 83.2 ns | **1.18–1.23×** |
+| `forward_core` light loop per fragment (8 lights) | 317.6 ns | 259.7 ns | 1.16–1.22× |
+| `accel_particle_forward` loop per fragment (8 lights) | 506.1 ns | 412.2 ns | 1.19–1.23× |
+| `eaglercraftLighting` x86 instruction count (straight-line, `-DPBR_INSN`) | 147 | 139 | **5.4 % fewer** |
+
+Reproduce: `./perfbench/shader/run_bench.sh`. The CPU ratios are an **upper bound** and are not a
+GPU speedup claim: libm `powf()` is dozens of times dearer than a GPU SFU `pow()`, while the
+culling wins are hardware-independent. The deterministic numbers (pow/SFU pairs per invocation,
+texture fetches, `sqrt` count, x86 instruction count) are the reviewable part.
+
+**GLSL validity.** `./perfbench/shader/run_validate.sh` assembles each shader the way
+`ShaderSource.java` does (recursive `#EAGLER INCLUDE`, injected `#line`) and compiles it, plus the
+compile-flag combinations the pipeline builds, with the real glslang front end: **13/13 variants
+compile**, and deliberately broken shaders (undefined identifier, wrong operand type) are rejected.
+
+**Rejected in this PR (measured, then backed out).** Sharing one `1.0/w` reciprocal across the two
+homogeneous divides in the transform prologue (`lighting_point`, `forward_core`,
+`accel_particle_forward`, water, glass): it is the same 3 divides → 1 rcp + 3 mul that drivers
+already emit, and it costs last-ULP agreement. With it the point-light pass had max 2116 ULP and
+**47 of 14.66 M fragments changed an 8-bit output**; without it, 12 ULP and 0. Not worth it: 1 ULP
+of visible risk for a saving the driver makes anyway (compare FINDINGS #2 and the rejected
+`Vec3.normalize` reciprocal in the LUT sweep).
+
+**Follow-ups left alone.** (a) `eaglercraftLighting` recomputes the material-only terms
+(`roughness`, `roughness^4`, `gs`) on every light iteration; a "precomputed material" entry point
+would remove ~6 more instructions per light but must be kept valid for the drift between the lib and
+the water/glass copies — GLSL compilers already do LICM on those expressions, so the win is
+unproven. (b) The two `u_metalsLUT` fetches in the metal branch cannot be merged without changing
+the LUT asset. (c) `skybox_irradiance.fsh` (156 taps/texel) only runs when the sky changes, and
+`reproject_ssr.fsh` accumulates one sample per frame, so neither is a per-frame loop.
+
+---
+
 ## LUT / approximation candidate sweep — measured rejections
 
 Everything below was analysed (function, domain, precision, frequency, memory) and **measured**
