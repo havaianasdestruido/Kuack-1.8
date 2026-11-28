@@ -240,7 +240,13 @@ public class SingleplayerServerController implements ISaveFormat {
 		}
 	}
 
-	public static void runTick() {
+	/**
+	 * Drains any IPC/packet traffic that arrived from the integrated server
+	 * worker since the last call and routes it to the IPC handlers or the local
+	 * player connection. Safe (and intended) to be called more often than
+	 * runTick(); when nothing is waiting this is just a queue poll.
+	 */
+	public static void pollLocalConnections() {
 		List<IPCPacketData> pktList = ClientPlatformSingleplayer.recieveAllPacket();
 		if(pktList != null) {
 			IPCPacketData packetData;
@@ -265,6 +271,10 @@ public class SingleplayerServerController implements ISaveFormat {
 				}
 			}
 		}
+	}
+
+	public static void runTick() {
+		pollLocalConnections();
 
 		boolean logWindowState = PlatformApplication.isShowingDebugConsole();
 		if(loggingState != logWindowState) {

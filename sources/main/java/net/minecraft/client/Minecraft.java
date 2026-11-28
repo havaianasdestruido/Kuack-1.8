@@ -905,6 +905,17 @@ public class Minecraft implements IThreadListener {
 			this.runTick();
 		}
 
+		// Process network traffic between ticks, every frame, so incoming packets
+		// (block updates, entity movement, keepalive, ...) reach the game within a
+		// frame instead of waiting for the next 20 Hz tick boundary. This is what
+		// makes singleplayer feel as close to the in-memory server it is as the
+		// browser event loop allows. Cheap no-op when nothing is queued.
+		this.mcProfiler.endStartSection("network");
+		if (this.theWorld != null && !this.isGamePaused) {
+			SingleplayerServerController.pollLocalConnections();
+			this.playerController.processNetworkPackets();
+		}
+
 		this.mcProfiler.endStartSection("preRenderErrors");
 		long i1 = System.nanoTime() - l;
 		this.checkGLError("Pre render");

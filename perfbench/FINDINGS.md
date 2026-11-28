@@ -921,3 +921,56 @@ connected component counts, and vertex/triangle/byte budgets across all 15 `.mdl
 | `EaglerMeshLoader` decode (all 15 meshes) | 104.56 µs | 81.86 µs | **1.28×** |
 | Vertex transform + 32-FIFO (20 FNAW players) | 1,843.33 µs | 1,144.88 µs | **1.61×** |
 
+
+---
+
+## #22 Singleplayer network latency — pump the network per frame, not per tick
+
+**Files:** `client/Minecraft.java` (`runGameLoop`), `client/multiplayer/PlayerControllerMP.java`
+(`updateController`/`processNetworkPackets`), `sp/SingleplayerServerController.java`
+(`pollLocalConnections`), `sp/server/EaglerIntegratedServerWorker.java`
+(`processReceivedPacketsOnly`), `server/management/ServerConfigurationManager.java`
+
+**Bottleneck.** Both network pumps in the browser runtime were quantised to the 20 Hz game tick.
+The client decoded server->client packets only from `PlayerControllerMP.updateController()`, called
+once per `runTick()`: a packet arriving just after a tick waited ~50 ms before the game saw it
+(mean 25 ms), which is why singleplayer felt like it had ping even though the integrated server is
+an in-process TeaVM worker. The worker had the mirror problem: inbound local packets were decoded
+only from `EaglerIntegratedServerWorker.tick()` (once per server tick), so the client's keepalive
+echo also waited ~50 ms (mean 25 ms) before the server measured it. The window-title/tab-list ping
+is the keepalive RTT, so singleplayer reported tick-pumped queueing delay instead of local-loopback
+cost, and the latency broadcast cadence was every 600 ticks (30 s), so the number was up to 30 s
+stale.
+
+**Fix.**
+- Client: `runGameLoop` now polls the worker/LAN connection and decodes waiting packets every frame
+  (profiler section `network`, no-op when nothing is queued or the game is paused). The tick-cadence
+  path is unchanged (`updateController` still pumps per tick); packets are processed exactly once
+  either way.
+- Worker: the integrated server's main loop now decodes inbound local packets every loop turn
+  (`processReceivedPacketsOnly()`) instead of only once per server tick. Tick-cadence work
+  (`ITickable.update`, keepalive sends, idle-kick) is untouched, handlers still only ever run on
+  the server thread, each packet is decoded exactly once, and the path is wrapped in try/catch so an
+  off-tick handler failure can never kill the worker loop.
+- The latency player-list broadcast went from every 600 ticks to every 100 ticks (30 s -> 5 s) so the
+  displayed ping is fresh (one extra ~25-byte packet per interval).
+
+**Benchmark** (`./perfbench/run_bench.sh perfbench.SingleplayerLatencyBench`) — deterministic
+queueing simulation of the two pump cadences (2,000,000 arrivals, fixed seed), i.e. analytic, not a
+wall-clock browser measurement:
+
+| path | before | after (60 FPS) |
+|---|---:|---:|
+| client one-way (arrival -> handled) mean / p99 / max | 25.00 / 49.50 / 50.00 ms | **8.33 / 16.50 / 16.67 ms** (30 FPS: 13.89 / 32.84 / 33.33; 144 FPS: 3.32 / 6.87 / 6.94) |
+| server one-way (arrival -> handled) mean / p99 / max | 24.99 / 49.50 / 50.00 ms | **1.96 / 3.96 / 4.00 ms** (4 ms nested-setTimeout clamp, conservative) |
+| keepalive RTT (what the ping display reflects) mean / p95 / p99 | 49.99 / 84.18 / 92.91 ms | **10.29 / 18.03 / 19.48 ms (4.86× lower)** |
+
+Sanity checks in the bench: the new pump is never slower than the old one in any sample, and the
+tick-pump max equals the tick period. Real in-game latency additionally depends on frame time, but
+the 20 Hz floor is gone.
+
+**Verification.** `./perfbench/compile_main.sh` — no new files failing to compile (the 105-file
+baseline is unchanged; the three touched files that were already in the baseline carry only their
+pre-existing platform-resolution errors). A full browser smoke run is not possible in CI; the
+packet paths are unchanged in structure, only in *when* they drain.
+
