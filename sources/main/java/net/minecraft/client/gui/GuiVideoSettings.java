@@ -45,7 +45,11 @@ public class GuiVideoSettings extends GuiScreen {
 			GameSettings.Options.ENTITY_SHADOWS, GameSettings.Options.FOG, GameSettings.Options.EAGLER_DYNAMIC_LIGHTS,
 			GameSettings.Options.FULLSCREEN, GameSettings.Options.FNAW_SKINS, GameSettings.Options.HUD_FPS,
 			GameSettings.Options.HUD_COORDS, GameSettings.Options.HUD_PLAYER, GameSettings.Options.HUD_STATS,
-			GameSettings.Options.HUD_WORLD, GameSettings.Options.HUD_24H, GameSettings.Options.CHUNK_FIX };
+			GameSettings.Options.HUD_WORLD, GameSettings.Options.HUD_24H, GameSettings.Options.CHUNK_FIX,
+			GameSettings.Options.GAMEPAD_ENABLE, GameSettings.Options.GAMEPAD_PRESET_LEGACY,
+			GameSettings.Options.GAMEPAD_PRESET_XBOX, GameSettings.Options.GAMEPAD_PRESET_PLAYSTATION,
+			GameSettings.Options.GAMEPAD_PRESET_SWITCH, GameSettings.Options.GAMEPAD_LOOK,
+			GameSettings.Options.GAMEPAD_LOOK_INVERT, GameSettings.Options.GAMEPAD_DEADZONE };
 
 	public GuiVideoSettings(GuiScreen parentScreenIn, GameSettings gameSettingsIn) {
 		this.parentGuiScreen = parentScreenIn;

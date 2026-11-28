@@ -573,13 +573,89 @@ no allocation, no platform-specific behavior.
 TeaVM/V8 replica `lightmap_cse_bit_exact`: 4,608 / 0. Edge cases include gamma, night vision, boss
 color, End dimension and negative/large sun brightness.
 
-**Benchmark.** JDK17 3.021 → 2.825 µs/update (1.07×, 6.49% less); JDK25 2.983 → 2.842 µs (1.05×,
-4.73% less); V8 6,635.358 → 6,449.422 ns (1.03×, 2.80% less). At a source-estimated 20 lightmap
-updates/s this is a few microseconds of CPU per second, not an FPS claim.
+**Benchmark.** JDK17 `5.181 → 4.831 µs/update` (`1.07×`), JDK25 `5.085 → 4.737 µs` (`1.07×`), V8 `9,577 → 8,982 ns` (`1.07×`). At a source-estimated 20 lightmap updates/s this is a few microseconds of CPU per second, not an FPS claim.
 
 ---
 
-## #14 `BlockModelRenderer` — allocation-free mesher scratch (AO + standard paths)
+## #14 `MipmapGammaBlend` — exact binary64 encode threshold & `sqrt(x)` bucket tables (superseding remaining `Math.pow` in #12)
+
+**Files:** `net/minecraft/client/renderer/texture/GeneratedGammaTables.java`, `MipmapGammaBlend.java`, `perfbench/gen_luts.py`, `perfbench/src/perfbench/VerifyGammaLut.java`, `VerifyEmbeddedLut.java`, `TextureGammaBench.java`, `perfbench/teavm/src/probe/TeaVMBench.java`, `tests/test_generated_luts.py`.
+
+**Bottleneck.** After #11/#12 tabulated the 16/4 byte decode calls, the 4 remaining `Math.pow(avg, 1/2.2)` encode calls still accounted for ~90% of `MipmapGammaBlend`'s runtime on both HotSpot and TeaVM/V8 (`485–543 ns` vs `32 ns`, `1,723 ns` vs `155 ns`). Quantizing the output directly broke exactness (`49/4,096` byte mismatches in `encode_quantized_bytes`).
+
+**Fix.** Exact IEEE-754 binary64 threshold & 513-entry `sqrt(x)` bucket tables generated in Python (`perfbench/gen_luts.py --gamma-only`):
+- `THRESH_BLEND[257]` / `BUCKET_BLEND[513]` for `(int) (Math.pow(x, 1.0/2.2) * 255.0)`.
+- `THRESH_COMP_JAVA[257]` / `BUCKET_COMP_JAVA[513]` and `THRESH_COMP_TEAVM[257]` / `BUCKET_COMP_TEAVM[513]` for `(int) ((float) Math.pow(x, 1.0/2.2) * 255.0F)` (capturing HotSpot vs TeaVM double-rounding semantics).
+- Unrolled 4-texel fast path inside `MipmapGammaBlend.blend` (kept at `239` bytes so HotSpot C2 compiles `blend` and `encodeComponent` as `inline (hot)`!) and zero heap/scratch allocation (`mipmapBuffer` removed).
+
+**Verification.** Exhaustive binary32 `[0,1]` check (`1,065,353,217` floats) and exhaustive `256^4 = 4,294,967,296` TeaVM 4-texel left-associated sum check proved the nearest sum to any threshold is `52,014` double-ULPs away (`0` runtime ambiguity). Runtime differential suites: `VerifyGammaLut` **12,442,624 checks / 0 failures**; `VerifyEmbeddedLut` **401,297 / 0**; TeaVM/V8 `blend_vs_legacy_browser_table` **203,072 / 0** & `blend_component_vs_legacy` **16,384 / 0**.
+
+**Benchmark.**
+- HotSpot JDK17 (`TextureGammaBench`): 1-texel linear `485.03 → 27.71 ns` (**17.50×**), 1-texel gamma `543.30 → 32.15 ns` (**16.90×**), 16×16 gamma chain `48.032 → 1.924 µs` (**24.96×**), 1,024-sprite atlas `44.72 → 4.78 ms` (**9.35×** linear) / `51.12 → 4.57 ms` (**11.17×** gamma), 256×256 atlas `10.72 → 1.11 ms` (**9.67×**).
+- HotSpot JDK25: 16×16 chain `19.16×` linear / `16.98×` gamma; 1,024-sprite atlas `7.82×` / `7.36×`; 256×256 atlas `8.79×`.
+- TeaVM 0.9.2 / V8 12.4 (`TeaVMBench`): `blend_shipped_linear` `1,723.354 → 155.381 ns` (**11.09×**), `blend_shipped_gamma` `1,701.795 → 247.034 ns` (**6.89×**).
+
+---
+
+## #15 `MathHelper.func_181159_b` / `func_181161_i` — JS-only native `Math.atan2` & `1/Math.sqrt` dispatch
+
+**File:** `net/minecraft/util/MathHelper.java` (`56` call sites across `RenderDragon`, `RenderGuardian`, `EntityLivingBase`, compass).
+
+**Bottleneck.** TeaVM compiles `Double.doubleToRawLongBits` / `Double.longBitsToDouble` inside `func_181161_i` (`rsqrt`) via `DataView` typed-array punning, making `func_181161_i` cost `55.588 ns` and `func_181159_b` cost `139.490 ns` in V8 (compared to `8.919 ns` for `1.0 / Math.sqrt` and `37.345 ns` for `Math.atan2`), whereas HotSpot turns those bit-ops into register moves (`10.25 ns`, **5.77×** faster than `Math.atan2` on JDK 17).
+
+**Fix.** Add `IS_JAVASCRIPT = EagRuntime.getPlatformType() == EnumPlatformType.JAVASCRIPT`. In JS, `func_181159_b` dispatches directly to `Math.atan2`, `func_181161_i` dispatches to `1.0D / Math.sqrt`, and `<clinit>` skips allocating/populating `field_181164_e[257]` and `field_181165_f[257]`. Desktop/JVM stays bit-identical. Verified `<clinit>` graph: neither `EagRuntime` nor `LogManager` touches `MathHelper`.
+
+**Verification & Benchmark.** `CrossRuntimeMathBench`: `mhAtan2MaxErr = 7.423e-6` rad on JVM; TeaVM `mh_atan2_tolerance` `4,097 / 0`, `mh_rsqrt_exact` `4,096 / 0`. V8 speeds up **3.74×** (`139.490 → 37.345 ns`) on `func_181159_b` and **6.23×** (`55.588 → 8.919 ns`) on `func_181161_i`; JVM retains its **5.77×** (JDK 17) / **2.44×** (JDK 25) bit-op advantage.
+
+---
+
+## #16 `TileEntityBeaconRenderer` & `RenderGuardian` — rotational-symmetry trig reductions
+
+**Files:** `client/renderer/tileentity/TileEntityBeaconRenderer.java` (`8 → 2` trig), `client/renderer/entity/RenderGuardian.java` (`16 → 2` trig).
+
+**Fix.** Replace `4` offset `(cos, sin)` pairs at `a + π/4 + k·π/2` (`Beacon`) and `8` offset pairs (`Guardian`) with single `(cos(a), sin(a))` evaluations rotated by exact constant factors (`0.7071067811865476D` etc.) and signs.
+
+**Verification & Benchmark.** `CrossRuntimeMathBench`: `beaconMaxAbs = 2.220e-16`, `guardianMaxAbs = 2.776e-16`; TeaVM `trig_symmetry_tolerance` `4,096 / 0`. Speedups: Beacon **3.49×** JDK17 (`93.00→26.68 ns`), **3.23×** JDK25 (`89.40→27.67 ns`), **3.11×** V8 (`117.331→37.687 ns`); Guardian **5.42×** JDK17 (`181.80→33.52 ns`), **5.38×** JDK25 (`169.97→31.62 ns`), **5.63×** V8 (`215.071→38.197 ns`).
+
+---
+
+## #17 `EntityRenderer.updateFogColor` — `Math.pow(f, 0.25D)` → `Math.sqrt(Math.sqrt(f))`
+
+**File:** `client/renderer/EntityRenderer.java`.
+
+**Verification & Benchmark.** Bit-identical on HotSpot & V8 (`fogBitDiffs = 0`; V8 `fog_pow25_bit_exact` `64 / 0`). Speedups: JDK17 **2.35×** (`25.59→10.91 ns`), JDK25 **5.24×** (`19.17→3.66 ns`), V8 **16.14×** (`60.038→3.721 ns`).
+
+---
+
+## #18 `InstancedFontRenderer` — exact `Math.pow(2.718D, -x)` → `Math.exp(-x * LN_2_718)`
+
+**File:** `net/lax1dude/eaglercraft/v1_8/opengl/InstancedFontRenderer.java`.
+
+**Fix.** Instead of changing the base (`2.718 != e`), store `private static final double LN_2_718 = Math.log(2.718D)` and compute `Math.exp(-x * LN_2_718)`, preserving the exact mathematical curve.
+
+**Verification & Benchmark.** `fontMaxUlp = 0` (`CrossRuntimeMathBench`); TeaVM `font_exp_tolerance` `4,096 / 0`. Speedups: JDK17 **1.17×** (`21.66→18.53 ns`), JDK25 **2.03×** (`17.70→8.73 ns`), V8 **5.54×** (`71.659→12.928 ns`).
+
+---
+
+## #19 `BlockNote` — discrete 25-entry `PITCH_TABLE`
+
+**File:** `net/minecraft/block/BlockNote.java`.
+
+**Fix.** Replace `(float) Math.pow(2.0D, (double)(note - 12) / 12.0D)` with clamped lookup into `private static final float[] PITCH_TABLE` (`25` exact constants).
+
+**Verification & Benchmark.** `noteBitDiffs = 0` (`0` ULP across all `25` entries); unit-tested by `tests/test_generated_luts.py::test_note_pitch_table_is_25_constants`. Speedups: JDK17 **19.13×** (`26.90→1.41 ns`), JDK25 **12.22×** (`16.82→1.38 ns`), prototype V8 **10.71×** (`56.88→5.31 ns`).
+
+---
+
+## #20 `RenderGlobal.renderWorldBorder` — `Math.pow(d1, 4.0D)` → `(d1*d1)*(d1*d1)`
+
+**File:** `net/minecraft/client/renderer/RenderGlobal.java`.
+
+**Verification & Benchmark.** `borderMaxAbs = 0.0` (`CrossRuntimeMathBench`). Speedups: JDK17 **18.70×** (`31.91→1.71 ns`), JDK25 **13.64×** (`16.54→1.21 ns`), prototype V8 **85.82×** (`101.29→1.18 ns`).
+
+---
+
+## #21 `BlockModelRenderer` — allocation-free mesher scratch (AO + standard paths)
 
 **File:** `client/renderer/BlockModelRenderer.java`
 
@@ -650,28 +726,133 @@ would need the whole World/Block closure), so there is no browser number and no 
 
 ---
 
+## #14 Built-in deferred/PBR shaders — hot-loop sweep (GLSL, not Java)
+
+**Files:** `sources/resources/assets/eagler/glsl/deferred/lib/pbr_lighting.glsl`,
+`lib/pbr_env_map.glsl`, `lighting_point.fsh` (per point light), `lighting_sun.fsh` (via the lib),
+`forward_core.fsh`, `accel_particle_forward.fsh`, `realistic_water_render.fsh`,
+`forward_glass_highlights.fsh` (the last two carry their own copies of the BRDF).
+
+**Where the hot loops are.** `lighting_point.fsh` runs once per fragment of every dynamic light's
+bounding mesh (up to 12 lights per chunk bucket, no depth test), and `forward_core.fsh` /
+`accel_particle_forward.fsh` / the water and glass variants run `eaglercraftLighting()` inside a
+per-light loop for every entity/particle fragment. So the per-invocation cost of the BRDF and the
+per-light loop body are the two things worth attacking, not the once-per-sky-update convolution
+shaders (`skybox_irradiance.fsh`, 156 taps/texel) or the temporally amortised SSR march.
+
+**What changed.**
+
+1. `pow(x, 5.0)` → `x2 * x2 * x` in the Fresnel-Schlick term of every PBR lighting function
+   (7 sites: the two libs, the water and glass copies). `highp pow()` is `exp2(5.0 * log2(x))` on
+   GLES3 drivers, i.e. two SFU ops plus the surrounding multiplies; three ALU multiplies replace it.
+   This is the only transcendental in the light-loop body.
+2. Point-light pass (`lighting_point.fsh`):
+   - the facing test now runs on the **unnormalised** light vector — `normalize()` only scales by
+     the positive `1/|d|`, so it cannot flip the sign of `dot(lightDir, N)` — which lets fragments
+     the light cannot reach skip `normalize()`, the colour divide and the whole BRDF;
+   - one `dot()` is now shared by the falloff and the `normalize()`;
+   - the colour texture fetch, two dead `lightmapCoords` stores and the second `u_inverseViewMatrix4f`
+     multiply were removed (the view direction reuses the inverse-projection result exactly as
+     `deferred_combine.fsh` already does).
+3. Per-light loops (`forward_core`, `accel_particle_forward`, water, glass): both culls (facing and
+   the `0.025` radiance cut-off) moved **before** the `normalize()` and the `1/dist2` divide. The
+   radiance test now compares `L.r+L.g+L.b` against `0.025 * dist2`, which is the same comparison
+   with the positive falloff moved across the inequality. The emissive (`material.b == 1.0`) case
+   keeps the old "never culled by facing" behaviour. `forward_core`/`accel_particle_forward` test
+   `dot(worldPos - lightPos, N) >= 0`, the water/glass loops the sign-flipped
+   `dot(lightPos - worldPos, N) <= 0`; both are the same test the shader did on the normalised
+   vector, and the harness replays the forward and accel forms (water/glass carry the same two
+   lines with the vector negated).
+
+**Old → new (per shader invocation, measured by the census in `perfbench/shader/`)
+| shader | pow/SFU pairs | sqrt/invsqrt | texture fetches |
+|---|---|---|---|
+| `lighting_point` per light-fragment | 0.888 → **0.000** | 3.775 → 3.643 | 4.000 → 3.888 |
+| `forward_core` per entity-fragment (8 lights) | 3.414 → **0.000** | 12.414 → **7.664** | – |
+| `accel_particle_forward` per fragment (8 lights) | 7.990 → **0.000** | 16.990 → 16.990 | – |
+
+`pow/SFU pairs` is below 1 for the point-light pass because 11.2 % of the covered fragments are now
+discarded before the BRDF. The `forward_core` `sqrt` drop is that shader's cull reordering: the
+lights that fail the facing test no longer pay their `normalize()` (3.41 of 8 lights contribute on
+average in the modelled frame, so ~4.75 normalises per fragment are gone).
+
+**Verification (equivalence).** `./perfbench/shader/run_bench.sh` replays the old and new scalar
+`float` math on a 1920×1080 synthetic gbuffer (blocky interior, 8 lights, half of them embedded in
+solid blocks like a torch/glowstone, 5 % metal / 25 % mirror / 2 % emissive materials, RGBA16F
+lighting target). All comparisons use identical inputs.
+
+| kernel | discard-mask mismatches | max ULP | max &#124;diff&#124; | RGBA16F value differs | 8-bit `post_tonemap` output differs |
+|---|---|---|---|---|---|
+| `lighting_point`, 16.51 M fragments (14.66 M kept) | **0** | 12 | 4.8e-7 | 182 | **0** |
+| `forward_core` loop, 250 k fragments | 0 (same 853,479 lights kept) | 2604 | 4.8e-7 | 9 | **0** |
+| `accel_particle` loop, 250 k fragments | 0 (same 1,997,528 lights kept) | 10 | 4.8e-7 | 9 | 1 |
+| `eaglercraftLighting` + IBL, 600 k random cases (incl. g = 0.9 / 0.964 boundaries) | – | 4298 | 1.9e-6 | – | – |
+
+The ULP tail is the GGX specular peak: `NDF = roughness^4` and `denom = NdotH^2 (NDF-1) + 1` make
+`1/denom^2` explode as `NdotH → 1` for smooth metals, so a 1-ULP change in `fresnel` is amplified
+by up to ~10^3 there. Absolute deviation stays ≤ 4.8e-7 (well under one RGBA16F step) and **no
+fragment changes its 8-bit output** except one `accel_particle` fragment sitting exactly on a
+rounding boundary. Light/skip *decisions* are bit-identical everywhere.
+
+**Benchmark (CPU replay; `gcc 12.2.0 -O2 -std=c11`, no `-ffast-math`).**
+
+| kernel | old | new | speedup (5 runs) |
+|---|---|---|---|
+| `lighting_point` per covered light-fragment | 100.8 ns | 83.2 ns | **1.18–1.23×** |
+| `forward_core` light loop per fragment (8 lights) | 317.6 ns | 259.7 ns | 1.16–1.22× |
+| `accel_particle_forward` loop per fragment (8 lights) | 506.1 ns | 412.2 ns | 1.19–1.23× |
+| `eaglercraftLighting` x86 instruction count (straight-line, `-DPBR_INSN`) | 147 | 139 | **5.4 % fewer** |
+
+Reproduce: `./perfbench/shader/run_bench.sh`. The CPU ratios are an **upper bound** and are not a
+GPU speedup claim: libm `powf()` is dozens of times dearer than a GPU SFU `pow()`, while the
+culling wins are hardware-independent. The deterministic numbers (pow/SFU pairs per invocation,
+texture fetches, `sqrt` count, x86 instruction count) are the reviewable part.
+
+**GLSL validity.** `./perfbench/shader/run_validate.sh` assembles each shader the way
+`ShaderSource.java` does (recursive `#EAGLER INCLUDE`, injected `#line`) and compiles it, plus the
+compile-flag combinations the pipeline builds, with the real glslang front end: **13/13 variants
+compile**, and deliberately broken shaders (undefined identifier, wrong operand type) are rejected.
+
+**Rejected in this PR (measured, then backed out).** Sharing one `1.0/w` reciprocal across the two
+homogeneous divides in the transform prologue (`lighting_point`, `forward_core`,
+`accel_particle_forward`, water, glass): it is the same 3 divides → 1 rcp + 3 mul that drivers
+already emit, and it costs last-ULP agreement. With it the point-light pass had max 2116 ULP and
+**47 of 14.66 M fragments changed an 8-bit output**; without it, 12 ULP and 0. Not worth it: 1 ULP
+of visible risk for a saving the driver makes anyway (compare FINDINGS #2 and the rejected
+`Vec3.normalize` reciprocal in the LUT sweep).
+
+**Follow-ups left alone.** (a) `eaglercraftLighting` recomputes the material-only terms
+(`roughness`, `roughness^4`, `gs`) on every light iteration; a "precomputed material" entry point
+would remove ~6 more instructions per light but must be kept valid for the drift between the lib and
+the water/glass copies — GLSL compilers already do LICM on those expressions, so the win is
+unproven. (b) The two `u_metalsLUT` fetches in the metal branch cannot be merged without changing
+the LUT asset. (c) `skybox_irradiance.fsh` (156 taps/texel) only runs when the sky changes, and
+`reproject_ssr.fsh` accumulates one sample per frame, so neither is a per-frame loop.
+
+---
+
 ## LUT / approximation candidate sweep — measured rejections
 
 Everything below was analysed (function, domain, precision, frequency, memory) and **measured**
-before being rejected. Numbers in the "measured" column are from this session on the JVM (Temurin
-25, `-Xmx2g -XX:+UseParallelGC`) or from `perfbench/js/bench_math_lut.js` (V8 12.4, the actual
-TeaVM target); the JS numbers are quoted where the runtime behaviour differs materially.
+before being rejected. Numbers in the "measured" column are from HotSpot 17/25 or from
+`perfbench/js/bench_math_lut.js` / TeaVM prototypes (V8 12.4, the actual browser JS target).
 
 | candidate | why it looked attractive | measured | verdict |
 |---|---|---|---|
-| **sqrt LUT** (`MathHelper.sqrt_float/sqrt_double`, 132 direct sites, every distance/normalise/physics path) | huge call count, monotone, easily tabulated | `Math.sqrt` = **1.56 ns** (JS) / 1.6 ns (JVM) — a hardware instruction. Any table needs range reduction + scaling + interpolation, i.e. ≥4× the work, plus unbounded-accuracy loss over the double range | **rejected**: cannot beat one instruction |
-| **fast inverse sqrt** (Quake/magic + Newton) as a `sqrt` replacement | already used inside `MathHelper.func_181161_i` | `1/Math.sqrt` = 2.63 ns; a JS-side magic-constant rsqrt (typed-array bit punning, which is what TeaVM would emit) = **12.1 ns**, 7.8× *slower* than `Math.sqrt`. The engine's own `func_181161_i` stays where it is (only `func_181159_b` uses it, to normalise two doubles for the asin table) | **rejected** |
-| **`Vec3.normalize` via reciprocal multiply** (`sqrt` + 3 divides → `1/sqrt` + 3 multiplies) | 1.68× on the operation | `sqrt`+3 div = 4.73 ns vs `1/sqrt`+3 mul = 2.83 ns, but the two forms differ in the last ULP, and `Vec3.normalize` feeds `getLook` → ray tracing and `AxisAlignedBB.calculateIntercept` where exact ties are decided | **rejected**: 1 ULP of risk for ~2 ns on a path called O(10)–O(100) times per frame |
-| **smaller sin table** (4,096 entries + linear interpolation) to cut the 256 KiB table into L1 | 16× less memory, *better* accuracy | 4,096-entry **step** table 1.00 ns/err 1.5e-3; 4,096-entry **lerp** 2.34 ns/err 2.4e-6; current 65,536-entry step 1.09 ns/err 9.6e-5. The lerp table is *slower* than the current table (two loads + FMA) and 40× more accurate; the step table is faster but 16× less accurate | **rejected for speed**; recorded as an accuracy/memory option if anyone ever needs `sin` to be more precise than vanilla |
-| **dropping `Math.fround` from `MathHelper.sin/cos`** (the float round-trip is a third of the cost) | the single hottest math function in the game | 2.08 ns → 1.09 ns (**1.9×**), but the index then differs from Java's float semantics for ~0.4 % of calls (float ULP at the products involved is up to 0.004, and any product within that of an integer truncates differently), shifting `sin` by one table step | **rejected**: `MathHelper.sin` is used by `MapGenCaves`, `MapGenRavine`, `WorldGenBigTree`, `WorldGenMinable` and `ChunkProviderHell` — a 0.4 % lookup perturbation changes generated terrain, breaking seed determinism |
-| **degree-indexed trig** (`sinDeg`/`cosDeg` for the ~100 `MathHelper.sin(x * 0.017453292F)` sites) | removes a multiply, tables are smaller | the multiply is 0.62 ns (baseline ALU op in the same benchmark); the inputs are almost never integral degrees, so a degree table would still need interpolation | **rejected**: no measurable saving |
-| **`wrapAngleTo180_float/double`: replace `%` with truncation** | float modulo is surprisingly slow in JS | `x % 360` = **7.96 ns** vs `x - 360*trunc(x/360)` = 1.49 ns (**5.3×**), but the replacement is not bit-exact (double rounding on the quotient), and the call count is 2–6 per entity per tick | **rejected**: 5× of nothing |
-| **floor LUT / `Math.floor` rewrite** (`floor_double`, `floor_float`; enormous call count in block iteration) | looks like a classic LUT | `Math.floor` = 1.152 ns, `MathHelper.floor_double` = **1.146 ns** — already at parity with the hardware instruction after JIT/TeaVM lowering | **rejected**: nothing to win |
-| **`atan2` LUT** (`func_181159_b`) | native `Math.atan2` is 18.4 ns | the engine already implements atan2 with a 257-entry asin/cos table + one Newton step; the remaining native `atan2` sites are per-entity-per-frame at most (`RenderDragon`, `RenderGuardian`, compass) | **keep existing table** |
-| **block-property LUTs in the AO mesher** (`Block.getAmbientOcclusionLightValue()` is a virtual call executed up to ~70×/block during a section rebuild, and only two blocks deviate from the 0.2 default) | biggest single numeric consumer in chunk meshing | the only cheap key would be `Block.getIdFromBlock`, which is an identity-hash registry lookup — as expensive as the virtual dispatch it would replace; a per-state table needs `IBlockState.getStateId()`, another hash lookup. The surrounding `getBlockState(pos)` chunk lookup dominates anyway | **rejected**: not enough win for a new global table + invalidation contract |
-| **`Math.pow(2.718, -x)` → `Math.exp(-x)`** (`InstancedFontRenderer` per-vertex fog) | 43.0 ns → 5.6 ns | but it is once per text *batch*, not per vertex (the batch aggregates the whole string), and `2.718 != e` would change the fog curve | **rejected**: frequency is negligible |
-| **`Math.pow(x, 2.0)` → `x * x`** (`WorldGenBigTree` leaf mask, `SpawnerAnimals.MOB_COUNT_DIV`, `VisGraph` constants) | trivial, obvious | the `WorldGenBigTree` one runs per leaf, i.e. per tree, and world generation is the one place bit-exactness must not move; the others are one-time constants already | **rejected**: no measurable effect |
-| **caching `Math.sin/cos` per particle** (5 calls per particle per frame, one of them a duplicate `sin(pitch)`) | 4,000 particles → 20,000 calls | the duplicate `sin(pitch)` CSE saves 1 of 5 lookups ≈ 2 ns/particle ≈ 8 µs/frame at the 4,000-particle cap, but `rotationYaw/Pitch` are mutated by several particle types, so a cache needs invalidation | **rejected**: exact-CSE only worth ~8 µs/frame at the worst-case particle count, not worth a staleness contract |
+| **sqrt LUT** (`MathHelper.sqrt_float/sqrt_double`, 132 direct sites, every distance/normalise/physics path) | huge call count, monotone, easily tabulated | `Math.sqrt` = **1.85 ns** (V8) / intrinsic (JVM). Any table needs range reduction + scaling + interpolation, i.e. ≥4× the work, plus unbounded-accuracy loss over the double range | **rejected**: cannot beat one instruction |
+| **fast inverse sqrt** (Quake/magic + Newton) as a `sqrt` replacement | already used inside `MathHelper.func_181161_i` | On V8, magic bit-punning `func_181161_i` = **55.6 ns** vs `1/Math.sqrt` = **8.9 ns** (`6.23×` slower in JS!). Now `func_181161_i` keeps magic bit-ops on JVM and dispatches to `1/Math.sqrt` in JS (#15) | **rejected for JS; platform-dispatched (#15)** |
+| **`Vec3.normalize` via reciprocal multiply** (`sqrt` + 3 divides → `1/sqrt` + 3 multiplies) | 1.68× on the operation | `sqrt`+3 div = 4.73 ns vs `1/sqrt`+3 mul = 2.83 ns, but differs in last ULP on `getLook`/ray-tracing ties | **rejected**: 1 ULP ray-trace tie risk |
+| **smaller sin table** (4,096 entries + linear interpolation) to cut the 256 KiB table into L1 | 16× less memory, *better* accuracy | 4,096-entry **lerp** 3.688 ns vs small step 2.074 ns in `bench_v8_math.js` (`1.78×` slower) | **rejected for speed** |
+| **dropping `Math.fround` from `MathHelper.sin/cos`** | 1.9× on the lookup | shifts `~0.4%` of lookups by 1 step, perturbing worldgen seeds (`MapGenCaves`, `WorldGenBigTree`, etc.) | **rejected**: worldgen seed determinism |
+| **degree-indexed trig** (`sinDeg`/`cosDeg`) | removes multiply | multiply is ~0.6 ns; inputs rarely integral degrees | **rejected** |
+| **`wrapAngleTo180_float/double`: replace `%` with truncation** | float `%` is slow in JS | `7.96 → 1.49 ns`, not bit-exact, tiny frequency | **rejected** |
+| **floor LUT / `Math.floor` rewrite** | huge block-iteration call count | `Math.floor` parity (`1.15 ns`) | **rejected** |
+| **pure-FP polynomial / `PureAtan2Lut` replacing `MathHelper.func_181159_b`** | avoid `field_181164_e/f` tables everywhere | `poly_atan2` slower on BOTH HotSpot (`10.35` vs `7.67 ns` JDK17; `9.29` vs `8.57 ns` JDK25) and V8 (`40.69` vs `28.28 ns`); `atanOctant` matched `Math.atan2` on V8 (`27.68 ns`) with extra branching | **rejected**: JS uses native `Math.atan2` (#15) |
+| **`WorldGenBigTree.func_181631_a` `pow(x, 2.0)` → `x*x`** | trivial | slower on HotSpot JDK17 (`159.8 → 201.6 ns`) and TeaVM/V8 (`162.6 → 198.3 ns`) because JIT/V8 already special-case `pow(x, 2.0)` | **rejected** |
+| **`GlStateManager.gluPerspective` `cos/sin → 1/tan`** | fewer trig calls | faster on HotSpot (`27.41 → 22.64 ns` JDK17), neutral on target TeaVM/V8 (`14.38 → 14.46 ns`) | **rejected** |
+| **`ModelDragon.render` trig CSE (`17` saved `Math.cos`)** | fewer trig calls in dragon render | faster on HotSpot (`1536 → 1397 ns`), slightly slower in TeaVM/V8 (`849.3 → 861.9 ns`) | **rejected** |
+| **block-property LUTs in the AO mesher** | virtual dispatch in section rebuild | registry hash lookup costs as much as virtual dispatch; chunk lookup dominates | **rejected** |
+| **caching `Math.sin/cos` per particle** | saves 1 duplicate `sin(pitch)` | ~8 µs/frame at 4,000 particles vs mutability/invalidation contract | **rejected** |
 
 ### Follow-up checked and closed: `PBRTextureMapUtils.generateMipmapDataIgnoreAlpha`
 
@@ -699,3 +880,44 @@ observation.
 - **A smaller table with interpolation is slower than a bigger step table.** Linear interpolation
   costs two dependent loads plus a multiply-add, which dominates any L1 saving: 2.34 ns (4,096 lerp)
   vs 1.09 ns (65,536 step). LUTs beat libm but they do not beat each other on size.
+
+---
+
+## #14 FNAW character meshes (`assets/eagler/mesh/*.mdl`) — QEM decimation + Forsyth vertex-cache reordering
+
+**Files:** `sources/resources/assets/eagler/mesh/*.mdl` (all 15 meshes across the 5 `HighPolySkin`
+characters), `scripts/optimize_fnaw_meshes.py`, `perfbench/js/bench_fnaw_meshes.js`,
+`tests/test_fnaw_meshes.py`
+
+**Bottleneck.** The five FNAW player skins (`LONG_ARMS`, `WEIRD_CLIMBER_DUDE`, `LAXATIVE_DUDE`,
+`BABY_CHARLES`, `BABY_WINSTON`) pack 3,470 vertices and 4,875 triangles across 15 `.mdl` files
+(112,785 B raw / 111,570 B GPU VBO+IBO), and their original index buffers had poor post-transform
+vertex cache locality (average ACMR 1.47 on a 32-entry FIFO, up to 1.96 on `weirdclimber0.mdl` and
+1.84 on `longarms0.mdl`, causing 7,181 shaded vertices per full-suite pass).
+
+**Fix.**
+- **QEM edge-collapse decimation** (`scripts/optimize_fnaw_meshes.py`, `--ratio 0.70 --eye-ratio 0.70 --max-err 0.020`):
+  reduces triangle count by 30.1 % while preserving open boundary loops (skirt/torso seams), UV
+  island seams, manifold link conditions, triangle winding, connected components, and bounding
+  boxes (RMS surface deviation 0.0016–0.0068 model units, max ≤ 0.0196).
+- **Tom Forsyth linear-speed vertex-cache optimization + pre-transform vertex remapping**: reorders
+  triangles for a 32-entry post-transform FIFO and remaps vertices in order of first reference,
+  cutting post-transform shaded vertices across all 15 meshes from 7,181 to 2,834 (**−60.5 %**,
+  overall ACMR 1.473 → 0.831).
+
+**Verification.** `tests/test_fnaw_meshes.py` verifies the exact `EaglerMeshLoader.reloadMesh`
+binary contract, index bounds, non-zero normals, zero degenerate/non-manifold triangles, preserved
+connected component counts, and vertex/triangle/byte budgets across all 15 `.mdl` files.
+
+**Benchmark** (`node perfbench/js/bench_fnaw_meshes.js`):
+
+| Metric | Before | After | Change / Speedup |
+|---|---:|---:|---:|
+| Total vertices (15 meshes) | 3,470 | 2,670 | −23.1 % |
+| Total triangles (15 meshes) | 4,875 | 3,409 | −30.1 % |
+| Asset file size (`.mdl` raw / gzip-9) | 112,785 B / 83,013 B | 85,029 B / 60,613 B | −24.6 % / −27.0 % |
+| GPU VBO + IBO memory | 111,570 B | 83,814 B | −24.9 % |
+| Shaded vertices (32-FIFO, all 15 meshes) | 7,181 (ACMR 1.47) | 2,834 (ACMR 0.83) | −60.5 % (2.53× fewer) |
+| `EaglerMeshLoader` decode (all 15 meshes) | 104.56 µs | 81.86 µs | **1.28×** |
+| Vertex transform + 32-FIFO (20 FNAW players) | 1,843.33 µs | 1,144.88 µs | **1.61×** |
+

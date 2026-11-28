@@ -23,6 +23,7 @@ import net.lax1dude.eaglercraft.v1_8.Display;
 import net.lax1dude.eaglercraft.v1_8.EagRuntime;
 import net.lax1dude.eaglercraft.v1_8.EagUtils;
 import net.lax1dude.eaglercraft.v1_8.EaglerXBungeeVersion;
+import net.lax1dude.eaglercraft.v1_8.Gamepad;
 import net.lax1dude.eaglercraft.v1_8.HString;
 import net.lax1dude.eaglercraft.v1_8.IOUtils;
 import net.lax1dude.eaglercraft.v1_8.Keyboard;
@@ -32,6 +33,7 @@ import net.lax1dude.eaglercraft.v1_8.futures.FutureTask;
 import net.lax1dude.eaglercraft.v1_8.futures.ListenableFuture;
 import net.lax1dude.eaglercraft.v1_8.futures.ListenableFutureTask;
 import net.lax1dude.eaglercraft.v1_8.internal.EnumPlatformType;
+import net.lax1dude.eaglercraft.v1_8.internal.KeyboardConstants;
 import net.lax1dude.eaglercraft.v1_8.internal.PlatformRuntime;
 import net.lax1dude.eaglercraft.v1_8.log4j.LogManager;
 import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
@@ -251,6 +253,7 @@ public class Minecraft implements IThreadListener {
 	private String serverName;
 	private int serverPort;
 	public boolean inGameHasFocus;
+	private boolean gamepadWasActive;
 	long systemTime = getSystemTime();
 	private int joinPlayerCounter;
 	public final FrameTimer field_181542_y = new FrameTimer();
@@ -1209,6 +1212,133 @@ public class Minecraft implements IThreadListener {
 	}
 
 	/**+
+	 * Polls the gamepad and translates its logical actions into the game's current
+	 * key and mouse bindings. Called once per tick, before the world is updated, so
+	 * movement and camera look see fresh state.
+	 */
+	private void updateGamepad() {
+		Gamepad.update(this.gameSettings.gamepadPreset, this.gameSettings.gamepadEnabled,
+				this.gameSettings.gamepadLookEnabled, this.gameSettings.gamepadLookInvert,
+				this.gameSettings.gamepadDeadzone, this.currentScreen == null);
+
+		if (!this.isGamepadActive()) {
+			if (this.gamepadWasActive) {
+				this.gamepadWasActive = false;
+				this.clearGamepadKeyStates();
+			}
+			return;
+		}
+
+		this.gamepadWasActive = true;
+
+		if (this.currentScreen != null || this.theWorld == null || this.thePlayer == null) {
+			return;
+		}
+
+		// Keep the camera look active while a controller is in use, even when the
+		// mouse cursor is not grabbed (no pointer lock).
+		if (!this.inGameHasFocus) {
+			this.inGameHasFocus = true;
+		}
+
+		// Continuously held actions. The game only updates its key binding state
+		// from input events, so a synthetic press is queued on the down transition
+		// and a synthetic release on the up transition.
+		this.gamepadSetBindingState(this.gameSettings.keyBindForward, Gamepad.ACT_FORWARD);
+		this.gamepadSetBindingState(this.gameSettings.keyBindBack, Gamepad.ACT_BACK);
+		this.gamepadSetBindingState(this.gameSettings.keyBindLeft, Gamepad.ACT_LEFT);
+		this.gamepadSetBindingState(this.gameSettings.keyBindRight, Gamepad.ACT_RIGHT);
+		this.gamepadSetBindingState(this.gameSettings.keyBindJump, Gamepad.ACT_JUMP);
+		this.gamepadSetBindingState(this.gameSettings.keyBindSneak, Gamepad.ACT_SNEAK);
+		this.gamepadSetBindingState(this.gameSettings.keyBindSprint, Gamepad.ACT_SPRINT);
+		this.gamepadSetBindingState(this.gameSettings.keyBindAttack, Gamepad.ACT_ATTACK);
+		this.gamepadSetBindingState(this.gameSettings.keyBindUseItem, Gamepad.ACT_USE);
+
+		// Discrete one-shot actions: a brief press-and-release tap.
+		if (Gamepad.isActionPressed(Gamepad.ACT_PICK)) {
+			this.gamepadTapBinding(this.gameSettings.keyBindPickBlock);
+		}
+
+		if (Gamepad.isActionPressed(Gamepad.ACT_INVENTORY)) {
+			this.gamepadTapBinding(this.gameSettings.keyBindInventory);
+		}
+
+		if (Gamepad.isActionPressed(Gamepad.ACT_DROP)) {
+			this.gamepadTapBinding(this.gameSettings.keyBindDrop);
+		}
+
+		if (Gamepad.isActionPressed(Gamepad.ACT_CHAT)) {
+			this.gamepadTapBinding(this.gameSettings.keyBindChat);
+		}
+
+		if (Gamepad.isActionPressed(Gamepad.ACT_PAUSE)) {
+			Keyboard.queueSyntheticKey(KeyboardConstants.KEY_ESCAPE, true);
+			Keyboard.queueSyntheticKey(KeyboardConstants.KEY_ESCAPE, false);
+		}
+
+		if (Gamepad.isActionPressed(Gamepad.ACT_HOTBAR_NEXT)) {
+			this.thePlayer.inventory.changeCurrentItem(1);
+		}
+
+		if (Gamepad.isActionPressed(Gamepad.ACT_HOTBAR_PREV)) {
+			this.thePlayer.inventory.changeCurrentItem(-1);
+		}
+	}
+
+	private void gamepadSetBindingState(KeyBinding binding, int action) {
+		if (Gamepad.isActionPressed(action)) {
+			this.gamepadPressBinding(binding);
+		} else if (Gamepad.isActionReleased(action)) {
+			this.gamepadReleaseBinding(binding);
+		}
+	}
+
+	private void gamepadPressBinding(KeyBinding binding) {
+		int keyCode = binding.getKeyCode();
+		if (keyCode >= 0) {
+			Keyboard.queueSyntheticKey(keyCode, true);
+		} else if (keyCode < 0) {
+			Mouse.queueSyntheticButton(keyCode + 100, true);
+		}
+	}
+
+	private void gamepadReleaseBinding(KeyBinding binding) {
+		int keyCode = binding.getKeyCode();
+		if (keyCode >= 0) {
+			Keyboard.queueSyntheticKey(keyCode, false);
+		} else if (keyCode < 0) {
+			Mouse.queueSyntheticButton(keyCode + 100, false);
+		}
+	}
+
+	private void gamepadTapBinding(KeyBinding binding) {
+		this.gamepadPressBinding(binding);
+		this.gamepadReleaseBinding(binding);
+	}
+
+	private void clearGamepadKeyStates() {
+		this.releaseGamepadAction(this.gameSettings.keyBindForward, Gamepad.ACT_FORWARD);
+		this.releaseGamepadAction(this.gameSettings.keyBindBack, Gamepad.ACT_BACK);
+		this.releaseGamepadAction(this.gameSettings.keyBindLeft, Gamepad.ACT_LEFT);
+		this.releaseGamepadAction(this.gameSettings.keyBindRight, Gamepad.ACT_RIGHT);
+		this.releaseGamepadAction(this.gameSettings.keyBindJump, Gamepad.ACT_JUMP);
+		this.releaseGamepadAction(this.gameSettings.keyBindSneak, Gamepad.ACT_SNEAK);
+		this.releaseGamepadAction(this.gameSettings.keyBindSprint, Gamepad.ACT_SPRINT);
+		this.releaseGamepadAction(this.gameSettings.keyBindAttack, Gamepad.ACT_ATTACK);
+		this.releaseGamepadAction(this.gameSettings.keyBindUseItem, Gamepad.ACT_USE);
+	}
+
+	private void releaseGamepadAction(KeyBinding binding, int action) {
+		if (Gamepad.isActionReleased(action)) {
+			this.gamepadReleaseBinding(binding);
+		}
+	}
+
+	private boolean isGamepadActive() {
+		return this.gameSettings.gamepadEnabled && Gamepad.isConnected();
+	}
+
+	/**+
 	 * Displays the ingame menu
 	 */
 	public void displayInGameMenu() {
@@ -1359,6 +1489,8 @@ public class Minecraft implements IThreadListener {
 			--this.rightClickDelayTimer;
 		}
 
+		this.updateGamepad();
+
 		RateLimitTracker.tick();
 
 		boolean isHostingLAN = LANServerController.isHostingLAN();
@@ -1408,7 +1540,7 @@ public class Minecraft implements IThreadListener {
 				this.displayGuiScreen(new GuiSleepMP());
 			}
 			if (this.currentScreen == null && this.dontPauseTimer <= 0) {
-				if (!Mouse.isMouseGrabbed()) {
+				if (!Mouse.isMouseGrabbed() && !this.isGamepadActive()) {
 					this.setIngameNotInFocus();
 					this.displayInGameMenu();
 				}

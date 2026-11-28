@@ -55,24 +55,48 @@ class GeneratedLutTests(unittest.TestCase):
         body = src[src.index("public final class GeneratedGammaTables"):]
         self.assertIn("private static final float[] GAMMA_2_2_JAVA = {", body)
         self.assertIn("private static final float[] GAMMA_2_2_TEAVM = {", body)
+        self.assertIn("private static final double[] THRESH_BLEND = {", body)
+        self.assertIn("private static final double[] THRESH_COMP = {", body)
+        self.assertIn("private static final short[] BUCKET_BLEND = {", body)
+        self.assertIn("private static final short[] BUCKET_COMP = {", body)
         self.assertIn("EagRuntime.getPlatformType() == EnumPlatformType.JAVASCRIPT", body)
         self.assertIn("static float[] activeTable()", body)
+        self.assertIn("static double[] blendThresholds()", body)
+        self.assertIn("static short[] blendBuckets()", body)
+        self.assertIn("static double[] componentThresholds()", body)
+        self.assertIn("static short[] componentBuckets()", body)
         self.assertNotIn("Math.pow", body)
+        self.assertNotIn("Math.sqrt", body)
         self.assertNotIn("for (", body)
         self.assertNotIn("static {", body)
         self.assertNotIn("new float[", body)
+        self.assertNotIn("new double[", body)
+        self.assertNotIn("new short[", body)
         # 2 arrays x 256 float literals. Lines have 8 entries; count decimal F suffixes.
         literals = re.findall(r"(?<![A-Za-z0-9_])(?:\d+\.\d*(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+|\d+)F", body)
         self.assertGreaterEqual(len(literals), 512)
+        dliterals = re.findall(r"(?<![A-Za-z0-9_])(?:\d+\.\d*(?:[eE][+-]?\d+)?|\d+[eE][+-]?\d+|\d+)D", body)
+        self.assertEqual(len(dliterals), 514)
 
     def test_hot_filter_holds_stable_final_reference(self):
         src = read(rel("sources", "main", "java", "net", "minecraft", "client",
                        "renderer", "texture", "MipmapGammaBlend.java"))
         self.assertIn("private static final float[] GAMMA = GeneratedGammaTables.activeTable();", src)
+        self.assertIn("private static final double[] THRESH_BLEND = GeneratedGammaTables.blendThresholds();", src)
+        self.assertIn("private static final short[] BUCKET_BLEND = GeneratedGammaTables.blendBuckets();", src)
+        self.assertIn("private static final double[] THRESH_COMP = GeneratedGammaTables.componentThresholds();", src)
+        self.assertIn("private static final short[] BUCKET_COMP = GeneratedGammaTables.componentBuckets();", src)
         self.assertIn("return GAMMA[byteValue & 255];", src)
         self.assertNotIn("new float[256]", src)
         code = src[src.index("public final class MipmapGammaBlend"):]
-        self.assertNotIn("Math.pow((float)", code)
+        self.assertNotIn("Math.pow", code)
+
+    def test_note_pitch_table_is_25_constants(self):
+        src = read(rel("sources", "main", "java", "net", "minecraft", "block", "BlockNote.java"))
+        m = re.search(r"PITCH_TABLE\s*=\s*\{([^}]+)\}", src)
+        self.assertIsNotNone(m)
+        literals = re.findall(r"(?<![A-Za-z0-9_])\d+\.\d*F", m.group(1))
+        self.assertEqual(len(literals), 25)
 
     def test_native_header_is_256_exact_hex_floats(self):
         src = read(rel("perfbench", "native", "gamma_table.h"))

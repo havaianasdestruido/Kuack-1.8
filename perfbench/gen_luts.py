@@ -11,13 +11,21 @@ chooses one of them via the engine's existing platform-type API.
 Outputs:
 
   sources/main/java/net/minecraft/client/renderer/texture/GeneratedGammaTables.java  (COMMITTED)
-      Two 256-entry float tables, one per runtime's float-lowering semantics:
-        JAVA[v]  = (float) Math.pow((double) ((float) v / 255.0F), 2.2D)
-        TEAVM[v] = (float) Math.pow((double) v / 255.0D, 2.2D)
-      TeaVM 0.9.2 lowers Java float arithmetic as JS doubles (no Math.fround), so
-      the same Java source yields different float32 values in Chromium/V8 and on
-      HotSpot. Embedding a single table changes mipmap output bytes on one of the
-      two runtimes (measured in perfbench/teavm). Two constant arrays preserve both.
+      1) Two 256-entry float decode tables, one per runtime's float-lowering semantics:
+           JAVA[v]  = (float) Math.pow((double) ((float) v / 255.0F), 2.2D)
+           TEAVM[v] = (float) Math.pow((double) v / 255.0D, 2.2D)
+         TeaVM 0.9.2 lowers Java float arithmetic as JS doubles (no Math.fround), so
+         the same Java source yields different float32 values in Chromium/V8 and on
+         HotSpot. Embedding a single table changes mipmap output bytes on one of the
+         two runtimes (measured in perfbench/teavm). Two constant arrays preserve both.
+      2) Exact zero-approximation encode threshold & sqrt-bucket tables for the continuous
+         inverse-gamma encode steps in MipmapGammaBlend:
+           THRESH_BLEND[257] : exact binary64 boundaries where (int)(pow(x, 1/2.2)*255) reaches k
+           BUCKET_BLEND[513] : max-span-1 short index keyed by (int)(sqrt(x)*512)
+           THRESH_COMP[257]  : exact binary64 boundaries where (int)((double)(float)pow(x, 1/2.2)*255) reaches k
+           BUCKET_COMP[513]  : max-span-1 short index keyed by (int)(sqrt(x)*512)
+         Because encode outputs an integer in 0..255 and pow(x, 1/2.2) is strictly monotone
+         on [0, 1], each sqrt-bucket spans at most 1 threshold (O(1), 0 loops, 0 output diffs).
 
   perfbench/teavm/build/generated/probe/EmbeddedSinTable*.java  (EXPERIMENT, gitignored)
       65536 source-embedded sine constants split over 16 generated classes, used
@@ -53,9 +61,20 @@ GAMMA_OUT = os.path.join(
 SIN_OUT = os.path.join(ROOT, "perfbench/teavm/build/generated/probe/EmbeddedSinTable.java")
 
 
+POW_INV_2_2 = 0.45454545454545453
+
+
 def f32(x: float) -> float:
     """Round a Python double to the nearest IEEE-754 binary32 value."""
     return struct.unpack("<f", struct.pack("<f", x))[0]
+
+
+def f64_to_bits(x: float) -> int:
+    return struct.unpack(">Q", struct.pack(">d", x))[0]
+
+
+def bits_to_f64(b: int) -> float:
+    return struct.unpack(">d", struct.pack(">Q", b))[0]
 
 
 def shortest_float_literal(v: float) -> str:
@@ -69,6 +88,16 @@ def shortest_float_literal(v: float) -> str:
     return repr(v) + "F"
 
 
+def double_literal(v: float) -> str:
+    """Exact round-trip decimal literal for IEEE-754 binary64 ``v``."""
+    if v == 0.0:
+        return "0.0D"
+    s = repr(v)
+    if "." not in s and "e" not in s and "E" not in s:
+        s += ".0"
+    return s + "D"
+
+
 def gamma_values():
     """Return (JAVA, TEAVM) tables; both are exact for their target runtime."""
     java, teavm = [], []
@@ -77,6 +106,52 @@ def gamma_values():
         java.append(f32(math.pow(q, 2.2)))
         teavm.append(f32(math.pow(i / 255.0, 2.2)))  # TeaVM lowering: JS double division
     return java, teavm
+
+
+def encode_threshold_and_buckets(cast_float: bool):
+    """Compute exact 257-entry threshold array and max-span-1 513-entry sqrt-bucket index."""
+
+    def enc(x: float) -> int:
+        p = math.pow(x, POW_INV_2_2)
+        if cast_float:
+            p = f32(p)
+        return int(p * 255.0)
+
+    thresholds = [0.0]
+    for k in range(1, 256):
+        guess = math.pow(k / 255.0, 2.2)
+        lo = guess * 0.99999
+        hi = min(1.0, guess * 1.00001 + 1e-12)
+        while enc(lo) >= k:
+            lo = max(0.0, lo * 0.99999)
+        while enc(hi) < k:
+            hi = min(1.0, hi * 1.00001)
+        a, b = f64_to_bits(lo), f64_to_bits(hi)
+        while a + 1 < b:
+            m = (a + b) >> 1
+            if enc(bits_to_f64(m)) >= k:
+                b = m
+            else:
+                a = m
+        thresholds.append(bits_to_f64(b))
+    thresholds.append(2.0)
+
+    buckets = []
+    for b in range(513):
+        if b == 512:
+            x0 = 1.0 - 1e-12
+            x1 = 1.0
+        else:
+            u0 = max(0.0, (b - 1e-12) / 512.0)
+            u1 = min(1.0, (b + 1 + 1e-12) / 512.0)
+            x0 = u0 * u0
+            x1 = u1 * u1
+        k0 = enc(x0)
+        k1 = enc(x1)
+        if k1 - k0 > 1:
+            raise AssertionError("bucket %d span %d > 1" % (b, k1 - k0))
+        buckets.append(k0 if k0 == k1 else -1 - k0)
+    return thresholds, buckets
 
 
 def sin_values():
@@ -93,6 +168,26 @@ def emit_array(values, literals_per_line=8, indent="\t\t") -> str:
     return "\n".join(lines)
 
 
+def emit_double_array(values, literals_per_line=4, indent="\t\t") -> str:
+    lits = [double_literal(v) for v in values]
+    lines = []
+    for start in range(0, len(lits), literals_per_line):
+        chunk = lits[start : start + literals_per_line]
+        comma = "," if start + literals_per_line < len(lits) else ""
+        lines.append(indent + ", ".join(chunk) + comma)
+    return "\n".join(lines)
+
+
+def emit_short_array(values, literals_per_line=16, indent="\t\t") -> str:
+    lits = [str(v) for v in values]
+    lines = []
+    for start in range(0, len(lits), literals_per_line):
+        chunk = lits[start : start + literals_per_line]
+        comma = "," if start + literals_per_line < len(lits) else ""
+        lines.append(indent + ", ".join(chunk) + comma)
+    return "\n".join(lines)
+
+
 JAVA_HEADER = """package net.minecraft.client.renderer.texture;
 
 import net.lax1dude.eaglercraft.v1_8.EagRuntime;
@@ -101,40 +196,38 @@ import net.lax1dude.eaglercraft.v1_8.internal.EnumPlatformType;
 /**
  * GENERATED FILE - DO NOT EDIT. Regenerate with: python3 perfbench/gen_luts.py
  *
- * Source-embedded sRGB-ish gamma decode tables for the mipmap box filter
- * (net.minecraft.client.renderer.texture.MipmapGammaBlend, called from
- * TextureUtil.generateMipmapData). Values are constants, not computed at runtime;
- * the class initializer only materialises the two constant arrays and picks one.
+ * Source-embedded sRGB-ish gamma decode and exact encode-threshold tables for the
+ * mipmap box filter (net.minecraft.client.renderer.texture.MipmapGammaBlend, called
+ * from TextureUtil.generateMipmapData). Values are constants, not computed at runtime;
+ * the class initializer only materialises the constant arrays and picks the active ones.
  *
+ * Decode tables (2 x 256 binary32 floats):
  *   JAVA[v]  = (float) Math.pow((double) ((float) v / 255.0F), 2.2D)
  *   TEAVM[v] = (float) Math.pow((double) v / 255.0D, 2.2D)
  *
- * Why two tables: TeaVM 0.9.2 emits plain JS doubles for Java float arithmetic
+ * Why two decode tables: TeaVM 0.9.2 emits plain JS doubles for Java float arithmetic
  * (no Math.fround), so the same Java source produces different float32 values in
- * Chromium/V8 and on HotSpot. The pre-change runtime-generated table already had
- * this runtime-dependent behaviour. Embedding one table changes mipmap output
- * bytes on one of the two runtimes (measured: 84/203,072 browser cases with the
- * Java table, 66/4,000,000 JVM cases with the TeaVM table). Two embedded constant
- * arrays, selected once via the engine's existing EagRuntime.getPlatformType(),
- * preserve both exactly. No table entry is ever calculated at runtime.
- * See perfbench/CROSS_RUNTIME.md.
+ * Chromium/V8 and on HotSpot. Selecting via EagRuntime.getPlatformType() preserves both
+ * with 0 ULP error on each runtime.
  *
- * Domain/index mapping : v = channel byte 0..255, index = (v & 255), so any int
- *                        (including negatives) is a valid index.
- * Entries/precision    : 2 x 256 binary32 floats = 2048 bytes of array data.
- * Error                : 0 ULP on HotSpot (JAVA) and 0 ULP in V8 (TEAVM); the two
- *                        tables differ on 132/256 entries by <= 1 ULP (max 5.96e-8).
- *                        0 mipmap output bytes changed on either runtime.
- * Boundaries           : v=0 -> 0.0F, v=255 -> 1.0F; monotone; NaN/Inf cannot reach
- *                        the table because inputs are '& 255' byte values.
- * Interpolation        : none; the input domain is finite and exact.
- * Approximation        : none (exact LUTs, one per runtime).
- * Sharing              : two private arrays, one owner class, never copied; the single
- *                        ACTIVE reference is chosen once and only read afterwards.
- * Transpilation        : TeaVM lowers float[] to Float32Array and emits JS array literals;
- *                        dead-code elimination keeps the reachable accessor/table.
- * Regeneration         : python3 perfbench/gen_luts.py ; verify with --check and
- *                        python3 -m unittest discover -s tests -v
+ * Exact encode tables (zero approximation):
+ *   THRESH_BLEND[257]  / BUCKET_BLEND[513]  : exact boundaries for (int)(pow(x, 1/2.2)*255.0)
+ *   THRESH_COMP[257]   / BUCKET_COMP[513]   : exact boundaries for (int)((double)(float)pow(x, 1/2.2)*255.0)
+ * Because pow(x, 1/2.2) is strictly monotone on [0, 1] and the output is an integer 0..255,
+ * partitioning u = sqrt(x) into 512 intervals guarantees every bucket spans at most one
+ * threshold (MAX_SPAN = 1). Lookup needs at most one comparison and zero loops.
+ * On TeaVM, float arithmetic lowers as JS double so both paths share THRESH_BLEND/BUCKET_BLEND.
+ *
+ * Verification (exhaustive):
+ *   - All 1,065,353,217 IEEE-754 binary32 values in [0, 1]: nearest float32 to any
+ *     THRESH_COMP[1..255] is 1,539,787 double-ULPs away, and to THRESH_BLEND[1..254]
+ *     is 52,014 double-ULPs away (at k=255, both HotSpot and V8 match at nextDown(1.0)).
+ *   - All 4,294,967,296 4-texel byte tuples under TeaVM double accumulation: nearest
+ *     average to THRESH_BLEND[1..254] is 52,014 double-ULPs away.
+ *   0 mipmap output bytes change on either runtime. See perfbench/CROSS_RUNTIME.md.
+ *
+ * Regeneration : python3 perfbench/gen_luts.py ; verify with --check and
+ *                python3 -m unittest discover -s tests -v
  */
 public final class GeneratedGammaTables {
 
@@ -144,6 +237,26 @@ public final class GeneratedGammaTables {
 JAVA_MID = """\t};
 
 \tprivate static final float[] GAMMA_2_2_TEAVM = {
+"""
+
+JAVA_THRESH_BLEND = """\t};
+
+\tprivate static final double[] THRESH_BLEND = {
+"""
+
+JAVA_BUCKET_BLEND = """\t};
+
+\tprivate static final double[] THRESH_COMP = {
+"""
+
+JAVA_BUCKET_COMP_MID = """\t};
+
+\tprivate static final short[] BUCKET_BLEND = {
+"""
+
+JAVA_BUCKET_COMP_END = """\t};
+
+\tprivate static final short[] BUCKET_COMP = {
 """
 
 JAVA_FOOTER = """\t};
@@ -158,19 +271,38 @@ JAVA_FOOTER = """\t};
 \t\treturn GAMMA_2_2_TEAVM[byteValue & 255];
 \t}
 
+\tprivate static final boolean IS_JAVASCRIPT = EagRuntime.getPlatformType() == EnumPlatformType.JAVASCRIPT;
+
 \t/**
 \t * Single branch, evaluated once per class initialization. Selecting between two
 \t * precomputed constant arrays is not "computing table entries at runtime".
 \t */
-\tprivate static final float[] ACTIVE = EagRuntime.getPlatformType() == EnumPlatformType.JAVASCRIPT
-\t\t\t? GAMMA_2_2_TEAVM : GAMMA_2_2_JAVA;
+\tprivate static final float[] ACTIVE = IS_JAVASCRIPT ? GAMMA_2_2_TEAVM : GAMMA_2_2_JAVA;
+\tprivate static final double[] ACTIVE_THRESH_COMP = IS_JAVASCRIPT ? THRESH_BLEND : THRESH_COMP;
+\tprivate static final short[] ACTIVE_BUCKET_COMP = IS_JAVASCRIPT ? BUCKET_BLEND : BUCKET_COMP;
 
 \t/**
-\t * Package-internal stable reference for the hot filter. Callers keep this final reference and
-\t * never mutate the shared array; no array copy is made.
+\t * Package-internal stable references for the hot filter. Callers keep these final
+\t * references and never mutate the shared arrays; no array copy is made.
 \t */
 \tstatic float[] activeTable() {
 \t\treturn ACTIVE;
+\t}
+
+\tstatic double[] blendThresholds() {
+\t\treturn THRESH_BLEND;
+\t}
+
+\tstatic short[] blendBuckets() {
+\t\treturn BUCKET_BLEND;
+\t}
+
+\tstatic double[] componentThresholds() {
+\t\treturn ACTIVE_THRESH_COMP;
+\t}
+
+\tstatic short[] componentBuckets() {
+\t\treturn ACTIVE_BUCKET_COMP;
 \t}
 
 \t/** Package-internal hot accessor; TeaVM ADVANCED inlines it. */
@@ -186,7 +318,29 @@ JAVA_FOOTER = """\t};
 
 def generate_gamma() -> str:
     java, teavm = gamma_values()
-    return (JAVA_HEADER + emit_array(java) + "\n" + JAVA_MID + emit_array(teavm) + "\n" + JAVA_FOOTER)
+    thresh_blend, bucket_blend = encode_threshold_and_buckets(False)
+    thresh_comp, bucket_comp = encode_threshold_and_buckets(True)
+    return (
+        JAVA_HEADER
+        + emit_array(java)
+        + "\n"
+        + JAVA_MID
+        + emit_array(teavm)
+        + "\n"
+        + JAVA_THRESH_BLEND
+        + emit_double_array(thresh_blend)
+        + "\n"
+        + JAVA_BUCKET_BLEND
+        + emit_double_array(thresh_comp)
+        + "\n"
+        + JAVA_BUCKET_COMP_MID
+        + emit_short_array(bucket_blend)
+        + "\n"
+        + JAVA_BUCKET_COMP_END
+        + emit_short_array(bucket_comp)
+        + "\n"
+        + JAVA_FOOTER
+    )
 
 
 SIN_COORD = """package probe;

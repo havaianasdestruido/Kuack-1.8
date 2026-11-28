@@ -93,11 +93,16 @@ public final class VerifyEmbeddedLut {
         // strip the Javadoc before scanning for runtime constructs
         String body = src.substring(src.indexOf("final class GeneratedGammaTables"));
         check(!body.contains("Math.pow"), "no Math.pow in generated source");
+        check(!body.contains("Math.sqrt"), "no Math.sqrt in generated source");
         check(!body.contains("for ("), "no runtime loop in generated source");
         check(!body.contains("static {"), "no static initializer computing entries");
         check(body.contains("private static final float[] GAMMA_2_2_JAVA = {"), "JAVA array constants present");
         check(body.contains("private static final float[] GAMMA_2_2_TEAVM = {"), "TEAVM array constants present");
-        System.out.println("  generated source: 2 constant arrays, 0 runtime computations, 0 file loads");
+        check(body.contains("private static final double[] THRESH_BLEND = {"), "THRESH_BLEND constants present");
+        check(body.contains("private static final double[] THRESH_COMP = {"), "THRESH_COMP constants present");
+        check(body.contains("private static final short[] BUCKET_BLEND = {"), "BUCKET_BLEND constants present");
+        check(body.contains("private static final short[] BUCKET_COMP = {"), "BUCKET_COMP constants present");
+        System.out.println("  generated source: 6 constant arrays, 0 runtime computations, 0 file loads");
     }
 
     private static int bits(float f) {
