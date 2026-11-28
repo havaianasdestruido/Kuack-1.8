@@ -3213,7 +3213,7 @@ public class EaglerDeferredPipeline {
 			DeferredStateManager.checkGLError("endDrawDeferred(): DOWNSCALE AND AVERAGE LUMA");
 		}
 
-		if(config.is_rendering_bloom) {
+		if(config.is_rendering_bloom && !mc.gameSettings.disableBlur) {
 
 			// ==================== BLOOM: BRIGHT PASS ==================== //
 

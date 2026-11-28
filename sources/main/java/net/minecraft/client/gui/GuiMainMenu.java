@@ -411,7 +411,8 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback {
 		GlStateManager.matrixMode(GL_PROJECTION);
 		GlStateManager.pushMatrix();
 		GlStateManager.loadIdentity();
-		if (enableBlur) {
+		boolean useBlur = this.enableBlur && !this.mc.gameSettings.disableBlur;
+		if (useBlur) {
 			GlStateManager.gluPerspective(120.0F, 1.0F, 0.05F, 10.0F);
 		} else {
 			GlStateManager.gluPerspective(85.0F, (float) width / (float) height, 0.05F, 10.0F);
@@ -421,7 +422,7 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback {
 		GlStateManager.loadIdentity();
 		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 		GlStateManager.rotate(180.0F, 1.0F, 0.0F, 0.0F);
-		if (enableBlur) {
+		if (useBlur) {
 			GlStateManager.rotate(90.0F, 0.0F, 0.0F, 1.0F);
 		}
 		GlStateManager.enableBlend();
@@ -429,7 +430,7 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback {
 		GlStateManager.disableCull();
 		GlStateManager.depthMask(false);
 		GlStateManager.tryBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, 1, 0);
-		byte b0 = enableBlur ? (byte) 8 : (byte) 1;
+		byte b0 = useBlur ? (byte) 8 : (byte) 1;
 
 		for (int i = 0; i < b0 * b0; ++i) {
 			GlStateManager.pushMatrix();
@@ -566,7 +567,7 @@ public class GuiMainMenu extends GuiScreen implements GuiYesNoCallback {
 	 */
 	public void drawScreen(int i, int j, float f) {
 		GlStateManager.disableAlpha();
-		if (enableBlur) {
+		if (this.enableBlur && !this.mc.gameSettings.disableBlur) {
 			this.renderSkybox(i, j, f);
 		} else {
 			this.drawPanorama(i, j, f);
