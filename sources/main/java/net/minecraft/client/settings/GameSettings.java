@@ -195,6 +195,7 @@ public class GameSettings {
 	public boolean hudStats = false;
 	public boolean hud24h = false;
 	public boolean chunkFix = true;
+	public boolean disableBlur = false;
 	public boolean fog = true;
 	public int fxaa = 0;
 	public boolean shaders = false;
@@ -445,6 +446,10 @@ public class GameSettings {
 			this.chunkFix = !this.chunkFix;
 		}
 
+		if (parOptions == GameSettings.Options.DISABLE_BLUR) {
+			this.disableBlur = !this.disableBlur;
+		}
+
 		if (parOptions == GameSettings.Options.FOG) {
 			this.fog = !this.fog;
 		}
@@ -539,6 +544,8 @@ public class GameSettings {
 			return this.hud24h;
 		case CHUNK_FIX:
 			return this.chunkFix;
+		case DISABLE_BLUR:
+			return this.disableBlur;
 		case FOG:
 			return this.fog;
 		case FULLSCREEN:
@@ -939,6 +946,10 @@ public class GameSettings {
 						this.chunkFix = astring[1].equals("true");
 					}
 
+					if (astring[0].equals("disableBlur")) {
+						this.disableBlur = astring[1].equals("true");
+					}
+
 					if (astring[0].equals("fog")) {
 						this.fog = astring[1].equals("true");
 					}
@@ -1107,6 +1118,7 @@ public class GameSettings {
 			printwriter.println("hudStats:" + this.hudStats);
 			printwriter.println("hud24h:" + this.hud24h);
 			printwriter.println("chunkFix:" + this.chunkFix);
+			printwriter.println("disableBlur:" + this.disableBlur);
 			printwriter.println("fog:" + this.fog);
 			printwriter.println("fxaa:" + this.fxaa);
 			printwriter.println("shaders:" + this.shaders);
@@ -1248,6 +1260,7 @@ public class GameSettings {
 		HUD_COORDS("options.hud.coords", false, true), HUD_STATS("options.hud.stats", false, true),
 		HUD_WORLD("options.hud.world", false, true), HUD_PLAYER("options.hud.player", false, true),
 		HUD_24H("options.hud.24h", false, true), CHUNK_FIX("options.chunkFix", false, true),
+		DISABLE_BLUR("options.disableBlur", false, true),
 		FOG("options.fog", false, true), FXAA("options.fxaa", false, false),
 		FULLSCREEN("options.fullscreen", false, true),
 		FNAW_SKINS("options.skinCustomisation.enableFNAWSkins", false, true),
