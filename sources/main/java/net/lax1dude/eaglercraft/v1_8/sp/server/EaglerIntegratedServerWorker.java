@@ -95,6 +95,26 @@ public class EaglerIntegratedServerWorker {
 		}
 	}
 
+	/**
+	 * Decodes whatever inbound player packets have arrived since the last call,
+	 * without advancing the tick. The worker's main loop calls this continuously,
+	 * so local player packets (keepalive echoes, movement, block actions) are
+	 * handled within milliseconds of arriving instead of waiting for the next
+	 * 20 Hz tick. Packet handlers only ever run on this (the server's) thread
+	 * and each packet is still decoded exactly once.
+	 */
+	public static void processReceivedPacketsOnly() {
+		List<IntegratedServerPlayerNetworkManager> ocs = new ArrayList<>(openChannels.values());
+		for(int i = 0, l = ocs.size(); i < l; ++i) {
+			try {
+				ocs.get(i).processReceivedPackets();
+			}catch(Throwable t) {
+				logger.error("Failed to process inbound packet(s) off-tick");
+				logger.error(t);
+			}
+		}
+	}
+
 	public static EaglerMinecraftServer getServer() {
 		return currentProcess;
 	}
@@ -456,6 +476,9 @@ public class EaglerIntegratedServerWorker {
 
 	private static void mainLoop() {
 		processAsyncMessageQueue();
+		// Decode inbound packets as soon as they land instead of at the next
+		// 20 Hz tick boundary so the local player feels attached to the server.
+		processReceivedPacketsOnly();
 		
 		if(currentProcess != null) {
 			if(currentProcess.isServerRunning()) {

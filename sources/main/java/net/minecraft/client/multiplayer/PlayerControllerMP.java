@@ -301,6 +301,16 @@ public class PlayerControllerMP {
 
 	public void updateController() {
 		this.syncCurrentPlayItem();
+		this.processNetworkPackets();
+	}
+
+	/**+
+	 * Decodes and dispatches any network traffic waiting to be handled.
+	 * Cheap when nothing is queued, so it can (and should) also be called every
+	 * frame; packets then reach the game within one frame instead of waiting for
+	 * the next 20 Hz tick boundary.
+	 */
+	public void processNetworkPackets() {
 		if (this.netClientHandler.getNetworkManager().isChannelOpen()) {
 			try {
 				this.netClientHandler.getNetworkManager().processReceivedPackets();
@@ -317,7 +327,6 @@ public class PlayerControllerMP {
 		} else {
 			this.netClientHandler.getNetworkManager().checkDisconnected();
 		}
-
 	}
 
 	private boolean isHittingPosition(BlockPos pos) {

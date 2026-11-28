@@ -577,7 +577,9 @@ public abstract class ServerConfigurationManager {
 	 * self explanitory
 	 */
 	public void onTick() {
-		if (++this.playerPingIndex > 600) {
+		// Broadcast measured latencies every 5 seconds (was 30) so displays of
+		// the player list ping stay honest; the packet is tiny.
+		if (++this.playerPingIndex > 100) {
 			this.sendPacketToAllPlayers(
 					new S38PacketPlayerListItem(S38PacketPlayerListItem.Action.UPDATE_LATENCY, this.playerEntityList));
 			this.playerPingIndex = 0;
