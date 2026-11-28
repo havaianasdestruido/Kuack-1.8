@@ -96,6 +96,10 @@ Eaglercraft uses its own Minecraft 1.8 renderer for the browser's WebGL/TeaVM ru
 
 This is an ongoing renderer port, not the upstream Sodium mod or a claim of feature-for-feature parity. No Sodium binaries or source files are bundled. See [Sodium](https://github.com/CaffeineMC/sodium) for the upstream project.
 
+## Frame pacing
+
+The browser client drives its render loop from the browser's `requestAnimationFrame` callback, so every frame is presented on a display refresh and the camera advances by an even amount while it is being turned. The loop used to fall back to a `setTimeout` timer whenever the VSync option was off, which produced frames faster than the display could show them and then presented them unevenly; that is what made the view appear to move in steps while walking and looking around. The measured refresh interval is also used to keep the **Max Framerate** limiter from sleeping on top of an already completed vsync wait, which would cost a whole frame every time it overshot. The **VSync** option now only controls whether that limiter waits at all in the browser, since a WebGL canvas cannot present faster than the display anyway. The desktop debug runtime still paces frames with the GL swap and behaves as before.
+
 ## Voice Chat
 
 EaglercraftX 1.8 includes an integrated voice-chat service that can be used in shared worlds and also on multiplayer servers when it is enabled by the server owner. This feature also uses WebRTC like shared worlds, so be careful that you don't leak your IP address accidentally by using it on a public server. If you own a website and don't want people to use voice chat on it, edit the `eaglercraftXOpts` variable in your index.html and add `allowVoiceClient: false`.

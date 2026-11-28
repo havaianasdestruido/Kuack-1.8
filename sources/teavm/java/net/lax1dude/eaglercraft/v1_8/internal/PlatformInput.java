@@ -118,6 +118,15 @@ public class PlatformInput {
 
 	private static boolean vsync = true;
 	private static boolean vsyncSupport = false;
+
+	/**
+	 * Timestamp of the last requestAnimationFrame callback and the smoothed interval between
+	 * two of them, both in milliseconds. The interval is the display refresh interval, which
+	 * is what the frame loop is really paced by in a browser, so Display.sync can tell
+	 * whether the configured frame rate limit still has anything to wait for.
+	 */
+	private static double lastAnimationFrameTimestamp = -1.0D;
+	private static double animationFrameInterval = 0.0D;
 	
 	@JSBody(params = { }, script = "window.onbeforeunload = () => {return false;};")
 	private static native void onBeforeCloseRegister();
@@ -367,7 +376,16 @@ public class PlatformInput {
 			}
 		}
 		if(getVisibilityState(win.getDocument())) {
-			if(vsyncSupport && vsync) {
+			// Always pace the frame loop with requestAnimationFrame when the browser has it.
+			// The old code only did that while VSync was enabled and otherwise resumed the
+			// loop from a setTimeout(0) timer, which is not synchronized with the compositor
+			// at all: frames were produced faster than the display could show them and the
+			// canvas then presented them unevenly (one frame shown for one refresh, the next
+			// for two). That uneven presentation is exactly what makes the camera look like it
+			// advances in steps while it is being turned. The browser cannot present faster
+			// than the display anyway, so the VSync toggle is now only honoured by the frame
+			// rate limiter rather than by dropping out of the display-synchronized loop.
+			if(vsyncSupport) {
 				asyncRequestAnimationFrame();
 			}else {
 				EagUtils.sleep(0l);
@@ -387,6 +405,7 @@ public class PlatformInput {
 			if(!hasCompleted[0]) {
 				hasCompleted[0] = true;
 				Window.clearTimeout(timeout[0]);
+				updateAnimationFrameInterval(d);
 				cb.complete(null);
 			}
 		});
@@ -398,8 +417,55 @@ public class PlatformInput {
 		}, 50);
 	}
 
+	/**
+	 * Feeds one requestAnimationFrame timestamp into the smoothed display interval estimate.
+	 * Frames that arrive way too late (a tab that was hidden, or a multi-second hitch) are
+	 * dropped instead of being mistaken for the refresh rate.
+	 */
+	private static void updateAnimationFrameInterval(double timestamp) {
+		if(timestamp > 0.0D) {
+			if(lastAnimationFrameTimestamp >= 0.0D) {
+				double interval = timestamp - lastAnimationFrameTimestamp;
+				if(interval >= 3.0D && interval <= 200.0D) {
+					if(animationFrameInterval <= 0.0D) {
+						animationFrameInterval = interval;
+					}else {
+						animationFrameInterval += (interval - animationFrameInterval) * 0.1D;
+					}
+				}
+			}
+			lastAnimationFrameTimestamp = timestamp;
+		}
+	}
+
+	/**
+	 * The display refresh rate in Hz as measured from requestAnimationFrame, or 0 when the
+	 * browser does not pace the frame loop with requestAnimationFrame (in which case the
+	 * Java-side frame rate limiter is the only thing pacing it, and it must keep sleeping).
+	 */
+	public static int getEstimatedRefreshRate() {
+		if(!vsyncSupport || animationFrameInterval <= 0.0D) {
+			return 0;
+		}
+		int rate = (int) (1000.0D / animationFrameInterval + 0.5D);
+		if(rate < 24) {
+			return 24;
+		}
+		if(rate > 360) {
+			return 360;
+		}
+		return rate;
+	}
+
 	public static boolean isVSyncSupported() {
 		return vsyncSupport;
+	}
+
+	/**
+	 * Whether the VSync option is currently enabled.
+	 */
+	public static boolean isVSyncEnabled() {
+		return vsync;
 	}
 
 	static void initFramebuffer(WebGL2RenderingContext ctx, WebGLFramebuffer fbo, int sw, int sh) {
