@@ -13,7 +13,9 @@ everything that is **bold** is a prority.
   - [ ] Abacus preset mode
   - [ ] Bacteria preset mode 
 - [ ] (better) mobile support
-- - [ ] Joysticks, better fullscreen support, etc.
+- - [x] Joysticks, better fullscreen support, etc.
+    - [x] full gamepad support with Legacy Console / Xbox / PlayStation / Nintendo Switch presets and look/deadzone toggles (browser runtime; see README "Gamepad Support")
+    - [ ] better fullscreen support
 - [x] performance optimizations
   - [x] fixing some hotloops and removed barely used code
     - [x] math/LUT sweep: `Matrix4f.rotate` now uses the engine's sine table (2.42x per rotation) and the mipmap gamma filter uses a 256-entry decode table (4.6x) — see `perfbench/FINDINGS.md` #10/#11

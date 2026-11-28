@@ -66,6 +66,19 @@ public class PlatformInput {
 	private static EventListener wheel = null;
 	private static EventListener pointerlock = null;
 
+	private static final List<int[]> syntheticKeyEvents = new LinkedList();
+	private static final List<int[]> syntheticMouseEvents = new LinkedList();
+
+	private static int syntheticKey = 0;
+	private static boolean syntheticKeyPressed = false;
+	private static boolean syntheticKeyActive = false;
+
+	private static int syntheticMouseButton = 0;
+	private static boolean syntheticMousePressed = false;
+	private static boolean syntheticMouseActive = false;
+
+	private static boolean gamepadSupported = false;
+
 	private static List<MouseEvent> mouseEvents = new LinkedList();
 	private static List<KeyboardEvent> keyEvents = new LinkedList();
 
@@ -255,6 +268,12 @@ public class PlatformInput {
 		});
 
 		try {
+			gamepadSupported = checkGamepadSupported();
+		}catch(Throwable t) {
+			gamepadSupported = false;
+		}
+
+		try {
 			onBeforeCloseRegister();
 		}catch(Throwable t) {
 		}
@@ -291,6 +310,18 @@ public class PlatformInput {
 	
 	@JSBody(params = { "e" }, script = "return e.which;")
 	private static native int getWhich(KeyboardEvent e);
+
+	@JSBody(params = { }, script = "return !!(window.navigator.getGamepads);")
+	private static native boolean checkGamepadSupported();
+
+	@JSBody(params = { "i" }, script = "var gps = window.navigator.getGamepads(); return gps ? (gps[i] != null && gps[i].connected) : false;")
+	private static native boolean getGamepadConnected(int i);
+
+	@JSBody(params = { "i", "b" }, script = "var gps = window.navigator.getGamepads(); var g = gps ? gps[i] : null; var btn = g ? g.buttons[b] : null; return (btn && btn.pressed) ? 1 : 0;")
+	private static native int getGamepadButton(int i, int b);
+
+	@JSBody(params = { "i", "a" }, script = "var gps = window.navigator.getGamepads(); var g = gps ? gps[i] : null; return g ? (g.axes[a] || 0) : 0;")
+	private static native float getGamepadAxis(int i, int a);
 	
 	public static int getWindowWidth() {
 		return windowWidth;
@@ -438,19 +469,30 @@ public class PlatformInput {
 			return false;
 		}
 		currentEventK = null;
+		syntheticKeyActive = false;
+		if(!syntheticKeyEvents.isEmpty()) {
+			int[] e = syntheticKeyEvents.remove(0);
+			syntheticKey = e[0];
+			syntheticKeyPressed = e[1] != 0;
+			syntheticKeyActive = true;
+			return true;
+		}
 		return !keyEvents.isEmpty() && (currentEventK = keyEvents.remove(0)) != null;
 	}
 
 	public static boolean keyboardGetEventKeyState() {
+		if(syntheticKeyActive) return syntheticKeyPressed;
 		return currentEventK == null? false : !currentEventK.getType().equals("keyup");
 	}
 
 	public static int keyboardGetEventKey() {
+		if(syntheticKeyActive) return syntheticKey;
 		int w = processFunctionKeys(getWhich(currentEventK));
 		return currentEventK == null ? -1 : KeyboardConstants.getEaglerKeyFromBrowser(w, currentEventK.getLocation());
 	}
 
 	public static char keyboardGetEventCharacter() {
+		if(syntheticKeyActive) return '\0';
 		if(currentEventK == null) return '\0';
 		String s = currentEventK.getKey();
 		return currentEventK == null ? ' ' : (char) (s.length() > 1 ? '\0' : s.charAt(0));
@@ -468,6 +510,7 @@ public class PlatformInput {
 	}
 
 	public static boolean keyboardIsRepeatEvent() {
+		if(syntheticKeyActive) return false;
 		return currentEventK == null ? false : currentEventK.isRepeat();
 	}
 
@@ -477,28 +520,41 @@ public class PlatformInput {
 
 	public static boolean mouseNext() {
 		currentEvent = null;
+		syntheticMouseActive = false;
+		if(!syntheticMouseEvents.isEmpty()) {
+			int[] e = syntheticMouseEvents.remove(0);
+			syntheticMouseButton = e[0];
+			syntheticMousePressed = e[1] != 0;
+			syntheticMouseActive = true;
+			return true;
+		}
 		return !mouseEvents.isEmpty() && (currentEvent = mouseEvents.remove(0)) != null;
 	}
 
 	public static boolean mouseGetEventButtonState() {
+		if(syntheticMouseActive) return syntheticMousePressed;
 		return currentEvent == null ? false : currentEvent.getType().equals(MouseEvent.MOUSEDOWN);
 	}
 
 	public static int mouseGetEventButton() {
+		if(syntheticMouseActive) return syntheticMouseButton;
 		if(currentEvent == null || currentEvent.getType().equals(MouseEvent.MOUSEMOVE)) return -1;
 		int b = currentEvent.getButton();
 		return b == 1 ? 2 : (b == 2 ? 1 : b);
 	}
 
 	public static int mouseGetEventX() {
+		if(syntheticMouseActive) return -1;
 		return currentEvent == null ? -1 : (int)(currentEvent.getClientX() * win.getDevicePixelRatio());
 	}
 
 	public static int mouseGetEventY() {
+		if(syntheticMouseActive) return -1;
 		return currentEvent == null ? -1 : (int)((canvas.getClientHeight() - currentEvent.getClientY()) * win.getDevicePixelRatio());
 	}
 
 	public static int mouseGetEventDWheel() {
+		if(syntheticMouseActive) return 0;
 		return ("wheel".equals(currentEvent.getType())) ? (((WheelEvent)currentEvent).getDeltaY() == 0.0D ? 0 : (((WheelEvent)currentEvent).getDeltaY() > 0.0D ? -1 : 1)) : 0;
 	}
 
@@ -512,6 +568,65 @@ public class PlatformInput {
 
 	public static boolean mouseIsButtonDown(int i) {
 		return buttonStates[i];
+	}
+
+	public static void keyboardQueueSyntheticEvent(int key, boolean pressed) {
+		syntheticKeyEvents.add(new int[] { key, pressed ? 1 : 0 });
+		if(syntheticKeyEvents.size() > 64) {
+			syntheticKeyEvents.remove(0);
+		}
+	}
+
+	public static void mouseQueueSyntheticEvent(int button, boolean pressed) {
+		syntheticMouseEvents.add(new int[] { button, pressed ? 1 : 0 });
+		if(syntheticMouseEvents.size() > 64) {
+			syntheticMouseEvents.remove(0);
+		}
+	}
+
+	public static void mouseAddVirtualDelta(int dx, int dy) {
+		mouseDX += dx;
+		mouseDY += dy;
+	}
+
+	public static boolean gamepadIsSupported() {
+		return gamepadSupported;
+	}
+
+	/**
+	 * Returns whether the gamepad at the given navigator index is present and connected.
+	 */
+	public static boolean gamepadIsConnected(int index) {
+		if(!gamepadSupported) {
+			return false;
+		}
+		try {
+			return getGamepadConnected(index);
+		}catch(Throwable t) {
+			return false;
+		}
+	}
+
+	public static boolean gamepadGetButton(int index, int button) {
+		if(!gamepadSupported) {
+			return false;
+		}
+		try {
+			return getGamepadButton(index, button) != 0;
+		}catch(Throwable t) {
+			return false;
+		}
+	}
+
+	public static float gamepadGetAxis(int index, int axis) {
+		if(!gamepadSupported) {
+			return 0.0F;
+		}
+		try {
+			return getGamepadAxis(index, axis);
+		}catch(Throwable t) {
+			return 0.0F;
+		}
 	}
 
 	public static int mouseGetDWheel() {
