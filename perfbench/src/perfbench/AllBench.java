@@ -7,7 +7,7 @@ public final class AllBench {
             "perfbench.EmbeddedLutBench", "perfbench.VerifyGammaLut",
             "perfbench.VerifyEmbeddedLut", "perfbench.VerifyMatrixRotate",
             "perfbench.LightmapBench", "perfbench.TextureGammaBench",
-            "perfbench.MatrixRotateBench"
+            "perfbench.MatrixRotateBench", "perfbench.CrossRuntimeMathBench"
         };
         for (String t : targets) {
             System.out.println();
