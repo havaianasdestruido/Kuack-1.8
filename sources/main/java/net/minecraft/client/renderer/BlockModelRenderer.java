@@ -75,16 +75,20 @@ public class BlockModelRenderer {
 	public boolean renderModelAmbientOcclusion(IBlockAccess blockAccessIn, IBakedModel modelIn, Block blockIn,
 			BlockPos blockPosIn, WorldRenderer worldRendererIn, boolean checkSides) {
 		boolean flag = false;
-		float[] afloat = new float[EnumFacing._VALUES.length * 2];
-		BitSet bitset = new BitSet(3);
-		BlockModelRenderer.AmbientOcclusionFace blockmodelrenderer$ambientocclusionface = new BlockModelRenderer.AmbientOcclusionFace();
+		// Scratch reuse: afloat/boundsFlags/AO face are fully overwritten by fillQuadBounds and
+		// updateVertexBrightness before any read on every call (all 12 bounds entries, boundsFlags
+		// bits 0 and 1 via set(index, value), and all 8 vertex arrays through the bijective
+		// VertexTranslations permutation), so the per-block allocations below are pure garbage.
+		float[] afloat = this.aoQuadBoundsScratch;
+		BitSet bitset = this.quadBoundsFlagsScratch;
+		BlockModelRenderer.AmbientOcclusionFace blockmodelrenderer$ambientocclusionface = this.aoFaceScratch;
 
 		EnumFacing[] facings = EnumFacing._VALUES;
 		for (int i = 0; i < facings.length; ++i) {
 			EnumFacing enumfacing = facings[i];
 			List list = modelIn.getFaceQuads(enumfacing);
 			if (!list.isEmpty()) {
-				BlockPos blockpos = blockPosIn.offset(enumfacing);
+				BlockPos blockpos = blockPosIn.offsetEvenFaster(enumfacing, this.aoFacingOffsetScratch);
 				if (!checkSides || blockIn.shouldSideBeRendered(blockAccessIn, blockpos, enumfacing)) {
 					this.renderModelAmbientOcclusionQuads(blockAccessIn, blockIn, blockPosIn, worldRendererIn, list,
 							afloat, bitset, blockmodelrenderer$ambientocclusionface);
@@ -107,10 +111,10 @@ public class BlockModelRenderer {
 			BlockPos blockPosIn, WorldRenderer worldRendererIn, boolean checkSides) {
 		boolean isDeferred = DeferredStateManager.isDeferredRenderer();
 		boolean flag = false;
-		float[] afloat = isDeferred ? new float[EnumFacing._VALUES.length * 2] : null;
-		BitSet bitset = new BitSet(3);
+		float[] afloat = isDeferred ? this.standardQuadBoundsScratch : null;
+		BitSet bitset = this.quadBoundsFlagsScratch;
 
-		BlockPos.MutableBlockPos pointer = new BlockPos.MutableBlockPos();
+		BlockPos.MutableBlockPos pointer = this.standardOffsetPointerScratch;
 		EnumFacing[] facings = EnumFacing._VALUES;
 		for (int m = 0; m < facings.length; ++m) {
 			EnumFacing enumfacing = facings[m];
@@ -271,6 +275,24 @@ public class BlockModelRenderer {
 	private final BlockPos blockpos4 = new BlockPos(0, 0, 0);
 	private final BlockPos blockpos5 = new BlockPos(0, 0, 0);
 
+	/**
+	 * Per-instance scratch buffers for the mesher loops. Block meshing is single-threaded in
+	 * Eaglercraft (no worker threads reach this class; TeaVM has none), and this class has exactly
+	 * one instance (BlockRendererDispatcher). Every scratch field is completely overwritten before
+	 * any read on each use:
+	 * - fillQuadBounds writes all 12 quadBounds entries and sets boundsFlags bits 0 and 1 explicitly;
+	 * - updateVertexBrightness writes all 4 vertexColorMultiplier and 4 vertexBrightness entries in
+	 *   both branches (VertexTranslations is a bijection of 0..3);
+	 * - the deferred brightness array writes all 4 entries before putBrightness4.
+	 */
+	private final float[] aoQuadBoundsScratch = new float[EnumFacing._VALUES.length * 2];
+	private final float[] standardQuadBoundsScratch = new float[EnumFacing._VALUES.length * 2];
+	private final BitSet quadBoundsFlagsScratch = new BitSet(3);
+	private final int[] deferredBrightnessScratch = new int[4];
+	private final BlockPos.MutableBlockPos aoFacingOffsetScratch = new BlockPos.MutableBlockPos();
+	private final BlockPos.MutableBlockPos standardOffsetPointerScratch = new BlockPos.MutableBlockPos();
+	private final BlockModelRenderer.AmbientOcclusionFace aoFaceScratch = new BlockModelRenderer.AmbientOcclusionFace();
+
 	private void renderModelStandardQuads(IBlockAccess blockAccessIn, Block blockIn, BlockPos blockPosIn,
 			EnumFacing faceIn, int brightnessIn, boolean ownBrightness, WorldRenderer worldRendererIn,
 			List<BakedQuad> listQuadsIn, BitSet boundsFlags, float[] quadBounds) {
@@ -331,7 +353,7 @@ public class BlockModelRenderer {
 				blockpos2.offsetEvenFaster(blockmodelrenderer$enumneighborinfo.field_178276_g[3], blockpos5);
 				int l1 = blockIn.getMixedBrightnessForBlock(blockAccessIn, blockpos5);
 
-				int[] b = new int[4];
+				int[] b = this.deferredBrightnessScratch;
 
 				boolean upIsOpaque = !blockAccessIn.getBlockState(blockpos0).getBlock().isOpaqueCube();
 				int i3;

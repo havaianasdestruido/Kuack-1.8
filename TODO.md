@@ -20,8 +20,9 @@ everything that is **bold** is a prority.
   - [x] fixing some hotloops and removed barely used code
     - [x] math/LUT sweep: `Matrix4f.rotate` now uses the engine's sine table (2.42x per rotation) and the mipmap gamma filter uses a 256-entry decode table (4.6x) — see `perfbench/FINDINGS.md` #10/#11
     - [x] built-in PBR shader hot loops: `pow(x,5)` removed from every Fresnel term, point-light and per-light-loop culls moved before `normalize()`/the falloff divide, dead work dropped — pow/SFU pairs per invocation 3.41 → 0 in the forward light loop, 0 of 14.66 M point-lit fragments change an 8-bit output — see `perfbench/FINDINGS.md` #14 and `perfbench/shader/`
+    - [x] mesher scratch reuse: `BlockModelRenderer` no longer allocates per rendered block (−85% allocation, 1.05–1.07× on the AO path) — see `perfbench/FINDINGS.md` #21
   - [ ] particle physics: `EntityFX` runs the full entity collision path (`World.getCollidingBoundingBoxes`, 79-95 ns/call, ~0.76 ms/tick at 4,000 particles) — needs allocation reuse in collision code, tracked at the top of `perfbench/HOTSPOTS.md`
-  - [ ] `BlockModelRenderer` per-block allocations and the AO property lookups (see `perfbench/HOTSPOTS.md`)
+  - [ ] the AO property lookups in the mesher (`perfbench/HOTSPOTS.md` — a block-property LUT there was measured and rejected; the per-block allocations are now fixed)
 - [ ] toggle between reporting or not that the client is cracked (for some servers that rejects cracked users, use at your own risk, dont abuse this or you may get banned from some servers, dont be an asshole)
 - - [ ] _oficial client spoofing_
 

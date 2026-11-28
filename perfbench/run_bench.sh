@@ -66,5 +66,8 @@ TARGETS=("$@")
 if [ ${#TARGETS[@]} -eq 0 ]; then TARGETS=(perfbench.AllBench); fi
 for t in "${TARGETS[@]}"; do
   echo "==> $t"
-  "$JAVA" -Xmx2g -XX:+UseParallelGC -cp "$OUT/bench:$CP_MAIN:$STUBS" "$t"
+  # stubs first: the platform files (EagRuntime/WorldRenderer/PlatformRuntime) that cannot compile
+  # under ECJ have working bench stubs here; main-tree copies of those exact classes are error-body
+  # artifacts and must never win the shadowing contest
+  "$JAVA" -Xmx2g -XX:+UseParallelGC -cp "$OUT/bench:$STUBS:$CP_MAIN" "$t"
 done

@@ -1,5 +1,9 @@
 package net.lax1dude.eaglercraft.v1_8.internal;
 
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+
 /** Minimal JVM-side stub of the TeaVM platform runtime, enough to run server/world logic in tests. */
 public class PlatformRuntime {
 
@@ -20,5 +24,17 @@ public class PlatformRuntime {
 
     public static long steadyTimeNanos() {
         return System.nanoTime();
+    }
+
+    public static ByteBuffer allocateByteBuffer(int length) {
+        return ByteBuffer.allocateDirect(length);
+    }
+
+    public static IntBuffer allocateIntBuffer(int length) {
+        return ByteBuffer.allocateDirect(length << 2).asIntBuffer();
+    }
+
+    public static FloatBuffer allocateFloatBuffer(int length) {
+        return ByteBuffer.allocateDirect(length << 2).asFloatBuffer();
     }
 }

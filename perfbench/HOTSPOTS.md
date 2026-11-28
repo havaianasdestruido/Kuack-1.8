@@ -57,7 +57,7 @@ the frame cost and are analysed separately, with the same rules (measure, verify
 
 ## The maths/LUT sweep (this session)
 
-Full detail in `FINDINGS.md` (existing-table inventory, trig call-site census, #10–#20, and the
+Full detail in `FINDINGS.md` (existing-table inventory, trig call-site census, #10–#21, and the
 "measured rejections" table). Headlines:
 
 - **Implemented #10** — `Matrix4f.rotate` used native
@@ -125,10 +125,14 @@ Full detail in `FINDINGS.md` (existing-table inventory, trig call-site census, #
    `getPosition().getY()/16` to index `getEntityLists()`; `RenderChunk` already stores its section
    index, so both are redundant. Runs once per visible chunk per frame (~700+ at radius 12).
 2. **`BlockModelRenderer` per-block allocation** (`client/renderer/BlockModelRenderer.java:77-80`,
-   `:110-111`) — `float[12]`, `new BitSet(3)` and a fresh `AmbientOcclusionFace` are allocated for
-   *every* rendered block, i.e. up to 16k blocks per chunk-section rebuild. Safe reuse requires a
-   per-thread scratch object because chunk meshing happens on `ChunkRenderDispatcher` workers; a
-   `ThreadLocal` scratch is the natural fix.
+   `:110-111`) — **FIXED.** The per-block `float[12]`, `BitSet(3)` and `AmbientOcclusionFace`
+   allocations (plus the AO path's per-face `BlockPos`, the standard path's per-call
+   `MutableBlockPos` and the deferred path's per-quad `int[4]`) are now per-instance scratch:
+   Eaglercraft meshes chunk sections on the render thread (`ChunkUpdateManager`), so instance
+   scratch is safe and `ThreadLocal` is not needed. Measured −85% allocation per block
+   (582 → 87 B) and 1.05–1.07× interleaved median on the AO path; 1,600-case differential
+   verification against the fresh-scratch implementation with a proven-sensitive negative test.
+   See FINDINGS #21.
 3. **`Chunk.getBlockState` vs `getBlockStateFaster`** (`world/chunk/Chunk.java:481` vs `:509`) — the
    generic path goes through `getX()/getY()/getZ()` accessors where `getBlockStateFaster` reads the
    fields; meshing calls the generic form indirectly through several block methods.
@@ -144,12 +148,13 @@ Full detail in `FINDINGS.md` (existing-table inventory, trig call-site census, #
    per call (several calls per entity per tick) and walks the full padded AABB in
    x → z → y order, which has poor locality; the world-border check is also re-evaluated per block.
 6. **`World.loadedEntityList.removeAll(unloadedEntityList)`** (`world/World.java:1390`) —
-   `ArrayList.removeAll` is O(n·m) with an `equals` call per pair. Usually tiny (`m` is a few
-   despawns), so it only matters on mass-removal ticks (explosions, chunk unload, dimension change),
-   where it is the dominant cost.
+   **already fixed in HEAD** (re-verified 2026-11-27): the unload branch wraps the argument in a
+   `HashSet` when `unloadedEntityList.size() > 1`, giving O(n·1) `contains` on mass-removal ticks
+   while keeping the cheap list scan for single despawns.
 7. **`PlayerManager.PlayerInstance.playersWatchingChunk`** (`server/management/PlayerManager.java:338`)
-   — an `ArrayList` whose `contains` is O(P), reached once per (entity, player) pair via
-   `isPlayerWatchingChunk`. `TrackerBench`: 6.42× at 32 players, but ~1.0× at 1–4 players.
+   — **already fixed in HEAD** (re-verified 2026-11-27): the field is already a `LinkedHashSet`
+   (declared `Set`), so `contains` is O(1) and the per-block-change `sendToAllPlayersWatchingChunk`
+   iteration order is preserved.
 8. **`SpawnerAnimals.eligibleChunksForSpawning`** (`world/SpawnerAnimals.java:64-84`) — allocates a
    `ChunkCoordIntPair` for all `(2·8+1)²` chunks per player and hash-tests each, every spawn tick,
    although the view square only changes when the player crosses a chunk boundary.
