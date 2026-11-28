@@ -25,6 +25,7 @@ everything that is **bold** is a prority.
   - [ ] the AO property lookups in the mesher (`perfbench/HOTSPOTS.md` — a block-property LUT there was measured and rejected; the per-block allocations are now fixed)
 - [ ] toggle between reporting or not that the client is cracked (for some servers that rejects cracked users, use at your own risk, dont abuse this or you may get banned from some servers, dont be an asshole)
 - - [ ] _oficial client spoofing_
+- [x] auto-detect the system/browser language and use it as the default language instead of always `en_US` (an explicit or saved `lang:` option still overrides it, and unsupported languages fall back to `en_US`)
 
 ## stuff i may add later
 
