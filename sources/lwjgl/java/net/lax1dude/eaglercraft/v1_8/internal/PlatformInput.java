@@ -234,6 +234,19 @@ public class PlatformInput {
 		return true;
 	}
 
+	/**
+	 * Desktop frames are paced by the GL swap (glfwSwapBuffers), not by a callback this class
+	 * could time, so there is no measured refresh rate to report. Returning 0 keeps
+	 * Display.sync on the classic "sleep whatever is left of the frame budget" behaviour.
+	 */
+	public static int getEstimatedRefreshRate() {
+		return 0;
+	}
+
+	public static boolean isVSyncEnabled() {
+		return vsync;
+	}
+
 	public static boolean wasResized() {
 		boolean b = windowResized;
 		windowResized = false;

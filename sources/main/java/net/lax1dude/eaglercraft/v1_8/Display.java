@@ -21,6 +21,13 @@ public class Display {
 
 	private static long lastSwap = 0l;
 
+	/**
+	 * Slack subtracted from the frame limiter's wait when the loop is paced by
+	 * requestAnimationFrame. It makes the loop resume just before the vsync it is aiming at
+	 * instead of exactly on it, which is what keeps the limiter from stealing a whole frame.
+	 */
+	private static final long FRAME_LIMIT_GUARD_MILLIS = 2l;
+
 	public static int getWidth() {
 		return PlatformInput.getWindowWidth();
 	}
@@ -59,16 +66,40 @@ public class Display {
 
 	public static void sync(int limitFramerate) {
 		boolean limitFPS = limitFramerate > 0 && limitFramerate < 1000;
-		
+
 		if(limitFPS) {
-			long millis = System.currentTimeMillis();
-			long frameMillis = (1000l / limitFramerate) - (millis - lastSwap);
-			if(frameMillis > 0l) {
-				EagUtils.sleep(frameMillis);
+			// On the browser runtime the loop is restarted from requestAnimationFrame, so every
+			// frame has already waited for the next display refresh by the time it gets here.
+			// Sleeping on top of that wait is what made the camera appear to move in steps: the
+			// extra delay pushes the next frame past the vsync it was aiming for, so the loop
+			// alternates between presenting on one refresh and on two (a "60 fps" that visibly
+			// judders). Only wait when the requested cap is genuinely below the display rate,
+			// i.e. when requestAnimationFrame cannot enforce it on its own.
+			int refreshRate = PlatformInput.getEstimatedRefreshRate();
+			boolean pacedByDisplay = refreshRate > 0
+					&& (limitFramerate >= refreshRate - 1 || !PlatformInput.isVSyncEnabled());
+			if(!pacedByDisplay) {
+				long millis = System.currentTimeMillis();
+				long frameMillis = (1000l / limitFramerate) - (millis - lastSwap);
+				if(refreshRate > 0) {
+					frameMillis -= FRAME_LIMIT_GUARD_MILLIS;
+				}
+				if(frameMillis > 0l) {
+					EagUtils.sleep(frameMillis);
+				}
 			}
 		}
-		
+
 		lastSwap = System.currentTimeMillis();
+	}
+
+	/**
+	 * The display refresh rate in Hz estimated from requestAnimationFrame callbacks, or 0 when
+	 * the platform does not pace frames that way (desktop, or a browser without
+	 * requestAnimationFrame support).
+	 */
+	public static int getEstimatedRefreshRate() {
+		return PlatformInput.getEstimatedRefreshRate();
 	}
 
 	public static boolean contextLost() {
