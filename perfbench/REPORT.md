@@ -289,15 +289,13 @@ Measured and deliberately **not** changed, because the only available fixes woul
 caches (which the task forbids): `EnchantmentHelper.getMaxEnchantmentLevel` (129.3 ns/call, 3×/frame)
 and `World.countEntities` (0.016 ms per spawn tick at 4,000 entities).
 
-**The maths/LUT sweep.** The engine's transcendentals are already 99 % tabulated (`SIN_TABLE`,
+**The maths/LUT sweep.** The engine's transcendentals are already mostly tabulated (`SIN_TABLE`,
 `func_181159_b`'s 257-entry asin/cos tables, the De Bruijn log2, the noise gradient tables, the light
-brightness table). The two sites that had escaped the tables are fixed above (#10, #11); everything
-else that looked like a table candidate was measured and rejected — sqrt LUT, magic-number rsqrt in
-JavaScript (11.8 ns vs 1.6 ns for `Math.sqrt`), smaller/lerped sine tables (slower than the existing
-65,536-entry one), dropping `Math.fround` from `MathHelper.sin/cos` (1.9× but it perturbs worldgen
-seeds), degree tables, `%`-free `wrapAngleTo180_*`, floor LUT (already at parity), `atan2` tables,
-block-property tables in the AO mesher, and `pow(2.718,-x)` → `exp`. Full table with numbers in
-`FINDINGS.md`.
+brightness table). The initial session fixed #10 and #11 above; the subsequent **2026-11-27 cross-runtime
+addendum** below adds exact binary64 gamma encode threshold/bucket LUTs, JS-only `Math.atan2` &
+`1/Math.sqrt` dispatch in `MathHelper`, rotational-symmetry trig reductions, `sqrt(sqrt(f))`,
+`Math.exp(-x * LN_2_718)`, `BlockNote.PITCH_TABLE[25]`, and `(d1*d1)*(d1*d1)`. Full table of
+shipped improvements and measured rejections in `FINDINGS.md`.
 
 ---
 
@@ -473,3 +471,44 @@ has no `javac`; after the visibility fix a temporary ECJ shim compiled all 2,452
 JDK 17 `javac`, license-restricted inputs and the Maven TeaVM cache. The one-time JVM/JS startup
 regression from embedding constants is documented and accepted, not hidden. No numbers are fabricated
 for unavailable environments.
+
+---
+
+## Addendum — 2026-11-27 cross-runtime pass (exact encode LUTs, JS dispatch, trig symmetry, algebraic `pow`)
+
+Building on the 2026-11-26 foundation, this pass extends optimization coverage across **HotSpot JDK 17**, **HotSpot JDK 25**, and **TeaVM 0.9.2 / V8 12.4** (`./perfbench/run_all.sh` passed all 16 steps; logs in `perfbench/results/*.txt`). **Full-game FPS / Chromium runtime remains unavailable in this sandbox.**
+
+### Additional production files and methods modified
+
+| File | Change | Verification / equivalence |
+|---|---|---|
+| `sources/main/java/net/minecraft/client/renderer/texture/GeneratedGammaTables.java` | Regenerated (`27,871` B) via `perfbench/gen_luts.py --gamma-only` adding exact binary64 encode thresholds & 513-entry `sqrt(x)` buckets (`THRESH_BLEND[257]`, `BUCKET_BLEND[513]`, `THRESH_COMP_JAVA/TEAVM[257]`, `BUCKET_COMP_JAVA/TEAVM[513]`) | `gen_luts.py --check` (`IDENTICAL`), `1,065,353,217` f32 + `256^4` 4-texel proof, `VerifyEmbeddedLut` (`401,297 / 0`) |
+| `sources/main/java/net/minecraft/client/renderer/texture/MipmapGammaBlend.java` | Replaced runtime `Math.pow` encode calls with `encodeBlend`/`encodeComponent` using exact thresholds & `sqrt` buckets; unrolled linear path inline inside `blend` (`239` B bytecode -> HotSpot C2 `inline (hot)`) and removed `mipmapBuffer` | `VerifyGammaLut` (`12,442,624 / 0`); TeaVM `203,072 / 0` (`blend`) & `16,384 / 0` (`blendComponent`) |
+| `sources/main/java/net/minecraft/util/MathHelper.java` | `IS_JAVASCRIPT = EagRuntime.getPlatformType() == EnumPlatformType.JAVASCRIPT`: JS `func_181159_b` calls `Math.atan2` (`3.74×`), `func_181161_i` calls `1.0 / Math.sqrt` (`6.23×`), skips `field_181164_e/f` init; JVM keeps bit-identical bit-op fast path (`5.77×` JDK 17) | `mhAtan2MaxErr = 7.423e-6` rad; TeaVM `4,097 / 0` (`atan2`) & `4,096 / 0` (`rsqrt`) |
+| `sources/main/java/net/minecraft/client/renderer/tileentity/TileEntityBeaconRenderer.java` | Rotational-symmetry trig reduction (`8 → 2` `Math.cos`/`sin` per beam) | `beaconMaxAbs = 2.220e-16`; TeaVM `4,096 / 0` |
+| `sources/main/java/net/minecraft/client/renderer/entity/RenderGuardian.java` | Rotational-symmetry trig reduction (`16 → 2` `Math.cos`/`sin` per beam) | `guardianMaxAbs = 2.776e-16`; TeaVM `4,096 / 0` |
+| `sources/main/java/net/minecraft/client/renderer/EntityRenderer.java` | `updateFogColor`: `Math.pow(f, 0.25D) → Math.sqrt(Math.sqrt(f))` | `fogBitDiffs = 0` (JDK 17/25); TeaVM `64 / 0` |
+| `sources/main/java/net/lax1dude/eaglercraft/v1_8/opengl/InstancedFontRenderer.java` | `Math.pow(2.718D, -x) → Math.exp(-x * LN_2_718)` (`LN_2_718 = Math.log(2.718D)`) | `fontMaxUlp = 0`; TeaVM `4,096 / 0` |
+| `sources/main/java/net/minecraft/block/BlockNote.java` | `PITCH_TABLE[25]` exact constants with `0..24` clamp replacing `Math.pow(2, (note - 12) / 12)` | `noteBitDiffs = 0`; `test_note_pitch_table_is_25_constants` |
+| `sources/main/java/net/minecraft/client/renderer/RenderGlobal.java` | `renderWorldBorder`: `Math.pow(d1, 4.0D) → (d1 * d1) * (d1 * d1)` | `borderMaxAbs = 0.000e+00` |
+
+### Freshly captured cross-runtime benchmark snapshot (`2026-11-27`)
+
+| Kernel / Workload | HotSpot JDK 17 | HotSpot JDK 25 | TeaVM 0.9.2 / V8 12.4 |
+|---|---|---|---|
+| Mipmap 1 texel (linear / gamma) | `485.03→27.71` (`17.50×`) / `543.30→32.15 ns` (`16.90×`) | `429.88→38.08` (`11.29×`) / `366.12→29.98 ns` (`12.21×`) | `1,723.4→155.4` (`11.09×`) / `1,701.8→247.0 ns` (`6.89×`) |
+| Mipmap 16×16 chain (linear / gamma) | `40.20→3.67` (`10.96×`) / `48.03→1.92 µs` (`24.96×`) | `35.52→1.85` (`19.16×`) / `31.84→1.88 µs` (`16.98×`) | — (`decode_lut` `83.82→3.60 ns`, `23.28×`) |
+| Mipmap 1,024-sprite atlas (linear / gamma) | `44.72→4.78` (`9.35×`) / `51.12→4.57 ms` (`11.17×`) | `37.52→4.80` (`7.82×`) / `33.77→4.59 ms` (`7.36×`) | — |
+| `MathHelper.func_181159_b` (`atan2`) | `59.09→10.25 ns` (`5.77×`, bit-op kept) | `23.52→9.64 ns` (`2.44×`, bit-op kept) | `139.490→37.345 ns` (`3.74×`, `Math.atan2` JS dispatch) |
+| `MathHelper.func_181161_i` (`rsqrt`) | bit-op kept | bit-op kept | `55.588→8.919 ns` (`6.23×`, `1/Math.sqrt` JS dispatch) |
+| `TileEntityBeaconRenderer` (`8→2` trig) | `93.00→26.68 ns` (`3.49×`) | `89.40→27.67 ns` (`3.23×`) | `117.331→37.687 ns` (`3.11×`) |
+| `RenderGuardian` (`16→2` trig) | `181.80→33.52 ns` (`5.42×`) | `169.97→31.62 ns` (`5.38×`) | `215.071→38.197 ns` (`5.63×`) |
+| `EntityRenderer.updateFogColor` (`pow→sqrt(sqrt)`) | `25.59→10.91 ns` (`2.35×`) | `19.17→3.66 ns` (`5.24×`) | `60.038→3.721 ns` (`16.14×`) |
+| `InstancedFontRenderer` (`pow→exp`) | `21.66→18.53 ns` (`1.17×`) | `17.70→8.73 ns` (`2.03×`) | `71.659→12.928 ns` (`5.54×`) |
+| `BlockNote` pitch (`pow→25-LUT`) | `26.90→1.41 ns` (`19.13×`) | `16.82→1.38 ns` (`12.22×`) | `56.88→5.31 ns` (`10.71×` isolated TeaVM probe) |
+| `RenderGlobal` worldBorder (`pow→(d*d)^2`) | `31.91→1.71 ns` (`18.70×`) | `16.54→1.21 ns` (`13.64×`) | `101.29→1.18 ns` (`85.82×` isolated TeaVM probe) |
+| `EntityRenderer.updateLightmap` CSE | `5.181→4.831 µs` (`1.07×`) | `5.085→4.737 µs` (`1.07×`) | `9,577→8,982 ns` (`1.07×`) |
+
+- **Gate summary (`2026-11-27`):** `python3 -m unittest discover -s tests -v`: **13 / 13 OK**; ECJ full-tree compile gate (JDK 17 & JDK 25): **1,524 problems / 104 files** vs pristine baseline **1,525 / 105** (`0` new failures); HotSpot JFR (`16-hotspot-jit-jfr`): `MipmapGammaBlend.blend` (239 B) and `encodeComponent` (62 B) compile as `inline (hot)` with zero `Math.pow` in the shipped filter path; WASM (`n=65,536`): `27.85×` (`2.941 ns/op`); Native C (`n=65,536`): `18.55×` (`1.177 ns/op`).
+- **Additional measured rejections:** `WorldGenBigTree.pow(x, 2.0) → x*x` (slower on JDK 17 `159.8→201.6 ns` and V8 `162.6→198.3 ns`), `GlStateManager.gluPerspective` `cos/sin → 1/tan` (neutral on V8 `14.38→14.46 ns`), `ModelDragon.render` CSE (slightly slower on V8 `849.3→861.9 ns`), and polynomial/`PureAtan2Lut` `atan2` (slower than HotSpot bit-ops and V8 `Math.atan2`).
+

@@ -1667,7 +1667,7 @@ public class EntityRenderer implements IResourceManagerReloadListener {
 		WorldClient worldclient = this.mc.theWorld;
 		Entity entity = this.mc.getRenderViewEntity();
 		float f = 0.25F + 0.75F * (float) this.mc.gameSettings.renderDistanceChunks / 32.0F;
-		f = 1.0F - (float) Math.pow((double) f, 0.25D);
+		f = 1.0F - (float) Math.sqrt(Math.sqrt((double) f));
 		Vec3 vec3 = worldclient.getSkyColor(this.mc.getRenderViewEntity(), partialTicks);
 		float f1 = (float) vec3.xCoord;
 		float f2 = (float) vec3.yCoord;

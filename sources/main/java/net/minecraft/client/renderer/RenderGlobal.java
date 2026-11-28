@@ -1816,7 +1816,8 @@ public class RenderGlobal implements IWorldAccess, IResourceManagerReloadListene
 		if (partialTicks.posX >= worldborder.maxX() - d0 || partialTicks.posX <= worldborder.minX() + d0
 				|| partialTicks.posZ >= worldborder.maxZ() - d0 || partialTicks.posZ <= worldborder.minZ() + d0) {
 			double d1 = 1.0D - worldborder.getClosestDistance(partialTicks) / d0;
-			d1 = Math.pow(d1, 4.0D);
+			double d1Sq = d1 * d1;
+			d1 = d1Sq * d1Sq;
 			double d2 = partialTicks.lastTickPosX
 					+ (partialTicks.posX - partialTicks.lastTickPosX) * (double) parFloat1;
 			double d3 = partialTicks.lastTickPosY

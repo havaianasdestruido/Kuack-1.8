@@ -42,6 +42,7 @@ public class InstancedFontRenderer {
 
 	private static final int BYTES_PER_CHARACTER = 10;
 	private static final int CHARACTER_LIMIT = 6553;
+	private static final double LN_2_718 = 0.999896315728952D;
 
 	private static IProgramGL shaderProgram = null;
 	private static IUniformGL u_matrixTransform = null;
@@ -325,7 +326,7 @@ public class InstancedFontRenderer {
 
 			float fogFactor = (float) Math.sqrt(vec4.x + vec4.y + vec4.z);
 			if(GlStateManager.stateFogEXP) {
-				fogFactor = 1.0f - (float) Math.pow(2.718, -(GlStateManager.stateFogDensity * fogFactor));
+				fogFactor = 1.0f - (float) Math.exp(-(GlStateManager.stateFogDensity * fogFactor) * LN_2_718);
 			}else {
 				fogFactor = (fogFactor - GlStateManager.stateFogStart) / (GlStateManager.stateFogEnd - GlStateManager.stateFogStart);
 			}

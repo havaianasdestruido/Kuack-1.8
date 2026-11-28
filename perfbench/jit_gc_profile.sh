@@ -17,9 +17,9 @@ echo "=== HotSpot JIT / JFR profile ($("$JDK/bin/java" -version 2>&1 | head -1))
   > "$OUT/jit_gc.log" 2>&1
 echo
 echo "-- JIT evidence (first relevant lines) --"
-grep -E "MipmapGammaBlend::gamma22|MipmapGammaBlend::blend" "$OUT/jit_gc.log" | head -8 || true
-grep -E "MipmapGammaBlend::gamma22.*inline \(hot\)" "$OUT/jit_gc.log" | head -4 || true
-grep -E "java.lang.Math::pow.*intrinsic" "$OUT/jit_gc.log" | head -4 || true
+grep -E "MipmapGammaBlend::(blend|encode|gamma22)" "$OUT/jit_gc.log" | head -12 || true
+grep -E "MipmapGammaBlend::(blend|encode|gamma22).*inline \(hot\)" "$OUT/jit_gc.log" | head -8 || true
+grep -E "java.lang.Math::(pow|sqrt).*intrinsic" "$OUT/jit_gc.log" | head -6 || true
 echo
 echo "-- JFR event summary --"
 "$JDK/bin/jfr" summary "$OUT/gamma.jfr" | grep -E "Event Type|jdk.GarbageCollection|jdk.ObjectAllocationSample|jdk.ThreadAllocationStatistics|jdk.YoungGarbageCollection" || true
