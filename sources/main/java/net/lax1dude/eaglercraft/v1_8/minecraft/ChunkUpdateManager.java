@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.lax1dude.eaglercraft.v1_8.PerformancePresets;
 import net.lax1dude.eaglercraft.v1_8.log4j.LogManager;
 import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
 import net.lax1dude.eaglercraft.v1_8.opengl.EaglercraftGPU;
@@ -115,6 +116,11 @@ public class ChunkUpdateManager {
 
 		boolean didWork = false;
 		long millis = System.currentTimeMillis();
+		Minecraft mc = Minecraft.getMinecraft();
+		int maxUpdates = (mc != null && mc.gameSettings != null)
+				? PerformancePresets.getMaxChunkUpdatesPerFrame(mc.gameSettings.performancePreset)
+				: Integer.MAX_VALUE;
+		int updatesThisFrame = 0;
 		List<ChunkCompileTaskGenerator> deferred = new ArrayList<>();
 		while (!queue.isEmpty()) {
 			int bestIndex = -1;
@@ -163,8 +169,9 @@ public class ChunkUpdateManager {
 			runGenerator(task, entity);
 			didWork = true;
 			++chunkUpdatesTotal;
+			++updatesThisFrame;
 
-			if (timeout < System.nanoTime()) {
+			if (updatesThisFrame >= maxUpdates || timeout < System.nanoTime()) {
 				break;
 			}
 		}

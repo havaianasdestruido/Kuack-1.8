@@ -65,8 +65,10 @@ public class GuiVideoSettings extends GuiScreen {
 	public void initGui() {
 		this.screenTitle = I18n.format("options.videoTitle", new Object[0]);
 		this.buttonList.clear();
-		this.buttonList.add(
-				new GuiButton(200, this.width / 2 - 100, this.height - 27, I18n.format("gui.done", new Object[0])));
+		this.buttonList.add(new GuiButton(201, this.width / 2 - 155, this.height - 27, 150, 20,
+				I18n.format("options.performancePresetsButton", new Object[0])));
+		this.buttonList.add(new GuiButton(200, this.width / 2 + 5, this.height - 27, 150, 20,
+				I18n.format("gui.done", new Object[0])));
 		this.optionsRowList = new GuiOptionsRowList(this.mc, this.width, this.height, 32, this.height - 32, 25,
 				videoOptions);
 	}
@@ -88,6 +90,9 @@ public class GuiVideoSettings extends GuiScreen {
 			if (parGuiButton.id == 200) {
 				this.mc.gameSettings.saveOptions();
 				this.mc.displayGuiScreen(this.parentGuiScreen);
+			} else if (parGuiButton.id == 201) {
+				this.mc.gameSettings.saveOptions();
+				this.mc.displayGuiScreen(new GuiPerformancePresets(this, this.guiGameSettings));
 			}
 
 		}

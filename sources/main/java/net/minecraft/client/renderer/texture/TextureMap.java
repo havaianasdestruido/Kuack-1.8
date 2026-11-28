@@ -15,6 +15,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import net.lax1dude.eaglercraft.v1_8.HString;
+import net.lax1dude.eaglercraft.v1_8.PerformancePresets;
 import net.lax1dude.eaglercraft.v1_8.internal.IFramebufferGL;
 import net.lax1dude.eaglercraft.v1_8.log4j.LogManager;
 import net.lax1dude.eaglercraft.v1_8.log4j.Logger;
@@ -513,6 +514,11 @@ public class TextureMap extends AbstractTexture implements ITickableTextureObjec
 	}
 
 	public void updateAnimations() {
+		Minecraft mc = Minecraft.getMinecraft();
+		if (mc != null && mc.gameSettings != null
+				&& !PerformancePresets.areTextureAnimationsEnabled(mc.gameSettings.performancePreset)) {
+			return;
+		}
 		if (isEaglerPBRMode) {
 			for (int i = 0, l = this.listAnimatedSprites.size(); i < l; ++i) {
 				this.listAnimatedSprites.get(i).updateAnimationPBR(copyColorFramebuffer, copyMaterialFramebuffer,
