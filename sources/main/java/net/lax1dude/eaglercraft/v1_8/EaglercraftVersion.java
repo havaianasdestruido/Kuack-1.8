@@ -10,7 +10,7 @@ public class EaglercraftVersion {
 	/// Customize these to fit your fork:
 	
 	public static final String projectForkName = "Kuack";
-	public static final String projectForkVersion = "pre-alpha o algo";
+	public static final String projectForkVersion = "pre-alpha - dont actually use it, full of bugs";
 	public static final String projectForkVendor = "havaianasdestruido";
 	
 	public static final String projectForkURL = "https://github.com/havaianasdestruido/Kuack-1.8";
