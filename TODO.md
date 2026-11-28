@@ -21,6 +21,7 @@ everything that is **bold** is a prority.
   - [ ] `BlockModelRenderer` per-block allocations and the AO property lookups (see `perfbench/HOTSPOTS.md`)
 - [ ] toggle between reporting or not that the client is cracked (for some servers that rejects cracked users, use at your own risk, dont abuse this or you may get banned from some servers, dont be an asshole)
 - - [ ] _oficial client spoofing_
+- [x] auto-detect the system/browser language and use it as the default language instead of always `en_US` (an explicit or saved `lang:` option still overrides it, and unsupported languages fall back to `en_US`)
 
 ## stuff i may add later
 

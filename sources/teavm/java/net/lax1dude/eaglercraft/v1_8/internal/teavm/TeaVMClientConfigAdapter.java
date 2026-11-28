@@ -9,11 +9,13 @@ import net.lax1dude.eaglercraft.v1_8.ThreadLocalRandom;
 import net.lax1dude.eaglercraft.v1_8.sp.relay.RelayManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.core.JSArrayReader;
 
 import net.lax1dude.eaglercraft.v1_8.internal.IClientConfigAdapter;
 import net.lax1dude.eaglercraft.v1_8.internal.IClientConfigAdapterHooks;
+import net.lax1dude.eaglercraft.v1_8.internal.SystemLanguage;
 import net.lax1dude.eaglercraft.v1_8.internal.teavm.opts.JSEaglercraftXOptsHooks;
 import net.lax1dude.eaglercraft.v1_8.internal.teavm.opts.JSEaglercraftXOptsRelay;
 import net.lax1dude.eaglercraft.v1_8.internal.teavm.opts.JSEaglercraftXOptsRoot;
@@ -39,7 +41,7 @@ public class TeaVMClientConfigAdapter implements IClientConfigAdapter {
 
 	public static final IClientConfigAdapter instance = new TeaVMClientConfigAdapter();
 
-	private String defaultLocale = "en_US";
+	private String defaultLocale = null;
 	private List<DefaultServer> defaultServers = new ArrayList();
 	private List<RelayEntry> relays = new ArrayList();
 	private String serverToJoin = null;   
@@ -66,7 +68,10 @@ public class TeaVMClientConfigAdapter implements IClientConfigAdapter {
 		integratedServerOpts = new JSONObject();
 		JSEaglercraftXOptsRoot eaglercraftXOpts = (JSEaglercraftXOptsRoot)jsObject;
 		
-		defaultLocale = eaglercraftXOpts.getLang("en_US");
+		defaultLocale = eaglercraftXOpts.getLang(null);
+		if (defaultLocale != null && defaultLocale.trim().isEmpty()) {
+			defaultLocale = null;
+		}
 		serverToJoin = eaglercraftXOpts.getJoinServer(null);
 		worldsDB = eaglercraftXOpts.getWorldsDB("worlds");
 		resourcePacksDB = eaglercraftXOpts.getResourcePacksDB("resourcePacks");
@@ -90,7 +95,6 @@ public class TeaVMClientConfigAdapter implements IClientConfigAdapter {
 
 		integratedServerOpts.put("worldsDB", worldsDB);
 		integratedServerOpts.put("demoMode", demoMode);
-		integratedServerOpts.put("lang", defaultLocale);
 		integratedServerOpts.put("allowUpdateSvc", isAllowUpdateSvc);
 		integratedServerOpts.put("allowUpdateDL", isAllowUpdateDL);
 		integratedServerOpts.put("allowVoiceClient", allowVoiceClient);
@@ -158,7 +162,10 @@ public class TeaVMClientConfigAdapter implements IClientConfigAdapter {
 
 	public void loadJSON(JSONObject eaglercraftOpts) {
 		integratedServerOpts = eaglercraftOpts;
-		defaultLocale = eaglercraftOpts.optString("lang", "en_US");
+		defaultLocale = eaglercraftOpts.optString("lang", null);
+		if (defaultLocale != null && defaultLocale.trim().isEmpty()) {
+			defaultLocale = null;
+		}
 		serverToJoin = eaglercraftOpts.optString("joinServer", null);
 		worldsDB = eaglercraftOpts.optString("worldsDB", "worlds");
 		resourcePacksDB = eaglercraftOpts.optString("resourcePacksDB", "resourcePacks");
@@ -237,8 +244,34 @@ public class TeaVMClientConfigAdapter implements IClientConfigAdapter {
 
 	@Override
 	public String getDefaultLocale() {
-		return defaultLocale;
+		if (defaultLocale == null) {
+			// no lang option in eaglercraftXOpts: default to the language the
+			// browser/OS reports, falling back to en_US when it is not supported
+			String detected = SystemLanguage.detect(getSystemLanguageTags());
+			if (detected != null) {
+				defaultLocale = detected;
+			}
+		}
+		return defaultLocale != null ? defaultLocale : SystemLanguage.DEFAULT_LOCALE;
 	}
+
+	@JSBody(script = "try {"
+			+ "var nav = (typeof navigator !== \"undefined\") ? navigator : null;"
+			+ "if (!nav) return \"\";"
+			+ "var list = [];"
+			+ "if (nav.languages && nav.languages.length > 0) {"
+			+ "for (var i = 0; i < nav.languages.length && i < 8; ++i) {"
+			+ "var s = nav.languages[i];"
+			+ "if (typeof s === \"string\" && s.length > 0 && list.indexOf(s) < 0) list.push(s);"
+			+ "}}"
+			+ "if (list.length === 0) {"
+			+ "var t = (typeof nav.language === \"string\" && nav.language.length > 0) ? nav.language"
+			+ ": ((typeof nav.userLanguage === \"string\" && nav.userLanguage.length > 0) ? nav.userLanguage : \"\");"
+			+ "if (t) list.push(t);"
+			+ "}"
+			+ "return list.join(\",\");"
+			+ "} catch(e) { return \"\"; }")
+	private static native String getSystemLanguageTags();
 
 	@Override
 	public List<DefaultServer> getDefaultServerList() {
@@ -262,6 +295,11 @@ public class TeaVMClientConfigAdapter implements IClientConfigAdapter {
 
 	@Override
 	public JSONObject getIntegratedServerOpts() {
+		if (integratedServerOpts != null) {
+			// resolve the detected default here so the integrated server
+			// worker receives the same language as the client
+			integratedServerOpts.put("lang", getDefaultLocale());
+		}
 		return integratedServerOpts;
 	}
 
@@ -348,7 +386,7 @@ public class TeaVMClientConfigAdapter implements IClientConfigAdapter {
 	@Override
 	public String toString() {
 		JSONObject jsonObject = new JSONObject();
-		jsonObject.put("lang", defaultLocale);
+		jsonObject.put("lang", getDefaultLocale());
 		jsonObject.put("joinServer", serverToJoin);
 		jsonObject.put("worldsDB", worldsDB);
 		jsonObject.put("resourcePacksDB", resourcePacksDB);

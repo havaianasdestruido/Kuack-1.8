@@ -2,6 +2,7 @@ package net.lax1dude.eaglercraft.v1_8.internal.lwjgl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.json.JSONObject;
 
@@ -9,6 +10,7 @@ import net.lax1dude.eaglercraft.v1_8.EaglercraftRandom;
 import net.lax1dude.eaglercraft.v1_8.EaglercraftVersion;
 import net.lax1dude.eaglercraft.v1_8.internal.IClientConfigAdapter;
 import net.lax1dude.eaglercraft.v1_8.internal.IClientConfigAdapterHooks;
+import net.lax1dude.eaglercraft.v1_8.internal.SystemLanguage;
 import net.lax1dude.eaglercraft.v1_8.sp.relay.RelayEntry;
 
 /**
@@ -34,9 +36,19 @@ public class DesktopClientConfigAdapter implements IClientConfigAdapter {
 
 	private final DesktopClientConfigAdapterHooks hooks = new DesktopClientConfigAdapterHooks();
 
+	private String defaultLocale = null;
+
 	@Override
 	public String getDefaultLocale() {
-		return "en_US";
+		if (defaultLocale == null) {
+			// default to the language of the operating system, falling back
+			// to en_US when it is not supported or has no language file
+			String detected = SystemLanguage.detect(Locale.getDefault().toLanguageTag());
+			if (detected != null) {
+				defaultLocale = detected;
+			}
+		}
+		return defaultLocale != null ? defaultLocale : SystemLanguage.DEFAULT_LOCALE;
 	}
 
 	@Override
