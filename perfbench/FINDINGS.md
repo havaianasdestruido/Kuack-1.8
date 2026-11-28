@@ -628,3 +628,44 @@ observation.
 - **A smaller table with interpolation is slower than a bigger step table.** Linear interpolation
   costs two dependent loads plus a multiply-add, which dominates any L1 saving: 2.34 ns (4,096 lerp)
   vs 1.09 ns (65,536 step). LUTs beat libm but they do not beat each other on size.
+
+---
+
+## #14 FNAW character meshes (`assets/eagler/mesh/*.mdl`) — QEM decimation + Forsyth vertex-cache reordering
+
+**Files:** `sources/resources/assets/eagler/mesh/*.mdl` (all 15 meshes across the 5 `HighPolySkin`
+characters), `scripts/optimize_fnaw_meshes.py`, `perfbench/js/bench_fnaw_meshes.js`,
+`tests/test_fnaw_meshes.py`
+
+**Bottleneck.** The five FNAW player skins (`LONG_ARMS`, `WEIRD_CLIMBER_DUDE`, `LAXATIVE_DUDE`,
+`BABY_CHARLES`, `BABY_WINSTON`) pack 3,470 vertices and 4,875 triangles across 15 `.mdl` files
+(112,785 B raw / 111,570 B GPU VBO+IBO), and their original index buffers had poor post-transform
+vertex cache locality (average ACMR 1.47 on a 32-entry FIFO, up to 1.96 on `weirdclimber0.mdl` and
+1.84 on `longarms0.mdl`, causing 7,181 shaded vertices per full-suite pass).
+
+**Fix.**
+- **QEM edge-collapse decimation** (`scripts/optimize_fnaw_meshes.py`, `--ratio 0.70 --eye-ratio 0.70 --max-err 0.020`):
+  reduces triangle count by 30.1 % while preserving open boundary loops (skirt/torso seams), UV
+  island seams, manifold link conditions, triangle winding, connected components, and bounding
+  boxes (RMS surface deviation 0.0016–0.0068 model units, max ≤ 0.0196).
+- **Tom Forsyth linear-speed vertex-cache optimization + pre-transform vertex remapping**: reorders
+  triangles for a 32-entry post-transform FIFO and remaps vertices in order of first reference,
+  cutting post-transform shaded vertices across all 15 meshes from 7,181 to 2,834 (**−60.5 %**,
+  overall ACMR 1.473 → 0.831).
+
+**Verification.** `tests/test_fnaw_meshes.py` verifies the exact `EaglerMeshLoader.reloadMesh`
+binary contract, index bounds, non-zero normals, zero degenerate/non-manifold triangles, preserved
+connected component counts, and vertex/triangle/byte budgets across all 15 `.mdl` files.
+
+**Benchmark** (`node perfbench/js/bench_fnaw_meshes.js`):
+
+| Metric | Before | After | Change / Speedup |
+|---|---:|---:|---:|
+| Total vertices (15 meshes) | 3,470 | 2,670 | −23.1 % |
+| Total triangles (15 meshes) | 4,875 | 3,409 | −30.1 % |
+| Asset file size (`.mdl` raw / gzip-9) | 112,785 B / 83,013 B | 85,029 B / 60,613 B | −24.6 % / −27.0 % |
+| GPU VBO + IBO memory | 111,570 B | 83,814 B | −24.9 % |
+| Shaded vertices (32-FIFO, all 15 meshes) | 7,181 (ACMR 1.47) | 2,834 (ACMR 0.83) | −60.5 % (2.53× fewer) |
+| `EaglerMeshLoader` decode (all 15 meshes) | 104.56 µs | 81.86 µs | **1.28×** |
+| Vertex transform + 32-FIFO (20 FNAW players) | 1,843.33 µs | 1,144.88 µs | **1.61×** |
+
