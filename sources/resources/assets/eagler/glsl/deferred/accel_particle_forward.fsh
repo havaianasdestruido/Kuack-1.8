@@ -208,16 +208,20 @@ void main() {
 	int safeLightCount = u_dynamicLightCount1i > 12 ? 0 : u_dynamicLightCount1i; // hate this
 	for(int i = 0; i < safeLightCount; ++i) {
 		dlightDist3f = worldPosition4f.xyz - u_dynamicLightArray[i].u_lightPosition4f.xyz;
-		dlightDir3f = normalize(dlightDist3f);
-		dlightDir3f = dlightDir3f * (dot(dlightDir3f, normalVector3f) < 0.0 ? 1.0 : -1.0);
+		float dlightDist2f = dot(dlightDist3f, dlightDist3f);
+		vec3 dlightRadiance3f = u_dynamicLightArray[i].u_lightColor4f.rgb;
+		// The 0.025 cut-off is moved across the 1/dist2 falloff (a positive scale) so that
+		// lights too dim to matter are rejected before the normalise() below.
+		if(dlightRadiance3f.r + dlightRadiance3f.g + dlightRadiance3f.b < 0.025 * dlightDist2f) {
+			continue;
+		}
+		dlightDir3f = dlightDist3f * inversesqrt(dlightDist2f);
+		dlightDir3f *= dot(dlightDir3f, normalVector3f) < 0.0 ? 1.0 : -1.0;
 		dlightDir3f = materialData3f.b == 1.0 ? normalVector3f : -dlightDir3f;
 		if(dot(dlightDir3f, normalVector3f) <= 0.0) {
 			continue;
 		}
-		dlightColor3f = u_dynamicLightArray[i].u_lightColor4f.rgb / dot(dlightDist3f, dlightDist3f);
-		if(dlightColor3f.r + dlightColor3f.g + dlightColor3f.b < 0.025) {
-			continue;
-		}
+		dlightColor3f = dlightRadiance3f / dlightDist2f;
 		lightColor3f += eaglercraftLighting(diffuseColor4f.rgb, dlightColor3f, -worldDirection4f.xyz, dlightDir3f, normalVector3f, materialData3f, metalN, metalK) * u_blockSkySunDynamicLightFac4f.w;
 	}
 

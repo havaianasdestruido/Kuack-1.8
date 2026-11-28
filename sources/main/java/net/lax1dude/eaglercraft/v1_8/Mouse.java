@@ -60,6 +60,14 @@ public class Mouse {
 		return PlatformInput.mouseIsButtonDown(i);
 	}
 
+	/**
+	 * Queues a synthetic mouse button event so the game's normal mouse handling
+	 * processes it exactly like a real mouse button.
+	 */
+	public static void queueSyntheticButton(int button, boolean pressed) {
+		PlatformInput.mouseQueueSyntheticEvent(button, pressed);
+	}
+
 	public static int getDWheel() {
 		return PlatformInput.mouseGetDWheel();
 	}

@@ -205,6 +205,27 @@ public class GameSettings {
 	public boolean enableFNAWSkins = true;
 	public boolean enableDynamicLights = false;
 
+	/**+
+	 * Whether gamepad (controller) input is enabled.
+	 */
+	public boolean gamepadEnabled = false;
+	/**+
+	 * Selected gamepad preset, one of the Gamepad.PRESET_* constants.
+	 */
+	public int gamepadPreset = 0;
+	/**+
+	 * Whether the right analog stick drives the camera.
+	 */
+	public boolean gamepadLookEnabled = true;
+	/**+
+	 * Whether to invert the vertical gamepad look axis.
+	 */
+	public boolean gamepadLookInvert = false;
+	/**+
+	 * Analog stick deadzone, in the range [0, 0.5].
+	 */
+	public float gamepadDeadzone = 0.15F;
+
 	public int voiceListenRadius = 16;
 	public float voiceListenVolume = 0.5f;
 	public float voiceSpeakVolume = 0.5f;
@@ -265,6 +286,10 @@ public class GameSettings {
 	 * value), this will set the float value.
 	 */
 	public void setOptionFloatValue(GameSettings.Options parOptions, float parFloat1) {
+		if (parOptions == GameSettings.Options.GAMEPAD_DEADZONE) {
+			this.gamepadDeadzone = parFloat1;
+		}
+
 		if (parOptions == GameSettings.Options.SENSITIVITY) {
 			this.mouseSensitivity = parFloat1;
 		}
@@ -476,10 +501,41 @@ public class GameSettings {
 			this.mc.renderGlobal.loadRenderers();
 		}
 
+		if (parOptions == GameSettings.Options.GAMEPAD_ENABLE) {
+			this.gamepadEnabled = !this.gamepadEnabled;
+		}
+
+		if (parOptions == GameSettings.Options.GAMEPAD_PRESET_LEGACY) {
+			this.gamepadPreset = 0;
+		}
+
+		if (parOptions == GameSettings.Options.GAMEPAD_PRESET_XBOX) {
+			this.gamepadPreset = 1;
+		}
+
+		if (parOptions == GameSettings.Options.GAMEPAD_PRESET_PLAYSTATION) {
+			this.gamepadPreset = 2;
+		}
+
+		if (parOptions == GameSettings.Options.GAMEPAD_PRESET_SWITCH) {
+			this.gamepadPreset = 3;
+		}
+
+		if (parOptions == GameSettings.Options.GAMEPAD_LOOK) {
+			this.gamepadLookEnabled = !this.gamepadLookEnabled;
+		}
+
+		if (parOptions == GameSettings.Options.GAMEPAD_LOOK_INVERT) {
+			this.gamepadLookInvert = !this.gamepadLookInvert;
+		}
+
 		this.saveOptions();
 	}
 
 	public float getOptionFloatValue(GameSettings.Options parOptions) {
+		if (parOptions == GameSettings.Options.GAMEPAD_DEADZONE) {
+			return this.gamepadDeadzone;
+		}
 		return parOptions == GameSettings.Options.FOV ? this.fovSetting
 				: (parOptions == GameSettings.Options.GAMMA ? this.gammaSetting
 						: (parOptions == GameSettings.Options.SATURATION ? this.saturation
@@ -556,6 +612,20 @@ public class GameSettings {
 			return this.enableVsync;
 		case EAGLER_DYNAMIC_LIGHTS:
 			return this.enableDynamicLights;
+		case GAMEPAD_ENABLE:
+			return this.gamepadEnabled;
+		case GAMEPAD_PRESET_LEGACY:
+			return this.gamepadPreset == 0;
+		case GAMEPAD_PRESET_XBOX:
+			return this.gamepadPreset == 1;
+		case GAMEPAD_PRESET_PLAYSTATION:
+			return this.gamepadPreset == 2;
+		case GAMEPAD_PRESET_SWITCH:
+			return this.gamepadPreset == 3;
+		case GAMEPAD_LOOK:
+			return this.gamepadLookEnabled;
+		case GAMEPAD_LOOK_INVERT:
+			return this.gamepadLookInvert;
 		default:
 			return false;
 		}
@@ -580,6 +650,9 @@ public class GameSettings {
 	 */
 	public String getKeyBinding(GameSettings.Options parOptions) {
 		String s = I18n.format(parOptions.getEnumString(), new Object[0]) + ": ";
+		if (parOptions == GameSettings.Options.GAMEPAD_DEADZONE) {
+			return s + (int) (this.gamepadDeadzone * 100.0F) + "%";
+		}
 		if (parOptions.getEnumFloat()) {
 			float f1 = this.getOptionFloatValue(parOptions);
 			float f = parOptions.normalizeValue(f1);
@@ -1009,6 +1082,26 @@ public class GameSettings {
 						this.enableDynamicLights = astring[1].equals("true");
 					}
 
+					if (astring[0].equals("gamepadEnabled")) {
+						this.gamepadEnabled = astring[1].equals("true");
+					}
+
+					if (astring[0].equals("gamepadPreset")) {
+						this.gamepadPreset = Integer.parseInt(astring[1]);
+					}
+
+					if (astring[0].equals("gamepadLookEnabled")) {
+						this.gamepadLookEnabled = astring[1].equals("true");
+					}
+
+					if (astring[0].equals("gamepadLookInvert")) {
+						this.gamepadLookInvert = astring[1].equals("true");
+					}
+
+					if (astring[0].equals("gamepadDeadzone")) {
+						this.gamepadDeadzone = this.parseFloat(astring[1]);
+					}
+
 					deferredShaderConf.readOption(astring[0], astring[1]);
 				} catch (Exception var8) {
 					logger.warn("Skipping bad option: " + s);
@@ -1129,6 +1222,11 @@ public class GameSettings {
 			printwriter.println("voicePTTKey:" + this.voicePTTKey);
 			printwriter.println("enableFNAWSkins:" + this.enableFNAWSkins);
 			printwriter.println("enableDynamicLights:" + this.enableDynamicLights);
+			printwriter.println("gamepadEnabled:" + this.gamepadEnabled);
+			printwriter.println("gamepadPreset:" + this.gamepadPreset);
+			printwriter.println("gamepadLookEnabled:" + this.gamepadLookEnabled);
+			printwriter.println("gamepadLookInvert:" + this.gamepadLookInvert);
+			printwriter.println("gamepadDeadzone:" + this.gamepadDeadzone);
 
 			for (KeyBinding keybinding : this.keyBindings) {
 				printwriter.println("key_" + keybinding.getKeyDescription() + ":" + keybinding.getKeyCode());
@@ -1264,7 +1362,15 @@ public class GameSettings {
 		FOG("options.fog", false, true), FXAA("options.fxaa", false, false),
 		FULLSCREEN("options.fullscreen", false, true),
 		FNAW_SKINS("options.skinCustomisation.enableFNAWSkins", false, true),
-		EAGLER_VSYNC("options.vsync", false, true), EAGLER_DYNAMIC_LIGHTS("options.dynamicLights", false, true);
+		EAGLER_VSYNC("options.vsync", false, true), EAGLER_DYNAMIC_LIGHTS("options.dynamicLights", false, true),
+		GAMEPAD_ENABLE("options.gamepad.enable", false, true),
+		GAMEPAD_PRESET_LEGACY("options.gamepad.preset.legacy", false, true),
+		GAMEPAD_PRESET_XBOX("options.gamepad.preset.xbox", false, true),
+		GAMEPAD_PRESET_PLAYSTATION("options.gamepad.preset.playstation", false, true),
+		GAMEPAD_PRESET_SWITCH("options.gamepad.preset.switch", false, true),
+		GAMEPAD_LOOK("options.gamepad.look", false, true),
+		GAMEPAD_LOOK_INVERT("options.gamepad.lookInvert", false, true),
+		GAMEPAD_DEADZONE("options.gamepad.deadzone", true, false, 0.0F, 0.5F, 0.05F);
 
 		private final boolean enumFloat;
 		private final boolean enumBoolean;

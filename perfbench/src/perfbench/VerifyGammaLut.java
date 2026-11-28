@@ -140,6 +140,18 @@ public final class VerifyGammaLut {
                         ref0, got0);
             }
         }
+        // direct blendComponent parity (for callers invoking blendComponent directly)
+        int refComp = vanillaBlendComponent(a, b, c, d, 16);
+        int gotComp = MipmapGammaBlend.blendComponent(a, b, c, d, 16);
+        ++checks;
+        if (refComp != gotComp) {
+            ++bad;
+            failures++;
+            if (bad < 8) {
+                System.out.printf("    MISMATCH comp16 %08x %08x %08x %08x: vanilla %d got %d%n", a, b, c, d,
+                        refComp, gotComp);
+            }
+        }
         // branch 1: gamma-correct (vanilla blendColors(..., true))
         int ref1 = vanillaBlend(a, b, c, d, true);
         int got1 = MipmapGammaBlend.blend(a, b, c, d, true);

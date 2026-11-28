@@ -1,7 +1,9 @@
 package net.minecraft.util;
 
+import net.lax1dude.eaglercraft.v1_8.EagRuntime;
 import net.lax1dude.eaglercraft.v1_8.EaglercraftRandom;
 import net.lax1dude.eaglercraft.v1_8.EaglercraftUUID;
+import net.lax1dude.eaglercraft.v1_8.internal.EnumPlatformType;
 
 /**+
  * This portion of EaglercraftX contains deobfuscated Minecraft 1.8 source code.
@@ -31,6 +33,7 @@ public class MathHelper {
 	 */
 	private static final float[] SIN_TABLE = new float[65536];
 	private static final int[] multiplyDeBruijnBitPosition;
+	private static final boolean IS_JAVASCRIPT = EagRuntime.getPlatformType() == EnumPlatformType.JAVASCRIPT;
 	private static final double field_181163_d;
 	private static final double[] field_181164_e;
 	private static final double[] field_181165_f;
@@ -380,6 +383,9 @@ public class MathHelper {
 	}
 
 	public static double func_181159_b(double parDouble1, double parDouble2) {
+		if (IS_JAVASCRIPT) {
+			return parDouble1 == 0.0D && parDouble2 == 0.0D ? 0.0D : Math.atan2(parDouble1, parDouble2);
+		}
 		double d0 = parDouble2 * parDouble2 + parDouble1 * parDouble1;
 		if (Double.isNaN(d0)) {
 			return Double.NaN;
@@ -429,6 +435,9 @@ public class MathHelper {
 	}
 
 	public static double func_181161_i(double parDouble1) {
+		if (IS_JAVASCRIPT) {
+			return 1.0D / Math.sqrt(parDouble1);
+		}
 		double d0 = 0.5D * parDouble1;
 		long i = Double.doubleToRawLongBits(parDouble1);
 		i = 6910469410427058090L - (i >> 1);
@@ -495,15 +504,21 @@ public class MathHelper {
 
 		multiplyDeBruijnBitPosition = new int[] { 0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8, 31, 27, 13,
 				23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9 };
-		field_181163_d = Double.longBitsToDouble(4805340802404319232L);
-		field_181164_e = new double[257];
-		field_181165_f = new double[257];
+		if (!IS_JAVASCRIPT) {
+			field_181163_d = Double.longBitsToDouble(4805340802404319232L);
+			field_181164_e = new double[257];
+			field_181165_f = new double[257];
 
-		for (int j = 0; j < 257; ++j) {
-			double d0 = (double) j / 256.0D;
-			double d1 = Math.asin(d0);
-			field_181165_f[j] = Math.cos(d1);
-			field_181164_e[j] = d1;
+			for (int j = 0; j < 257; ++j) {
+				double d0 = (double) j / 256.0D;
+				double d1 = Math.asin(d0);
+				field_181165_f[j] = Math.cos(d1);
+				field_181164_e[j] = d1;
+			}
+		} else {
+			field_181163_d = 0.0D;
+			field_181164_e = null;
+			field_181165_f = null;
 		}
 
 	}

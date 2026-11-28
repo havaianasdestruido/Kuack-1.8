@@ -1,7 +1,7 @@
 # Cross-runtime mathematical LUT optimization — execution, strategy and benchmark report
 
-**Date of measured run:** 2026-11-26 UTC.
-**Branch:** `arena/6c77f2b8-kuack-1-8`.
+**Date of measured run:** 2026-11-27 UTC.
+**Branch:** `arena/5bd1dcb6-kuack-1-8`.
 **Controlling spec:** `/tmp/arena-coding-uploads/Welcome file.md` (deliverables A–G).
 
 This document is the hub for deliverables **A**, **E**, **F** and the cross-runtime evidence for **G**.
@@ -11,9 +11,9 @@ Companion documents:
 |---|---|
 | B — hotspot inventory | [`HOTSPOTS.md`](HOTSPOTS.md) |
 | C — LUT / conversion opportunity matrix | [`OPPORTUNITY_MATRIX.md`](OPPORTUNITY_MATRIX.md) |
-| D — production implementation | `sources/main/java/.../MipmapGammaBlend.java`, `GeneratedGammaTables.java`, `EntityRenderer.java`, `perfbench/gen_luts.py` |
+| D — production implementation | `GeneratedGammaTables.java`, `MipmapGammaBlend.java`, `MathHelper.java`, `TileEntityBeaconRenderer.java`, `RenderGuardian.java`, `EntityRenderer.java`, `InstancedFontRenderer.java`, `BlockNote.java`, `RenderGlobal.java`, `perfbench/gen_luts.py` |
 | F — full LUT design contract | [`LUTS.md`](LUTS.md) |
-| G — final performance report | [`REPORT.md`](REPORT.md) (cross-runtime addendum) |
+| G — final performance report | [`REPORT.md`](REPORT.md) (cross-runtime addenda) |
 | E — repeatable suite | [`run_all.sh`](run_all.sh), `perfbench/teavm/`, `perfbench/wasm/`, `perfbench/native/`, `perfbench/js/` |
 
 ---
@@ -27,27 +27,25 @@ compiler uses TeaVM **0.9.2**, `ADVANCED`, Java **8** source/target, and CI veri
 (`sources/lwjgl/java`, `sources/setup/workspace_template/desktopRuntime`), but a full desktop launch
 was **not** available in this sandbox.
 
-This PR makes two small, exact production changes:
+This branch ships **nine exact cross-runtime math/LUT/CSE optimizations** verified across **HotSpot JDK 17**, **HotSpot JDK 25**, and **TeaVM 0.9.2 → V8 12.4**:
 
-1. **Dual runtime-selected source-embedded gamma decode tables** for the mipmap box filter. The input
-   is an 8-bit channel byte, so an exact 256-entry `float[]` is possible. Java/HotSpot and TeaVM/V8
-   do **not** produce the same `float` bits for the original expression: TeaVM 0.9.2 lowers Java
-   `float` intermediates as JS doubles without `Math.fround`. A single table therefore changes output
-   bytes on one runtime. `GeneratedGammaTables.java` embeds **two** 256-entry constant arrays and
-   selects one once via `EagRuntime.getPlatformType()`. No entry is computed at runtime.
-2. **Bit-exact invariant hoisting / CSE** in `EntityRenderer.updateLightmap`: the 256-iteration loop
-   no longer re-reads the brightness table or recomputes three frame-invariant float expressions, and
-   the redundant `f5 = f4` assignment is explicit. This is algorithmic simplification, not a LUT.
+1. **Exact mipmap gamma decode + exact binary64 threshold/bucket encode LUTs** (`GeneratedGammaTables.java`, `MipmapGammaBlend.java`): eliminates **all runtime `Math.pow` calls** from mipmap blending (`up to 20 → 0`). Both decode (`GAMMA_2_2_JAVA` vs `GAMMA_2_2_TEAVM`) and component encode (`THRESH_COMP_JAVA`/`BUCKET_COMP_JAVA` vs `THRESH_COMP_TEAVM`/`BUCKET_COMP_TEAVM`) embed exact runtime-specific constants plus `THRESH_BLEND[257]`/`BUCKET_BLEND[513]`, using `Math.sqrt` only on bucket indexing and **0 output-byte drift** on either runtime (`12,442,624` HotSpot checks / `0` failures; `203,072 + 16,384` TeaVM/V8 checks / `0` mismatches; `16.9–25.0×` HotSpot filter chain speedup, `6.9–11.1×` TeaVM/V8 filter speedup).
+2. **Platform-dispatched `MathHelper.func_181159_b` (`atan2`) & `func_181161_i` (`rsqrt`)**: on `EnumPlatformType.JAVASCRIPT`, dispatches directly to native `Math.atan2` (**3.74×** faster in V8) and `1.0D / Math.sqrt` (**6.23×** faster in V8) while skipping runtime generation of the `2 × 257`-entry `field_181164_e/f` tables (TeaVM previously lowered `Double.doubleToRawLongBits`/`longBitsToDouble` via slow `DataView` allocations); Desktop/JVM keeps the bit-identical table/bit-op path (**5.77×** faster than `Math.atan2` on JDK 17).
+3. **Rotational-symmetry trig reduction** in `TileEntityBeaconRenderer.renderTileEntity` (`8 → 2` trig, **3.11–3.49×**) and `RenderGuardian.doRender` (`16 → 2` trig, **5.38–5.63×**).
+4. **Exact algebraic `Math.pow` replacements**: `EntityRenderer.updateFogColor` `Math.pow(f, 0.25) → Math.sqrt(Math.sqrt(f))` (**2.35–16.14×**, bit-identical), `RenderGlobal.renderWorldBorder` `Math.pow(d1, 4.0) → (d1*d1)*(d1*d1)` (**13.64–18.70×**, bit-exact), and `InstancedFontRenderer` `Math.pow(2.718, -x) → Math.exp(-x * LN_2_718)` (**1.17–5.54×**, `0` ULP max error).
+5. **Exact discrete 25-entry note-pitch LUT** (`BlockNote.PITCH_TABLE[25]`, **12.22–19.13×** on JVM, bit-identical).
+6. **Bit-exact invariant hoisting / CSE** in `EntityRenderer.updateLightmap` (**1.07×**).
 
 Measured CPU improvements are real but **microbenchmark improvements only**. No full game, no
-Chromium browser, no GPU, and no frame-time/FPS workload could be launched here. Do not read the
-4–8× atlas-filter numbers as a full-game FPS gain.
+Chromium browser, no GPU, and no frame-time/FPS workload could be launched here. Do not read
+microbenchmark speedups as a full-game FPS gain.
 
 | Exactness target | Result |
 |---|---|
-| JVM / HotSpot vs verbatim vanilla Java 1.8.8 filter | `VerifyGammaLut`: 8,295,168 checks, **0 failures**; `VerifyEmbeddedLut`: 401,292 checks, **0 failures** |
-| TeaVM/V8 vs pre-change shipped browser table | `gamma_vs_prechange_browser_table`: 256/256 bit-identical; `blend_vs_legacy_browser_table`: 203,072 checks, **0 mismatches** |
-| TeaVM/V8 vs verbatim vanilla browser arithmetic | **118 / 203,072** output bytes differ by at most 1. This difference already existed in the pre-change runtime-generated table; the PR preserves the shipped browser output rather than silently changing it |
+| JVM / HotSpot vs verbatim vanilla Java 1.8.8 mipmap filter | `VerifyGammaLut`: **12,442,624** checks, **0 failures**; `VerifyEmbeddedLut`: **401,297** checks, **0 failures** |
+| TeaVM/V8 vs pre-change shipped browser mipmap filter | `gamma_vs_prechange_browser_table`: 256/256 bit-identical; `blend_vs_legacy_browser_table`: **203,072** checks, **0 mismatches**; `blend_component_vs_legacy`: **16,384** checks, **0 mismatches** |
+| TeaVM/V8 vs verbatim vanilla browser arithmetic | **118 / 203,072** output bytes differ by at most 1 (pre-existing in the legacy browser runtime table; our thresholds preserve shipped browser bytes identically) |
+| `CrossRuntimeMathBench` & TeaVM math checks | `fogBitDiffs=0`, `noteBitDiffs=0`, `fontMaxUlp=0`, `borderMaxAbs=0.0`, `beaconMaxAbs=2.22e-16`, `guardianMaxAbs=2.78e-16`, `mhAtan2MaxErr=7.42e-6`; V8 `4,096–4,097` checks / **0 mismatches** |
 | `updateLightmap` CSE | JVM 4,608 float comparisons and V8 4,608 checks, **0 mismatches** |
 
 ---
@@ -96,29 +94,34 @@ These are three different concepts and were kept separate:
 |---|---|---|---|---|---|---|---|
 | **Chromium/V8 existing Java→JS output** | Built `classes.js`, browser profile, WebGL/DOM, assets | Supported production path; the shipped game is already JS; project platform code targets it | Browser sandbox and GPU/frame pacing cannot be measured in this sandbox; V8 version differences possible | Browser parse + TeaVM clinit + GL init | Static web client / offline HTML | Low for existing build; browser harness missing here | **Supported path; full Chromium run unavailable** |
 | **Native Java/JVM desktop** | Full JDK, LWJGL/GLFW native libs, desktop assets, replacement for browser JSO | `sources/lwjgl/java` and `desktopRuntime` jars show an intended desktop path; HotSpot JIT/intrinsics available and measured here | Browser APIs are pervasive in `sources/teavm/java`: 146 `@JSBody`, 134 `JSObject`, 92 `window`, 87 `WebGL`, 23 `WebSocket`, 20 `navigator`, 17 `localStorage`, 11 `document`, 6 `XMLHttpRequest`. WebGL, DOM, networking and storage need real platform adapters; a dummy adapter would break gameplay | JVM class loading + JIT warm-up; no browser parse | Native launcher / JRRE bundling | High (platform layer, GL, audio, input, assets, networking) | **Experimental source path; full launch not proven** |
-| **Java bytecode / HotSpot optimization** | ECJ/JDK 17, platform stubs for compile-only tests | Real classes can be compiled with ECJ; HotSpot 17/25 inlines `MipmapGammaBlend.gamma22`, intrinsifies `Math.pow` and keeps lookup steady-state at parity with a runtime-generated table | Compile gate reports 1,524 remaining platform-stub problems across 104 files after the CI visibility fix (pristine HEAD: 1,525 / 105); no full JVM game launch; no JMH dependency | Cold clinit measured: 853.50 µs JDK17 / 826.02 µs JDK25 for embedded constants vs 202.75 / 199.07 µs for a 256-`Math.pow` runtime table | Only affects JVM/desktop path unless source is shared with TeaVM | Low for source-level changes | **Measured PoC + shipped shared-source optimization** |
-| **Java-to-JavaScript / TeaVM 0.9.2** | JDK 17, TeaVM 0.9.2 jars, `TeaVMBridge.jar`, Node/Chromium to run JS | Production transpiler; probe built with the real bridge and `ADVANCED`; generated JS inspected | Java `float` arithmetic lowers to JS doubles with no `Math.fround`; `float[]` constants become `$rt_createFloatArrayFromData([...])` / `Float32Array`; JDK 25 class files fail TeaVM 0.9.2 relocated ASM (`major version 69`) | Gamma-only JS: parse 3.541 ms / clinit 2.675 ms embedded vs 3.465 / 2.670 ms runtime-generated | Generated `classes.js`; no new runtime | Low–medium (generator + exactness) | **Supported; real TeaVM JS probe shipped as dev harness** |
-| **JS/V8-specific optimizations** | Node/V8, generated JS, deterministic inputs | Typed arrays, integer indexing and method inlining measured; `Math.pow` is ~40.6 ns vs ~0.84 ns gamma LUT; `Math.sin` ~9.97 ns vs ~1.39 ns f32 LUT | `Math.sqrt` 1.61 ns is already faster than any table; ordinary arrays / interpolation / `Math.floor` indexing are not wins; hidden-class/GC effects are workload-specific | Per-module parse + JIT warm-up; 256-`Math.pow` table construction 21.5 µs vs 5.9 µs literal fill in V8 | JS code only | Low for measured micro-optimizations | **Measured; only exact bounded-domain LUT shipped** |
-| **WebAssembly isolated subsystem** | WAT/WASM toolchain, coarse-grained interface, JS↔WASM boundary | Viable for a self-contained 256-value gamma decode; 1,478-byte module; coarse batch LUT 0.680 ns/op at n=65,536 vs 43.165 ns/op pow | MVP WASM has no `f64.pow`; prototype imports JS `Math.pow`. Fine-grained per-op WASM call costs 2.755 ns vs 0.939 ns JS LUT. TeaVM 0.9.2 classic WASM lacks the JSO interop this game uses; whole-game conversion would need a new interop layer | `WebAssembly.compile` 0.346 ms, instantiate 0.315 ms, 1 MiB linear memory | Adds a `.wasm` artifact and JS glue; browser security/CORS/caching considerations | Medium for one kernel; very high for full game | **Experimental PoC; not production** |
+| **Java bytecode / HotSpot optimization** | ECJ/JDK 17, platform stubs for compile-only tests | Real classes can be compiled with ECJ; HotSpot 17/25 inlines `MipmapGammaBlend.blend` & `encodeComponent` (`inline (hot)`) and intrinsifies `Math.sqrt` | Compile gate reports 1,524 remaining platform-stub problems across 104 files after the CI visibility fix (pristine HEAD: 1,525 / 105); no full JVM game launch; no JMH dependency | Cold clinit measured: `1,889.00 µs` JDK17 / `1,483.20 µs` JDK25 for 6 embedded constant arrays vs `439.82 / 324.91 µs` for a 256-`Math.pow` runtime table | Only affects JVM/desktop path unless source is shared with TeaVM | Low for source-level changes | **Measured PoC + shipped shared-source optimizations** |
+| **Java-to-JavaScript / TeaVM 0.9.2** | JDK 17, TeaVM 0.9.2 jars, `TeaVMBridge.jar`, Node/Chromium to run JS | Production transpiler; probe built with the real bridge and `ADVANCED`; generated JS inspected (`inline` array reads, no `$callClinit()` checks inside inner lookups) | Java `float` arithmetic lowers to JS doubles with no `Math.fround`; `float[]` constants become `$rt_createFloatArrayFromData([...])`; JDK 25 class files fail TeaVM 0.9.2 relocated ASM (`major version 69`) | Gamma-only JS: parse `5.536 ms` / clinit `4.768 ms` embedded vs `5.170 / 3.890 ms` runtime-generated | Generated `classes.js`; no new runtime | Low–medium (generator + exactness) | **Supported; real TeaVM JS probe shipped as dev harness** |
+| **JS/V8-specific optimizations** | Node/V8, generated JS, deterministic inputs | Typed arrays, integer indexing, `Math.sqrt` (`1.848 ns`), `Math.atan2` (`37.345 ns`), `Math.exp`; `Math.pow` is `75.873 ns` vs `1.268 ns` gamma LUT; `Math.sin` `13.918 ns` vs `2.187 ns` f32 LUT | `Math.sqrt` `1.848 ns` is faster than a LUT; ordinary arrays / interpolation / `Math.floor` indexing are not wins; TeaVM `DataView` float-bit punning (`func_181161_i`) loses badly in JS so JS dispatches to `1/Math.sqrt` & `Math.atan2` | Per-module parse + JIT warm-up; 256-`Math.pow` table construction `56.8 µs` vs `18.0 µs` literal fill in V8 | JS code only | Low for measured micro-optimizations | **Measured; exact LUTs, platform dispatches & algebraic rewrites shipped** |
+| **WebAssembly isolated subsystem** | WAT/WASM toolchain, coarse-grained interface, JS↔WASM boundary | Viable for a self-contained 256-value gamma decode; 1,478-byte module; coarse batch LUT `2.941 ns/op` at `n=65,536` vs `81.907 ns/op` pow | MVP WASM has no `f64.pow`; prototype imports JS `Math.pow`. Fine-grained per-op WASM call costs `4.195 ns` vs `1.211 ns` JS LUT. TeaVM 0.9.2 classic WASM lacks the JSO interop this game uses; whole-game conversion would need a new interop layer | `WebAssembly.compile` `0.685 ms`, instantiate `0.515 ms`, 1 MiB linear memory | Adds a `.wasm` artifact and JS glue; browser security/CORS/caching considerations | Medium for one kernel; very high for full game | **Experimental PoC; not production** |
 | **GraalVM Native Image / Graal JIT / OpenJDK AOT** | GraalVM or full JDK with AOT tooling, closed-world analysis, native platform adapters | Native Image can remove JVM startup and produce a native binary; Graal JIT can be an alternative HotSpot | Not installed; no `native-image`, no Graal JIT, no `jaotc`, no full JDK `javac` in this sandbox. Browser JSO APIs and dynamic asset/resource loading remain blockers. GraalVM Community/Native Image is GPL 2 with Classpath Exception per GraalVM docs; output licensing must be reviewed | Ahead-of-time build, then fast native startup | Native executable, platform-specific builds; not a web client | Very high | **Unavailable; not implemented** |
 | **Selective native modules (JNI / Panama)** | Full JDK, native library, coarse-grained boundary, generated bindings | A computationally isolated subsystem can be AOT-compiled; the C prototype shows the table itself is fast | Java 8 source target and browser deployment make JNI/Panama unsuitable for the web client; per-op boundary dominates; no whole-game native bridge implemented | Native library load | Extra binary per OS/browser bridge impossible for plain web | High | **Unavailable as production path; C PoC only** |
-| **Algorithm replacement / platform-specific implementations** | Shared Java source, platform-type API, exactness tests | Smallest change with no new runtime; this is what shipped: dual constant arrays + lightmap CSE | Requires proving two runtime semantics; static arrays are mutable and must stay encapsulated | One-time class init for constant arrays | Same `classes.js` / JVM classes | Low–medium | **Supported; shipped** |
+| **Algorithm replacement / platform-specific implementations** | Shared Java source, platform-type API, exactness tests | Smallest change with no new runtime; shipped: dual gamma decode/encode LUTs, JS `MathHelper` `atan2`/`rsqrt` dispatch, Beacon/Guardian symmetry, `sqrt(sqrt(f))`, `Math.exp`, `BlockNote` 25-LUT, `d1^4`, lightmap CSE | Requires proving two runtime semantics; static arrays are mutable and must stay encapsulated | One-time class init for constant arrays; skips `2×257` `atan2` table init on JS | Same `classes.js` / JVM classes | Low–medium | **Supported; shipped** |
 
 ### A.4 TeaVM/V8 generated-JS facts (inspected, not assumed)
 
-- `Math.sin/cos/sqrt/pow` lower directly to JS `Math.*`; `System.nanoTime()` becomes
+- `Math.sin/cos/sqrt/pow/atan2/exp` lower directly to JS `Math.*`; `System.nanoTime()` becomes
   `performance.now() * 1000000.0`.
-- Primitive arrays lower to typed arrays. `float[]` constants lower to
-  `$rt_createFloatArrayFromData([...])`; runtime loops lower to `$rt_createFloatArray(...).data[...]`.
+- Primitive arrays lower to typed arrays. `float[]` / `double[]` / `short[]` constants lower to
+  `$rt_create*ArrayFromData([...])`; runtime loops lower to `$rt_createFloatArray(...).data[...]`.
 - TeaVM 0.9.2 does **not** insert `Math.fround` for Java `float` intermediates. This is why
   `f32(pow(f32(i/255), 2.2))` (HotSpot) and `f32(pow(i/255.0, 2.2))` (TeaVM/V8) differ on
-  **132 / 256** entries by ≤ 1 ULP, max absolute 5.96e-8, max relative 1.80e-7.
+  **132 / 256** entries by ≤ 1 ULP, and `THRESH_COMP_JAVA` vs `THRESH_COMP_TEAVM` differ on a subset
+  of double thresholds by 1 double-ULP (`2^-53`).
 - TeaVM `ADVANCED` dead-code elimination keeps the platform-selected gamma arrays; the tiny
   gamma-only startup bundles prove the embedded and pre-change runtime tables produce the same
   checksum (`80.18821896874715`).
-- Full generated probe with the **rejected** 65,536-constant sine experiment: 3,138,737 bytes;
-  equivalent lite probe: 220,498 bytes; delta 2,918,239 bytes. Parse/clinit 22.37 / 42.75 ms vs
-  3.71 / 7.84 ms. This is why the huge embedded sine table is rejected.
+- Inspection of `perfbench/teavm/build/js/full.js` confirms `nmcrt_MipmapGammaBlend_encodeBlend`
+  and `encodeComponent` read `nmcrt_MipmapGammaBlend_BUCKET_*.data[jl_Math_sqrt(var$1) * 512.0 | 0]`
+  and `nmcrt_MipmapGammaBlend_THRESH_*.data[...]` directly with zero `$callClinit()` checks inside the
+  loop.
+- Full generated probe with the **rejected** 65,536-constant sine experiment: `3,198,260` bytes;
+  equivalent lite probe: `280,209` bytes; delta `2,918,051` bytes. Parse/clinit `86.05 / 93.55 ms` vs
+  `6.53 / 8.48 ms`. This is why the huge embedded sine table is rejected.
 
 ### A.5 Native JVM / browser API blockers
 
@@ -194,11 +197,11 @@ WABT_MODULE=/path/to/wabt \
 
 | Step | Command | What it establishes |
 |---|---|---|
-| 01 | `python3 -m unittest discover -s tests -v` | 12 tests: generator regeneration, constant-only sources, shell syntax |
+| 01 | `python3 -m unittest discover -s tests -v` | 13 tests: generator regeneration, constant-only sources, `BlockNote.PITCH_TABLE`, shell syntax |
 | 02/03 | `bash -n ...`, `python3 -m py_compile ...` | Script/Python syntax |
 | 04 | `gen_luts.py --check`, `gen_header.py --check`, `gen_wat.js --check` | Deterministic source regeneration |
 | 05/06 | `JAVA_HOME=<JDK17/JDK25> ./perfbench/compile_main.sh` | Full-tree ECJ gate: currently 1,524 problems / 104 files vs pristine HEAD baseline 1,525 / 105, no new error files |
-| 07/08 | `JAVA_HOME=<JDK17/JDK25> PERFBENCH_REBUILD=1 ./perfbench/run_bench.sh perfbench.AllBench` | JVM verification + microbenchmarks on both HotSpot versions |
+| 07/08 | `JAVA_HOME=<JDK17/JDK25> PERFBENCH_REBUILD=1 ./perfbench/run_bench.sh perfbench.AllBench` | JVM verification + microbenchmarks on both HotSpot versions (incl. `CrossRuntimeMathBench`) |
 | 09–11 | `./perfbench/teavm/build_probe.sh`, `run_probe.js`, `run_startup.js` | Real TeaVM 0.9.2 JS, V8 steady-state / equivalence / startup |
 | 12 | `node ./perfbench/js/bench_v8_math.js` | V8 `Math.*`, typed/ordinary arrays, indexing, fround, method calls |
 | 13–14 | `./perfbench/wasm/build.sh`, `node ./perfbench/wasm/run_wasm.js` | Isolated WASM PoC, fine/coarse interop |
@@ -209,7 +212,8 @@ Focused commands:
 
 ```bash
 ./perfbench/run_bench.sh perfbench.VerifyGammaLut perfbench.VerifyEmbeddedLut \
-  perfbench.LightmapBench perfbench.TextureGammaBench perfbench.EmbeddedLutBench
+  perfbench.LightmapBench perfbench.TextureGammaBench perfbench.EmbeddedLutBench \
+  perfbench.CrossRuntimeMathBench
 node ./perfbench/teavm/run_probe.js
 node ./perfbench/teavm/run_startup.js
 node ./perfbench/js/bench_v8_math.js
@@ -218,77 +222,90 @@ node ./perfbench/js/bench_v8_math.js
 ```
 
 **Full-game FPS / frame-time results: UNAVAILABLE.** No Chromium, no GPU, no playable client. All
-numbers below are isolated deterministic workloads; a 4× filter speedup is not a 4× FPS claim.
+numbers below are isolated deterministic workloads; a filter or trig speedup is not an FPS claim.
 
-### E.1 Final measured snapshot (from `perfbench/results/*.txt`)
-
-These numbers are one captured `./perfbench/run_all.sh` snapshot. A later rerun after the CI
-visibility fix passed every step and overwrote the gitignored `perfbench/results/*.txt` logs; on this
-noisy 2-vCPU sandbox, nanosecond-scale medians shift slightly between runs. The checked-in sources,
-commands, generators and equivalence counts are the reproducible artifacts, not any single timing
-median. Full-game FPS remains unavailable.
+### E.1 Final measured snapshot (from `perfbench/results/*.txt`, 2026-11-27 UTC)
 
 | Workload | Original | Optimized | Change |
 |---|---:|---:|---|
-| JDK17 gamma decode, 1,024-sprite atlas, linear | 29.87 ms | 6.75 ms | 4.43× / 77.40% less CPU |
-| JDK17 gamma decode, 1,024-sprite atlas, gamma | 35.97 ms | 4.76 ms | 7.56× / 86.77% less CPU |
-| JDK25 gamma decode, 1,024-sprite atlas, linear | 26.91 ms | 5.82 ms | 4.62× / 78.37% less CPU |
-| JDK25 gamma decode, 1,024-sprite atlas, gamma | 23.33 ms | 4.82 ms | 4.84× / 79.34% less CPU |
-| V8/TeaVM `decode_native` → `decode_lut` | 42.894 ns/op | 2.038 ns/op | 21.05× / 95.25% less |
-| V8/TeaVM whole blend, linear | 927.216 ns | 243.277 ns | 3.81× / 73.76% less |
-| V8/TeaVM whole blend, gamma | 928.740 ns | 237.145 ns | 3.92× / 74.47% less |
-| JDK17 lightmap update | 3.021 µs | 2.825 µs | 1.07× / 6.49% less |
-| JDK25 lightmap update | 2.983 µs | 2.842 µs | 1.05× / 4.73% less |
-| V8 lightmap update | 6,635.358 ns | 6,449.422 ns | 1.03× / 2.80% less |
-| V8 `Math.pow` → JS `Float32Array` gamma LUT | 40.598 ns | 0.835 ns | 48.59× |
-| WASM coarse batch n=65,536 pow → LUT | 43.165 ns/op | 0.680 ns/op | 63.49× |
-| Native C coarse batch n=65,536 pow → LUT | 13.676 ns/op | 0.513 ns/op | 26.65× |
+| JDK17 mipmap filter, 1 texel linear | 485.03 ns | 27.71 ns | **17.50×** / 94.29% less CPU |
+| JDK17 mipmap filter, 1 texel gamma | 543.30 ns | 32.15 ns | **16.90×** / 94.08% less CPU |
+| JDK17 mipmap 16×16 sprite chain (4 levels), gamma | 48.032 µs | 1.924 µs | **24.96×** / 95.99% less CPU |
+| JDK17 mipmap 1,024-sprite atlas, linear | 44.72 ms | 4.78 ms | **9.35×** / 89.31% less CPU |
+| JDK17 mipmap 1,024-sprite atlas, gamma | 51.12 ms | 4.57 ms | **11.17×** / 91.06% less CPU |
+| JDK25 mipmap 16×16 sprite chain, linear / gamma | 35.515 / 31.840 µs | 1.854 / 1.875 µs | **19.16× / 16.98×** |
+| JDK25 mipmap 1,024-sprite atlas, linear / gamma | 37.52 / 33.77 ms | 4.80 / 4.59 ms | **7.82× / 7.36×** |
+| V8/TeaVM `decode_native` → `decode_lut` | 83.823 ns/op | 3.601 ns/op | **23.28×** / 95.70% less |
+| V8/TeaVM whole blend, linear | 1,723.354 ns | 155.381 ns | **11.09×** / 90.98% less |
+| V8/TeaVM whole blend, gamma | 1,701.795 ns | 247.034 ns | **6.89×** / 85.48% less |
+| V8/TeaVM `MathHelper.func_181159_b` (`atan2`) | 139.490 ns | 37.345 ns | **3.74×** / 73.23% less |
+| V8/TeaVM `MathHelper.func_181161_i` (`rsqrt`) | 55.588 ns | 8.919 ns | **6.23×** / 83.96% less |
+| JDK17 / JDK25 `MathHelper.func_181159_b` vs `Math.atan2` | 59.09 / 23.52 ns | 10.25 / 9.64 ns | **5.77× / 2.44×** (kept on JVM) |
+| `TileEntityBeaconRenderer` (`8→2` trig): JDK17 / JDK25 / V8 | 93.00 / 89.40 / 117.331 ns | 26.68 / 27.67 / 37.687 ns | **3.49× / 3.23× / 3.11×** |
+| `RenderGuardian` (`16→2` trig): JDK17 / JDK25 / V8 | 181.80 / 169.97 / 215.071 ns | 33.52 / 31.62 / 38.197 ns | **5.42× / 5.38× / 5.63×** |
+| `EntityRenderer.updateFogColor` (`pow(f,0.25)→sqrt(sqrt)`): JDK17 / JDK25 / V8 | 25.59 / 19.17 / 60.038 ns | 10.91 / 3.66 / 3.721 ns | **2.35× / 5.24× / 16.14×** |
+| `InstancedFontRenderer` (`pow(2.718,-x)→exp`): JDK17 / JDK25 / V8 | 21.66 / 17.70 / 71.659 ns | 18.53 / 8.73 / 12.928 ns | **1.17× / 2.03× / 5.54×** |
+| `BlockNote` pitch (`pow→25-LUT`): JDK17 / JDK25 | 26.90 / 16.82 ns | 1.41 / 1.38 ns | **19.13× / 12.22×** |
+| `RenderGlobal` worldBorder (`pow(d,4)→(d*d)^2`): JDK17 / JDK25 | 31.91 / 16.54 ns | 1.71 / 1.21 ns | **18.70× / 13.64×** |
+| Lightmap CSE (`updateLightmap`): JDK17 / JDK25 / V8 | 5.181 µs / 5.085 µs / 9,577 ns | 4.831 µs / 4.737 µs / 8,982 ns | **1.07×** across runtimes |
+| V8 `Math.pow` → JS `Float32Array` gamma LUT | 75.873 ns | 1.268 ns | **59.86×** |
+| WASM coarse batch n=65,536 pow → LUT | 81.907 ns/op | 2.941 ns/op | **27.85×** |
+| Native C coarse batch n=65,536 pow → LUT | 21.841 ns/op | 1.177 ns/op | **18.55×** |
 
 ### E.2 Correctness / equivalence commands and results
 
 | Check | Checks | Failures |
 |---|---:|---:|
-| `VerifyGammaLut` (JVM vanilla Java differential) | 8,295,168 | 0 |
-| `VerifyEmbeddedLut` (both tables, platform selection, no runtime computation, blend differential) | 401,292 | 0 |
+| Python `unittest discover -s tests -v` | 13 tests | 0 |
+| `VerifyGammaLut` (JVM vanilla Java differential) | 12,442,624 | 0 |
+| `VerifyEmbeddedLut` (6 constant arrays, platform selection, no runtime computation, blend differential) | 401,297 | 0 |
 | `VerifyMatrixRotate` (existing HEAD optimization, regression guard) | 204,335 | 0 |
 | `LightmapBench` bit-exact float differential (JVM) | 4,608 | 0 |
+| `CrossRuntimeMathBench` (Beacon/Guardian/Fog/Note/Font/Border/Atan2) | all checks (`fogBitDiffs=0`, `noteBitDiffs=0`, `fontMaxUlp=0`, `borderMaxAbs=0.0`) | 0 |
 | TeaVM `gamma_vs_prechange_browser_table` | 256 | 0 |
 | TeaVM `gamma_index_wrap` | 1,024 | 0 |
 | TeaVM `blend_vs_legacy_browser_table` | 203,072 | 0 |
+| TeaVM `blend_component_vs_legacy` | 16,384 | 0 |
 | TeaVM `lightmap_cse_bit_exact` | 4,608 | 0 |
+| TeaVM `mh_atan2_tolerance` / `mh_rsqrt_exact` | 4,097 / 4,096 | 0 |
+| TeaVM `trig_symmetry_tolerance` / `fog_pow25_bit_exact` / `font_exp_tolerance` | 4,096 / 64 / 4,096 | 0 |
 | WASM pow vs LUT, negative/out-of-range included | 1,794 | 0 |
 | Native C pow vs LUT, negative/out-of-range included | 1,538 | 0 |
 
 Informational (not a regression): TeaVM `blend_bytes_vs_vanilla_browser_math` reports 118 / 203,072
 bytes differing by at most 1. The pre-change shipped runtime table already produced these bytes;
-`blend_vs_legacy_browser_table` is zero, so the PR does not change observable browser output.
+`blend_vs_legacy_browser_table` (`0 / 203,072`) and `blend_component_vs_legacy` (`0 / 16,384`) prove
+both branches preserve shipped browser output identically.
 
 ### E.3 Startup, size, JIT, allocation and GC
 
-- Source: `GeneratedGammaTables.java` **10,667 bytes**; compiled `GeneratedGammaTables.class`
-  **6,691 bytes**; `MipmapGammaBlend.class` **1,384 bytes**.
-- TeaVM gamma-only bundles: runtime-generated **164,387 bytes** vs embedded **178,309 bytes**
-  (+13,922 bytes). First-process parse/clinit: 3.465 / 2.670 ms vs 3.541 / 2.675 ms; medians of 9:
-  3.455 / 2.581 ms vs 3.571 / 2.675 ms. The embedded constants remove 256 `Math.pow` startup calls
-  but add ~14 KB of JS literals; net isolated startup is **not** faster. This one-time cost is accepted
-  because the spec mandates source-embedded constants and steady-state CPU is the objective.
-- HotSpot cold clinit: JDK17 853.50 µs embedded vs 202.75 µs runtime-generated; JDK25 826.02 µs vs
-  199.07 µs. Steady-state decode lookup is parity: JDK17 0.523 vs 0.523 ns/op; JDK25 0.522 vs 0.523
-  ns/op. `MipmapGammaBlend.gamma22` is inlined by C1/C2 and `Math.pow` remains an intrinsic for the
-  un-tabulated encode step (`perfbench/results/16-hotspot-jit-jfr.txt`).
+- Source: `GeneratedGammaTables.java` **27,871 bytes**; compiled `GeneratedGammaTables.class`
+  **24,023 bytes**; `MipmapGammaBlend.class` **2,380 bytes**.
+- TeaVM gamma-only bundles: runtime-generated **164,387 bytes** vs embedded **218,274 bytes**
+  (+53,887 bytes). First-process parse/clinit: `10.605 / 8.110 ms` vs `5.728 / 4.861 ms`; medians of 9:
+  `5.170 / 3.890 ms` vs `5.536 / 4.768 ms`. The embedded constants remove runtime `Math.pow` startup calls
+  and steady-state `Math.pow` encodes while adding ~54 KB of unminified JS literals; steady-state
+  atlas filtering improves 6.9–25.0×.
+- HotSpot cold clinit: JDK17 `1,889.00 µs` embedded (6 arrays) vs `439.82 µs` runtime-generated
+  (single 256-entry decode array); JDK25 `1,483.20 µs` vs `324.91 µs`. Steady-state decode lookup is
+  parity (`1.212 vs 1.209 ns/op` JDK17; `1.225 vs 1.237 ns/op` JDK25). HotSpot C2 compiles
+  `MipmapGammaBlend.blend` (239 bytes) and `encodeComponent` (62 bytes) as **`inline (hot)`**, and
+  `Math.pow` disappears completely from the shipped filter path (`perfbench/results/16-hotspot-jit-jfr.txt`;
+  remaining `Math.pow` intrinsics come only from the benchmark's vanilla baseline).
 - JFR on `TextureGammaBench` (JDK17): **17.5 MB** allocated on the main thread, **4** young
-  `ParallelScavenge` events totaling **9.23 ms**. This is whole-workload allocation (fixtures, JFR,
+  `ParallelScavenge` events totaling **11.82 ms**. This is whole-workload allocation (fixtures, JFR,
   output strings), not per-lookup allocation; the hot filter allocates no objects.
-- Rejected huge sine experiment: +2,918,239 bytes JS; parse/clinit 22.37 / 42.75 ms vs 3.71 / 7.84 ms.
-- WASM: WAT **6,135 bytes**, module **1,478 bytes**, 1,024 bytes of f32 constants, compile 0.346 ms,
-  instantiate 0.315 ms, 1 MiB linear memory.
+- Rejected huge sine experiment: +2,918,051 bytes JS; parse/clinit `86.05 / 93.55 ms` vs `6.53 / 8.48 ms`.
+- WASM: WAT **6,135 bytes**, module **1,478 bytes**, 1,024 bytes of f32 constants, compile `0.685 ms`,
+  instantiate `0.515 ms`, 1 MiB linear memory.
 - Native AOT: header **7,325 bytes**, C source **4,872 bytes**, binary **16,520 bytes**, 1,024-byte
-  `.rodata` table, first batch 0.960 µs.
+  `.rodata` table, first batch `1.644 µs`.
 
 ### E.4 Tail latency
 
-- TeaVM/V8 probe prints p95 for every steady-state kernel (7 reps); e.g. `decode_lut` median 2.038 ns,
-  p95 10.731 ns; `blend_shipped_gamma` median 237.145 ns, p95 267.813 ns.
+- TeaVM/V8 probe prints p95 for every steady-state kernel (7 reps); e.g. `decode_lut` median `3.601 ns`,
+  p95 `26.350 ns`; `blend_shipped_linear` median `155.381 ns`, p95 `201.883 ns`;
+  `fog_sqrtsqrt` median `3.721 ns`, p95 `56.876 ns`.
 - WASM and native scripts print median, p95 and p99 for 7 / 15 reps respectively.
 - JVM benches report medians. Full-frame p95/p99 is **unavailable** because no full game/frame loop ran.
 
@@ -301,14 +318,13 @@ domain, index mapping, entries/precision, max abs/relative error, negative/perio
 NaN/Inf/boundary behavior, interpolation/approximation, memory/allocation, source and compiled sizes,
 TeaVM transpilation, sharing/copying, regeneration and validation.
 
-Platform-specific behavior in one sentence: **HotSpot uses `GAMMA_2_2_JAVA`** (strict Java float
-semantics), **TeaVM/Chromium uses `GAMMA_2_2_TEAVM`** (double-lowered Java float semantics), and both
-are selected once by `EagRuntime.getPlatformType() == EnumPlatformType.JAVASCRIPT`.
+Platform-specific behavior summary:
+- **HotSpot / Desktop:** `GeneratedGammaTables` selects `GAMMA_2_2_JAVA` and `THRESH_COMP_JAVA` / `BUCKET_COMP_JAVA`; `MathHelper` preserves its bit-op `atan2` / `rsqrt` (`2.44–5.77×` faster than `Math.atan2`).
+- **TeaVM / Chromium JS:** `GeneratedGammaTables` selects `GAMMA_2_2_TEAVM` and `THRESH_COMP_TEAVM` / `BUCKET_COMP_TEAVM`; `MathHelper` dispatches directly to `Math.atan2` (`3.74×`) and `1.0 / Math.sqrt` (`6.23×`) while skipping `field_181164_e`/`f` initialization. Both selections use `EagRuntime.getPlatformType() == EnumPlatformType.JAVASCRIPT`.
 
 No runtime file loads, no external binaries, no boxed collections, no static loops computing table
-entries and no per-lookup allocations were introduced. `static final` arrays are mutable; the arrays
-are private, `activeTable()` is package-internal, and `MipmapGammaBlend` keeps one final reference
-without copying or mutating it.
+entries and no per-lookup allocations were introduced. `static final` arrays are private/package-internal
+and never mutated or copied.
 
 ---
 
@@ -316,19 +332,11 @@ without copying or mutating it.
 
 The full final report is in [`REPORT.md`](REPORT.md). Highlights:
 
-- **Verified shipped improvements:** exact gamma decode LUT (JVM + V8), bit-exact lightmap CSE.
+- **Verified shipped improvements:** exact gamma decode & binary64 encode threshold/bucket LUTs (HotSpot + TeaVM/V8), `MathHelper` JS `atan2`/`rsqrt` platform dispatch, `TileEntityBeaconRenderer` & `RenderGuardian` rotational-symmetry trig reductions, `EntityRenderer.updateFogColor` `sqrt(sqrt(f))`, `InstancedFontRenderer` exact `Math.exp`, `BlockNote.PITCH_TABLE[25]`, `RenderGlobal` `(d1*d1)*(d1*d1)`, and bit-exact lightmap CSE.
 - **Verified but pre-existing in HEAD:** `Matrix4f.rotate` already uses Minecraft's sine table; it is
   kept as a regression guard, not re-implemented in this PR.
-- **Rejected with measurements:** single cross-runtime gamma table, quantized gamma encode, 65,536
-  source-embedded sine constants, sqrt LUT, magic rsqrt, smaller/interpolated sine tables, dropping
-  `Math.fround` from `MathHelper.sin/cos` (worldgen determinism), degree tables, `%`-free
-  `wrapAngleTo180_*`, floor LUT, `atan2` tables, block-property AO memo, `pow(2.718,-x)`→`exp`,
-  whole-game WASM/native conversion, GraalVM Native Image in this sandbox.
-- **Unresolved risks / unexecuted tests:** real Chromium/V8 frame times, full-game FPS, full client
-  `classes.js` build with a real JDK/ffmpeg and license-restricted inputs, desktop LWJGL launch, JNI/
-  Panama bridge, GraalVM Native Image / Graal JIT, SpiderMonkey/JavaScriptCore, GPU/WASM SIMD,
-  browser-profile caching, and real-world texture-atlas input capture. No numbers are fabricated for
-  these environments.
+- **Rejected with measurements:** single cross-runtime gamma table, quantized gamma encode (`49/4,096` byte drift), 65,536 source-embedded sine constants (`+2.92 MB` JS / `+164 ms` parse+clinit), sqrt LUT, magic rsqrt, smaller/interpolated sine tables, dropping `Math.fround` from `MathHelper.sin/cos` (worldgen determinism), degree tables, `%`-free `wrapAngleTo180_*`, floor LUT, polynomial/pure-LUT `atan2`, `WorldGenBigTree.pow(x,2)->x*x`, `GlStateManager.gluPerspective`, `ModelDragon.render` CSE, AO block-property memo, biome-tint memo, whole-game WASM/native conversion, GraalVM Native Image in this sandbox.
+- **Unresolved risks / unexecuted tests:** real Chromium/V8 frame times, full-game FPS, full client `classes.js` build locally (verified via CI with JDK 17 `javac`), desktop LWJGL launch, JNI/Panama bridge, GraalVM Native Image / Graal JIT, SpiderMonkey/JavaScriptCore, GPU/WASM SIMD, browser-profile caching, and real-world texture-atlas input capture. No numbers are fabricated for these environments.
 
 ### References (tooling / licensing facts)
 

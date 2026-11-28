@@ -100,7 +100,10 @@ vec3 eaglercraftLighting_Glass(in vec3 radiance, in vec3 viewDir, in vec3 lightD
 	vec2 Ndot = NdotHVL.yz;
 	Ndot /= Ndot * (1.0 - gs) + gs;
 	NDF *= Ndot.x * Ndot.y;
-	float fresnel = pow(max(1.0 - NdotHVL.x, 0.0), 5.0);
+	// pow(x, 5.0) -> x2 * x2 * x (see lib/pbr_lighting.glsl): 3 ALU ops, no log2/exp2
+	float nvf = max(1.0 - NdotHVL.x, 0.0);
+	float nvf2 = nvf * nvf;
+	float fresnel = nvf2 * nvf2 * nvf;
 	vec3 F = vec3(GLASS_F0 + (1.0 - GLASS_F0) * fresnel);
 	denom = 4.0 * NdotHVL.y * NdotHVL.z + 0.0001;
 	return (NDF * F / denom) * radiance * NdotHVL.z;
@@ -108,7 +111,10 @@ vec3 eaglercraftLighting_Glass(in vec3 radiance, in vec3 viewDir, in vec3 lightD
 
 vec3 eaglercraftIBL_Specular_Glass(in vec3 envMapSample, in vec3 viewDir, in vec3 normalVec) {
 	float NdotV = dot(normalVec, -viewDir);
-	float fresnel = pow(max(1.0 - NdotV, 0.0), 5.0);
+	// pow(x, 5.0) -> x2 * x2 * x (see lib/pbr_lighting.glsl): 3 ALU ops, no log2/exp2
+	float nvf = max(1.0 - NdotV, 0.0);
+	float nvf2 = nvf * nvf;
+	float fresnel = nvf2 * nvf2 * nvf;
 	vec3 F = vec3(GLASS_F0 + (max(1.0 - GLASS_ROUGHNESS, GLASS_F0) - GLASS_F0) * fresnel);
 	vec2 brdf2f = vec2(max(NdotV, 0.0), GLASS_ROUGHNESS);
 	brdf2f = 1.0 - brdf2f;
@@ -270,14 +276,19 @@ void main() {
 	int safeLightCount = u_dynamicLightCount1i > 12 ? 0 : u_dynamicLightCount1i; // hate this
 	for(int i = 0; i < safeLightCount; ++i) {
 		dlightDist3f = u_dynamicLightArray[i].u_lightPosition4f.xyz - worldPosition4f.xyz;
-		dlightDir3f = normalize(dlightDist3f);
-		if(dot(dlightDir3f, normalVector3f) <= 0.0) {
+		float dlightDist2f = dot(dlightDist3f, dlightDist3f);
+		// Both culls now run before the normalise/divide: normalize() cannot flip the sign of
+		// dot(dir, N) (it scales by the positive 1/|d|), and the 0.025 cut-off can be moved
+		// across the 1/dist2 falloff without changing which lights pass.
+		if(dot(dlightDist3f, normalVector3f) <= 0.0) {
 			continue;
 		}
-		dlightColor3f = u_dynamicLightArray[i].u_lightColor4f.rgb / dot(dlightDist3f, dlightDist3f);
-		if(dlightColor3f.r + dlightColor3f.g + dlightColor3f.b < 0.025) {
+		vec3 dlightRadiance3f = u_dynamicLightArray[i].u_lightColor4f.rgb;
+		if(dlightRadiance3f.r + dlightRadiance3f.g + dlightRadiance3f.b < 0.025 * dlightDist2f) {
 			continue;
 		}
+		dlightDir3f = dlightDist3f * inversesqrt(dlightDist2f);
+		dlightColor3f = dlightRadiance3f / dlightDist2f;
 		lightColor3f += eaglercraftLighting_Glass(dlightColor3f, -worldDirection4f.xyz, dlightDir3f, normalVector3f) * u_blockSkySunDynamicLightFac4f.w;
 	}
 

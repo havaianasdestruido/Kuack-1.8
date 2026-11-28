@@ -52,6 +52,14 @@ public class Keyboard {
 		return PlatformInput.keyboardIsKeyDown(key);
 	}
 
+	/**
+	 * Queues a synthetic key event so the game's normal key handling (press
+	 * timing, key binding presses, GUI input) processes it exactly like a real key.
+	 */
+	public static void queueSyntheticKey(int key, boolean pressed) {
+		PlatformInput.keyboardQueueSyntheticEvent(key, pressed);
+	}
+
 	public static String getKeyName(int key) {
 		return KeyboardConstants.getKeyName(key);
 	}
